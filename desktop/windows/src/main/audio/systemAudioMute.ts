@@ -58,12 +58,41 @@ class SystemAudioMuteBridge {
 
   private ensureStarted(): void {
     if (this.child || this.unavailable || this.disposed) return
+    // The mute helper is a WASAPI .NET exe — Windows-only by definition. On other
+    // platforms the resolver's dev fallback lands inside app.asar, where spawn()
+    // throws ENOTDIR synchronously and escapes to uncaughtException.
+    if (process.platform !== 'win32') {
+      this.unavailable = true
+      return
+    }
     const exe = resolveAudioHelperPath()
     // windowsHide: the helper is a console-subsystem .NET exe (OutputType=Exe).
     // Electron main is a GUI process with no console, so without CREATE_NO_WINDOW
     // the child allocates a NEW visible console — a stray taskbar window. Its
     // stdio is piped, so hiding the console loses nothing.
-    const child = spawn(exe, [], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+    let child: ChildProcessWithoutNullStreams
+    try {
+      child = spawn(exe, [], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+    } catch (e) {
+      // spawn can throw synchronously (ENOTDIR through an asar path, EACCES);
+      // route it through the same latch as the async ENOENT path so callers see
+      // a silent no-op, never an uncaught exception.
+      console.error('[win-audio-helper] spawn threw:', (e as Error).message)
+      // Same durable fail-open degrade as the async ENOENT path below: muting is
+      // silently disabled for the rest of the session while PTT keeps working, so
+      // it routes through the shared fallback emitter (AGENTS.md), not Sentry.
+      recordFallback({
+        component: 'other',
+        from: 'system_audio_mute',
+        to: 'none',
+        reason: 'other',
+        outcome: 'degraded',
+        cause: 'spawn_sync_error',
+        code: (e as NodeJS.ErrnoException).code ?? 'unknown'
+      })
+      this.unavailable = true
+      return
+    }
     this.child = child
 
     const decoder = new FrameDecoder((json) => {
