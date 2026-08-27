@@ -13,6 +13,7 @@ describe('dev-ports.mjs parity with devInstance.ts', () => {
     expect(mjs.DEV_RENDERER_SPAN).toBe(ts.DEV_RENDERER_SPAN)
     expect(mjs.DEV_CDP_BASE).toBe(ts.DEV_CDP_BASE)
     expect(mjs.DEV_CDP_SPAN).toBe(ts.DEV_CDP_SPAN)
+    expect(mjs.WORKTREE_WALK_LIMIT).toBe(ts.WORKTREE_WALK_LIMIT)
   })
 
   it('derives identical ports + slugs across a name corpus', () => {

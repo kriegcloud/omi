@@ -9,6 +9,7 @@ import { basename, dirname, join, relative, isAbsolute } from 'node:path'
 
 export const PRIMARY_RENDERER_PORT = 5179
 export const PRIMARY_CDP_PORT = 9222
+export const WORKTREE_WALK_LIMIT = 40
 export const DEV_RENDERER_BASE = 5180
 export const DEV_RENDERER_SPAN = 100
 export const DEV_CDP_BASE = 9230
@@ -58,7 +59,7 @@ export function sanitizeInstanceName(raw) {
 /** Classify a checkout: a linked worktree has a `.git` FILE, the primary a `.git` DIR. */
 export function findWorktreeContext(startDir) {
   let dir = startDir
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < WORKTREE_WALK_LIMIT; i++) {
     const gitPath = join(dir, '.git')
     if (existsSync(gitPath)) {
       let isDir = false

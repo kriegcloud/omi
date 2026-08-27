@@ -13,7 +13,8 @@ import {
   DEV_CDP_BASE,
   DEV_CDP_SPAN,
   PRIMARY_RENDERER_PORT,
-  PRIMARY_CDP_PORT
+  PRIMARY_CDP_PORT,
+  WORKTREE_WALK_LIMIT
 } from './devInstance'
 
 describe('deriveRendererPort / deriveCdpPort', () => {
@@ -195,10 +196,21 @@ describe('findWorktreeContext', () => {
     }
   })
 
-  it('falls back to primary when no .git is found', () => {
+  it('falls back to primary when no .git is found within the walk limit', () => {
+    // Start deeper than WORKTREE_WALK_LIMIT so every directory the walk probes is
+    // inside the fixture. Starting at the mkdtemp root itself lets the walk escape
+    // into the real tmpdir and on up to / — a transient /tmp/.git created by any
+    // other process then flips the result (observed: {name: 'tmp'} instead of
+    // {name: 'primary'}). The .git DIRECTORY at the fixture root sits just beyond
+    // the walk's reach: if the limit ever stops bounding the walk, the walk finds
+    // it and this test fails loudly instead of silently going non-hermetic again.
     const root = mkdtempSync(join(tmpdir(), 'omi-wt-none-'))
     try {
-      const ctx = findWorktreeContext(root)
+      mkdirSync(join(root, '.git'))
+      let start = root
+      for (let i = 0; i < WORKTREE_WALK_LIMIT + 5; i++) start = join(start, 'd')
+      mkdirSync(start, { recursive: true })
+      const ctx = findWorktreeContext(start)
       expect(ctx).toEqual({ name: 'primary', isPrimary: true })
     } finally {
       rmSync(root, { recursive: true, force: true })

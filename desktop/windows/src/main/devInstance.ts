@@ -24,6 +24,9 @@ import { fnv1a, avalanche } from './portDerivation'
 export const PRIMARY_RENDERER_PORT = 5179
 export const PRIMARY_CDP_PORT = 9222
 
+/** Max directory levels findWorktreeContext ascends before giving up (bounds the walk on pathological paths). */
+export const WORKTREE_WALK_LIMIT = 40
+
 // Worktree renderer ports sit just above the canonical 5179 so they still read as
 // "the Vite dev server". 5180–5279 avoids 5432 (postgres) and stays out of the OS
 // ephemeral range where transient collisions with outbound sockets are likely.
@@ -139,7 +142,7 @@ export function computeDevInstance(
  */
 export function findWorktreeContext(startDir: string): { name: string; isPrimary: boolean } {
   let dir = startDir
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < WORKTREE_WALK_LIMIT; i++) {
     const gitPath = join(dir, '.git')
     if (existsSync(gitPath)) {
       let isDir = false
