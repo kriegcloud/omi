@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "FC-spawn-sync-failure-channel-unhandled",
+  "violated_contract": "A supervisor that promises callers a best-effort, never-throwing bridge to an optional helper process must intercept every failure channel of the launch API it wraps. Node's spawn reports launch failure on two channels — an asynchronous 'error' event (ENOENT) and a synchronous throw (ENOTDIR through an app.asar path, EACCES) — and handling only the asynchronous channel lets the synchronous one escape the bridge's no-throw contract; launched from a bare startup timer, that escape is a process-fatal uncaughtException that left a window-less zombie holding the single-instance lock. Compounding it, spawn failure was the implicit platform detector: a platform-scoped helper must be gated on process.platform by its owning bridge so unsupported platforms never reach the launch API at all.",
+  "canonical_prevention": "Route every launch-failure channel into the bridge's single fail-open latch: guard the platform at the top of ensureStarted, wrap the spawn call in try/catch feeding the same 'unavailable' latch (and one-shot fallback record) as the async 'error' path, and prove both with regression tests asserting warm() and all calls stay silent no-ops — no throw, no respawn loop, no fallback noise for by-design platform absence. Sibling helper bridges copying this supervisor shape (automation, OCR) inherit the same contract.",
+  "canonical_prevention_artifact": [
+    "desktop/windows/src/main/audio/systemAudioMute.test.ts"
+  ],
+  "evidence_prs": [],
+  "scope_hints": [
+    "desktop/windows/src/main/audio/**",
+    "desktop/windows/src/main/automation/**",
+    "desktop/windows/src/main/ocr/**"
+  ],
+  "status": "open"
+}
