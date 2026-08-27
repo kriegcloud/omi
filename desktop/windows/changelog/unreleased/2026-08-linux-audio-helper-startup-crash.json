@@ -1,0 +1,5 @@
+{
+  "changes": [
+    "The Linux build no longer crashes a few seconds after startup — and no longer leaves a stuck background process that blocked every relaunch — while warming up the Windows-only push-to-talk audio-mute helper."
+  ]
+}
