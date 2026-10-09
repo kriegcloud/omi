@@ -47,6 +47,18 @@ class AnalyticsManager {
   static Timer? _retryTimer;
   static int _droppedEvents = 0;
   static Map<String, Object> _globalEventProperties = {'app_platform': _mobilePlatformName};
+
+  /// Events whose PostHog rows were missing the release build. The value is
+  /// the same `app_build` super-property Device Connected already flushes.
+  static const Set<String> _captureWedgeFamilyEvents = {
+    'Capture Wedge Detected',
+    'Local WAL Stuck',
+    'Recording Start Failed',
+    'Capture Recovery Prompt Shown',
+    'Capture Recovery Actioned',
+    'Capture Recovery Resolved',
+    'Capture Ingress Health',
+  };
   static bool _analyticsReady = false;
   static bool _trackingEnabled = true;
   static int _consentRevision = 0;
@@ -65,6 +77,8 @@ class AnalyticsManager {
   static int get identityEpoch => _identityEpoch;
   static bool get identityKnown => _identityKnown;
   static bool get trackingEnabled => _trackingEnabled;
+  static final ValueNotifier<bool> _trackingConsent = ValueNotifier(true);
+  static ValueListenable<bool> get trackingConsent => _trackingConsent;
   static String? get currentIdentity => _boundIdentity;
   static String get appBuild => _globalEventProperties['app_build']?.toString() ?? 'unknown';
   static String get mobilePlatform => _mobilePlatformName;
@@ -209,6 +223,7 @@ class AnalyticsManager {
         final consent = await SharedPreferences.getInstance();
         if (consentRevision == _consentRevision) {
           _trackingEnabled = consent.getBool('product_analytics_enabled') ?? _trackingEnabled;
+          _trackingConsent.value = _trackingEnabled;
         }
         await PlatformService.executeIfSupportedAsync(PlatformService.isAnalyticsSupported, adapter.init);
         if (!identical(_adapter, adapter)) return;
@@ -281,6 +296,7 @@ class AnalyticsManager {
     _globalEventProperties = {'app_platform': _mobilePlatformName};
     _analyticsReady = false;
     _trackingEnabled = true;
+    _trackingConsent.value = true;
     _clientAppNamespace = 'unknown';
     _settledDistinctId = null;
     _identityEpoch++;
@@ -435,6 +451,7 @@ class AnalyticsManager {
     _consentRevision++;
     if (!_trackingEnabled) _identityEpoch++;
     _trackingEnabled = true;
+    _trackingConsent.value = true;
     unawaited(_persistTrackingPreference(true));
     _notifyIdentity(null, false);
     PlatformService.executeIfSupported(PlatformService.isAnalyticsSupported, () {
@@ -451,6 +468,7 @@ class AnalyticsManager {
   void optOutTracking() {
     _consentRevision++;
     _trackingEnabled = false;
+    _trackingConsent.value = false;
     unawaited(_persistTrackingPreference(false));
     _identityEpoch++;
     _queuedEvents.clear();
@@ -634,7 +652,14 @@ class AnalyticsManager {
         final event = _queuedEvents.removeAt(0);
         try {
           if (!_trackingEnabled || event.identityEpoch != _identityEpoch) continue;
-          final properties = {...event.properties, ..._globalEventProperties};
+          final properties = <String, Object>{...event.properties, ..._globalEventProperties};
+          // Device lifecycle events already carry this value as `app_build`.
+          // Capture-wedge events were emitted without it, so fleet queries on
+          // `build` could not attribute a wedge to a release.
+          final build = _globalEventProperties['app_build'];
+          if (build != null && _captureWedgeFamilyEvents.contains(event.eventName)) {
+            properties['build'] = build;
+          }
           if (adapter is AnalyticsDeliveryAdapter) {
             await (adapter as AnalyticsDeliveryAdapter).deliver(
               eventName: event.eventName,

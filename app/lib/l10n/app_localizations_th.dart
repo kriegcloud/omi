@@ -9863,11 +9863,6 @@ class AppLocalizationsTh extends AppLocalizations {
       'พื้นที่จัดเก็บของ Pendant เต็มและยังอยู่ในโหมดบันทึกเสียง จึงไม่สามารถถ่ายโอนเสียงที่บันทึกไว้ได้ กดปุ่มของ Pendant เพื่อหยุดการบันทึก แล้วซิงค์อีกครั้ง';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'ไม่ได้บันทึก ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return 'โปรไฟล์เสียงของ $name';
   }
@@ -12349,4 +12344,398 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'แสดงบนหน้าจอล็อก';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'บัญชีนี้กำลังถูกลบ ลงชื่อเข้าใช้ด้วยบัญชีอื่น หรือรอสักครู่แล้วลองอีกครั้ง';
+
+  @override
+  String get onboardingSetupTitle => 'กำลังตั้งค่า Omi ของคุณ';
+
+  @override
+  String get onboardingSetupSubtitle => 'ขอเวลา Omi สักครู่เพื่อปรับให้เหมาะกับคุณ';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'กำลังเตรียมพื้นที่ทำงานของคุณ';
+
+  @override
+  String get onboardingSetupStepLanguage => 'กำลังปรับการถอดเสียงให้เข้ากับภาษาของคุณ';
+
+  @override
+  String get onboardingSetupStepMemory => 'กำลังตั้งค่าความจำของคุณ';
+
+  @override
+  String get onboardingSetupStepDevices => 'กำลังเชื่อมต่ออุปกรณ์ของคุณ';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'กำลังปรับแต่งประสบการณ์ของคุณ';
+
+  @override
+  String get onboardingRatingPromptTitle => 'คุณชอบ Omi ไหม?';
+
+  @override
+  String get onboardingRatingPromptYes => 'ใช่';
+
+  @override
+  String get onboardingRatingPromptNo => 'ไม่';
+
+  @override
+  String get partialRecording => 'การบันทึกบางส่วน';
+
+  @override
+  String get importTranscriptFiles => 'ไฟล์ถอดเสียง';
+
+  @override
+  String get importTranscriptFilesDescription => 'เลือกไฟล์ถอดเสียง SRT, VTT หรือ TXT หรือไฟล์ ZIP ที่รวมไว้';
+
+  @override
+  String get importTooManyAttempts => 'มีการนำเข้ามากเกินไปในขณะนี้ โปรดลองอีกครั้งในภายหลัง';
+
+  @override
+  String get importFileTooLarge => 'ไฟล์นี้ใหญ่เกินไปที่จะนำเข้า';
+
+  @override
+  String get importUnsupportedFileType => 'ไม่สามารถนำเข้าไฟล์ประเภทนี้ได้';
+
+  @override
+  String get reviewTitle => 'ตรวจสอบ';
+
+  @override
+  String get reviewEntryTitle => 'คำถามสำหรับคุณ';
+
+  @override
+  String reviewRemaining(int count) {
+    return 'เหลือ $count';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'ใครพูดสิ่งนี้?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'คนเดียวกับ “$name” ใช่ไหม';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'สะกดอย่างไร';
+
+  @override
+  String get reviewPlayClip => 'เล่นคลิป';
+
+  @override
+  String get reviewStopClip => 'หยุดคลิป';
+
+  @override
+  String get reviewOpenDetailsHint => 'เปิดรายละเอียด';
+
+  @override
+  String get reviewAnswerMe => 'ฉัน';
+
+  @override
+  String get reviewAnswerOther => 'อื่น ๆ';
+
+  @override
+  String get reviewAddTask => 'เพิ่มงาน';
+
+  @override
+  String get reviewAnswerFailed => 'บันทึกคำตอบของคุณไม่ได้ ลองอีกครั้ง';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'คำตอบนี้ติดป้ายการสนทนา $count รายการ';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'ผู้พูดที่ไม่รู้จัก';
+
+  @override
+  String get reviewNewPersonName => 'ชื่อของเขา';
+
+  @override
+  String get reviewSomeoneElse => 'คนอื่น…';
+
+  @override
+  String get reviewConfirm => 'ยืนยัน';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return 'ยืนยัน $name';
+  }
+
+  @override
+  String get reviewNotSure => 'ไม่แน่ใจ';
+
+  @override
+  String get reviewOpenConversation => 'การสนทนา';
+
+  @override
+  String get reviewTaskField => 'งาน';
+
+  @override
+  String get reviewDue => 'กำหนดส่ง';
+
+  @override
+  String get reviewNoDate => 'ไม่มี';
+
+  @override
+  String get reviewProject => 'โปรเจกต์';
+
+  @override
+  String get reviewReasonAlreadyDone => 'ทำเสร็จแล้ว';
+
+  @override
+  String get reviewReasonNotMine => 'ไม่ใช่ของฉัน';
+
+  @override
+  String get reviewReasonNotUseful => 'ไม่มีประโยชน์';
+
+  @override
+  String get reviewYesMerge => 'ใช่ รวมเลย';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'การสนทนา: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'พิมพ์เอง';
+
+  @override
+  String get reviewLoadFailed => 'โหลดคำถามของคุณไม่ได้';
+
+  @override
+  String get reviewCaughtUpTitle => 'ไม่มีอะไรให้ตอบ';
+
+  @override
+  String get reviewCaughtUpBody => 'Omi จะถามที่นี่เมื่อต้องการคุณเท่านั้น';
+
+  @override
+  String get reviewRecentChanges => 'การเปลี่ยนแปลงล่าสุด';
+
+  @override
+  String get reviewChangesIntro => 'สิ่งที่ Omi เปลี่ยนเองในช่วง 30 วันที่ผ่านมา ย้อนกลับสิ่งที่ดูไม่ถูกต้องได้';
+
+  @override
+  String get reviewChangeUndone => 'ย้อนกลับแล้ว Omi จะไม่ทำซ้ำเอง';
+
+  @override
+  String get reviewChangeFailed => 'อัปเดตการเปลี่ยนแปลงนี้ไม่ได้ ลองอีกครั้ง';
+
+  @override
+  String get reviewChangesLoadFailed => 'โหลดการเปลี่ยนแปลงล่าสุดไม่ได้';
+
+  @override
+  String get reviewNoChangesTitle => 'ยังไม่มีการเปลี่ยนแปลง';
+
+  @override
+  String get reviewNoChangesBody => 'เมื่อ Omi จัดระเบียบบันทึกของคุณ การเปลี่ยนแปลงจะแสดงที่นี่';
+
+  @override
+  String get reviewShowMore => 'แสดงเพิ่มเติม';
+
+  @override
+  String get entityKeptCurrent => 'Omi ดูแลให้เป็นปัจจุบัน';
+
+  @override
+  String get entityNotRight => 'ไม่ถูกต้อง?';
+
+  @override
+  String get entityCorrectionTitle => 'อะไรไม่ถูกต้อง?';
+
+  @override
+  String get entityCorrectionHint => 'บอก Omi ว่าต้องแก้อะไร';
+
+  @override
+  String get entityCorrectionSaved => 'ขอบคุณ Omi จะแก้ไขให้';
+
+  @override
+  String get entityCorrectionFailed => 'ส่งการแก้ไขของคุณไม่ได้ ลองอีกครั้ง';
+
+  @override
+  String get entityLoadFailed => 'โหลดหน้านี้ไม่ได้';
+
+  @override
+  String get entityProject => 'โปรเจกต์';
+
+  @override
+  String get entityProjects => 'โปรเจกต์';
+
+  @override
+  String get entityDecisions => 'การตัดสินใจ';
+
+  @override
+  String get entityOpenTasks => 'งานที่ยังเปิดอยู่';
+
+  @override
+  String get entityOpenThreads => 'เรื่องที่ยังค้างอยู่';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'รอ $name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'กำหนดส่ง $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'สิ่งที่ Omi รู้';
+
+  @override
+  String get entityRecentConversations => 'การสนทนาล่าสุด';
+
+  @override
+  String get tasksNoProject => 'ไม่มีโปรเจกต์';
+
+  @override
+  String get tasksGroupByProject => 'จัดกลุ่มตามโปรเจกต์';
+
+  @override
+  String get tasksGroupByDate => 'จัดกลุ่มตามวันที่';
+
+  @override
+  String get dreamReportTitle => 'รายงาน Dream';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'โหมดตัวอย่าง: Dream แสดงสิ่งที่จะเปลี่ยน แต่ยังไม่มีอะไรในบัญชีของคุณเปลี่ยนแปลง';
+
+  @override
+  String get dreamReportLiveBanner =>
+      'Dream ใช้การเปลี่ยนแปลงเหล่านี้โดยอัตโนมัติ เลิกทำรายการใดก็ได้ใน การเปลี่ยนแปลงล่าสุด';
+
+  @override
+  String get dreamReportRunNow => 'เรียกใช้ตอนนี้';
+
+  @override
+  String get dreamReportRunLimit => 'วันนี้ไม่เหลือสิทธิ์เรียกใช้เองแล้ว';
+
+  @override
+  String get dreamReportRunInProgress => 'มีรอบที่กำลังทำงานอยู่ ลองอีกครั้งในอีกสักครู่';
+
+  @override
+  String get dreamReportRunFailed => 'เรียกใช้ Dream ไม่ได้ ลองอีกครั้ง';
+
+  @override
+  String get dreamReportIdle => 'ยังไม่มีอะไรใหม่ให้ตรวจดู';
+
+  @override
+  String get dreamReportLoadFailed => 'โหลดรายงาน Dream ไม่ได้';
+
+  @override
+  String get dreamReportEmptyTitle => 'ยังไม่มีรอบการทำงาน';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream ตรวจดูสิ่งที่เปลี่ยนในบัญชีของคุณประมาณชั่วโมงละครั้ง';
+
+  @override
+  String get dreamReportScheduled => 'ตามกำหนดเวลา';
+
+  @override
+  String get dreamReportManual => 'เรียกใช้เอง';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'ล้มเหลว ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'หยุดเมื่อถึงขีดจำกัดเวลา';
+
+  @override
+  String get dreamReportNothingFound => 'ไม่มีอะไรต้องแก้ไข';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return 'อ่านแล้ว $records รายการ · $tokens โทเค็น';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'จะแก้ไข';
+
+  @override
+  String get dreamReportFixed => 'แก้ไขแล้ว';
+
+  @override
+  String get dreamReportWouldAsk => 'จะถามคุณ';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'จะแนะนำงาน';
+
+  @override
+  String get dreamReportLearnedWords => 'คำที่เรียนรู้';
+
+  @override
+  String get dreamReportFeedback => 'รายงานให้ทีม Omi แล้ว';
+
+  @override
+  String get dreamReportDeletedItem => 'รายการที่ลบแล้ว';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return 'วันนี้ทำงานแล้ว $count จาก $limit รอบ';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'มี $count การเปลี่ยนแปลงรออยู่',
+      one: 'มี 1 การเปลี่ยนแปลงรออยู่',
+      zero: 'ไม่มีการเปลี่ยนแปลงที่รออยู่',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'วันนี้เรียกใช้เองได้อีก $count ครั้ง',
+      one: 'วันนี้เรียกใช้เองได้อีก 1 ครั้ง',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: 'แก้ไข $fixes รายการ',
+      one: 'แก้ไข 1 รายการ',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: 'แนะนำ $asks รายการ',
+      one: 'แนะนำ 1 รายการ',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ข้ามการเปลี่ยนแปลงเก่า $count รายการ',
+      one: 'ข้ามการเปลี่ยนแปลงเก่า 1 รายการ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'เก็บรายงาน $count รายการไว้เพื่อความเป็นส่วนตัว',
+      one: 'เก็บรายงาน 1 รายการไว้เพื่อความเป็นส่วนตัว',
+    );
+    return '$_temp0';
+  }
 }

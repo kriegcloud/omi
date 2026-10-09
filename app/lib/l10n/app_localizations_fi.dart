@@ -9924,11 +9924,6 @@ class AppLocalizationsFi extends AppLocalizations {
       'Pendantin muisti on täynnä ja se on yhä äänitystilassa, joten tallennettua ääntä ei voi siirtää. Pysäytä äänitys painamalla Pendantin painiketta ja synkronoi sitten uudelleen.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'Ei tallennettu ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return 'Käyttäjän $name ääniprofiili';
   }
@@ -12419,4 +12414,398 @@ class AppLocalizationsFi extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'Näytä lukitusnäytöllä';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'Tätä tiliä poistetaan. Kirjaudu sisään toisella tilillä tai odota muutama minuutti ja yritä uudelleen.';
+
+  @override
+  String get onboardingSetupTitle => 'Omia otetaan käyttöön';
+
+  @override
+  String get onboardingSetupSubtitle => 'Anna Omille hetki mukautua';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'Työtilaasi valmistellaan';
+
+  @override
+  String get onboardingSetupStepLanguage => 'Tekstitystä mukautetaan kielellesi';
+
+  @override
+  String get onboardingSetupStepMemory => 'Muistiasi otetaan käyttöön';
+
+  @override
+  String get onboardingSetupStepDevices => 'Laitteitasi yhdistetään';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'Kokemustasi personoidaan';
+
+  @override
+  String get onboardingRatingPromptTitle => 'Pidätkö Omista?';
+
+  @override
+  String get onboardingRatingPromptYes => 'Kyllä';
+
+  @override
+  String get onboardingRatingPromptNo => 'Ei';
+
+  @override
+  String get partialRecording => 'Osittainen tallenne';
+
+  @override
+  String get importTranscriptFiles => 'Litterointitiedostot';
+
+  @override
+  String get importTranscriptFilesDescription => 'Valitse SRT-, VTT- tai TXT-litteroinnit tai niitä sisältävä ZIP';
+
+  @override
+  String get importTooManyAttempts => 'Liian monta tuontia juuri nyt. Yritä myöhemmin uudelleen.';
+
+  @override
+  String get importFileTooLarge => 'Tämä tiedosto on liian suuri tuotavaksi.';
+
+  @override
+  String get importUnsupportedFileType => 'Tämän tyyppistä tiedostoa ei voi tuoda.';
+
+  @override
+  String get reviewTitle => 'Tarkistus';
+
+  @override
+  String get reviewEntryTitle => 'Kysymyksiä sinulle';
+
+  @override
+  String reviewRemaining(int count) {
+    return '$count jäljellä';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'Kuka sanoi tämän?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'Sama henkilö kuin ”$name”?';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'Miten tämä kirjoitetaan?';
+
+  @override
+  String get reviewPlayClip => 'Toista klippi';
+
+  @override
+  String get reviewStopClip => 'Pysäytä klippi';
+
+  @override
+  String get reviewOpenDetailsHint => 'Avaa tiedot';
+
+  @override
+  String get reviewAnswerMe => 'Minä';
+
+  @override
+  String get reviewAnswerOther => 'Muu';
+
+  @override
+  String get reviewAddTask => 'Lisää tehtävä';
+
+  @override
+  String get reviewAnswerFailed => 'Vastausta ei voitu tallentaa. Yritä uudelleen.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'Tämä vastaus nimeää $count keskustelua';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'Tuntematon puhuja';
+
+  @override
+  String get reviewNewPersonName => 'Heidän nimensä';
+
+  @override
+  String get reviewSomeoneElse => 'Joku muu…';
+
+  @override
+  String get reviewConfirm => 'Vahvista';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return 'Vahvista $name';
+  }
+
+  @override
+  String get reviewNotSure => 'En ole varma';
+
+  @override
+  String get reviewOpenConversation => 'Keskustelu';
+
+  @override
+  String get reviewTaskField => 'Tehtävä';
+
+  @override
+  String get reviewDue => 'Määräpäivä';
+
+  @override
+  String get reviewNoDate => 'Ei mitään';
+
+  @override
+  String get reviewProject => 'Projekti';
+
+  @override
+  String get reviewReasonAlreadyDone => 'Jo tehty';
+
+  @override
+  String get reviewReasonNotMine => 'Ei minun';
+
+  @override
+  String get reviewReasonNotUseful => 'Ei hyödyllinen';
+
+  @override
+  String get reviewYesMerge => 'Kyllä, yhdistä';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'Keskustelut: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'Kirjoita itse';
+
+  @override
+  String get reviewLoadFailed => 'Kysymyksiäsi ei voitu ladata.';
+
+  @override
+  String get reviewCaughtUpTitle => 'Ei vastattavaa';
+
+  @override
+  String get reviewCaughtUpBody => 'Omi kysyy täällä vain, kun se tarvitsee sinua.';
+
+  @override
+  String get reviewRecentChanges => 'Viimeaikaiset muutokset';
+
+  @override
+  String get reviewChangesIntro =>
+      'Mitä Omi on muuttanut itse viimeisen 30 päivän aikana. Kumoa kaikki, mikä näyttää väärältä.';
+
+  @override
+  String get reviewChangeUndone => 'Kumottu. Omi ei toista tätä itse.';
+
+  @override
+  String get reviewChangeFailed => 'Muutosta ei voitu päivittää. Yritä uudelleen.';
+
+  @override
+  String get reviewChangesLoadFailed => 'Viimeaikaisia muutoksia ei voitu ladata.';
+
+  @override
+  String get reviewNoChangesTitle => 'Ei vielä muutoksia';
+
+  @override
+  String get reviewNoChangesBody => 'Kun Omi siistii muistiinpanojasi, muutokset näkyvät täällä.';
+
+  @override
+  String get reviewShowMore => 'Näytä lisää';
+
+  @override
+  String get entityKeptCurrent => 'Omin ajan tasalla pitämä';
+
+  @override
+  String get entityNotRight => 'Eikö oikein?';
+
+  @override
+  String get entityCorrectionTitle => 'Mikä ei ole oikein?';
+
+  @override
+  String get entityCorrectionHint => 'Kerro Omille, mitä korjataan';
+
+  @override
+  String get entityCorrectionSaved => 'Kiitos. Omi korjaa sen.';
+
+  @override
+  String get entityCorrectionFailed => 'Korjausta ei voitu lähettää. Yritä uudelleen.';
+
+  @override
+  String get entityLoadFailed => 'Tätä sivua ei voitu ladata.';
+
+  @override
+  String get entityProject => 'Projekti';
+
+  @override
+  String get entityProjects => 'Projektit';
+
+  @override
+  String get entityDecisions => 'Päätökset';
+
+  @override
+  String get entityOpenTasks => 'Avoimet tehtävät';
+
+  @override
+  String get entityOpenThreads => 'Avoimet asiat';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'Odotetaan: $name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'Määräpäivä $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'Mitä Omi tietää';
+
+  @override
+  String get entityRecentConversations => 'Viimeisimmät keskustelut';
+
+  @override
+  String get tasksNoProject => 'Ei projektia';
+
+  @override
+  String get tasksGroupByProject => 'Ryhmittele projektin mukaan';
+
+  @override
+  String get tasksGroupByDate => 'Ryhmittele päivämäärän mukaan';
+
+  @override
+  String get dreamReportTitle => 'Dream-raportti';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'Esikatselutila: Dream näyttää, mitä se muuttaisi, mutta tilissäsi ei muutu vielä mitään.';
+
+  @override
+  String get dreamReportLiveBanner => 'Dream tekee nämä muutokset itse. Peru ne kohdassa Viimeisimmät muutokset.';
+
+  @override
+  String get dreamReportRunNow => 'Suorita nyt';
+
+  @override
+  String get dreamReportRunLimit => 'Ei manuaalisia ajoja jäljellä tänään';
+
+  @override
+  String get dreamReportRunInProgress => 'Ajo on jo käynnissä. Yritä uudelleen minuutin kuluttua.';
+
+  @override
+  String get dreamReportRunFailed => 'Dreamin ajaminen ei onnistunut. Yritä uudelleen.';
+
+  @override
+  String get dreamReportIdle => 'Ei vielä mitään uutta tarkistettavaa.';
+
+  @override
+  String get dreamReportLoadFailed => 'Dream-raportin lataaminen ei onnistunut.';
+
+  @override
+  String get dreamReportEmptyTitle => 'Ei vielä ajoja';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream tarkistaa tilisi muutokset noin kerran tunnissa.';
+
+  @override
+  String get dreamReportScheduled => 'Ajastettu';
+
+  @override
+  String get dreamReportManual => 'Manuaalinen';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'Epäonnistui ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'Pysähtyi aikarajaan';
+
+  @override
+  String get dreamReportNothingFound => 'Ei korjattavaa';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return 'Luettu $records kohdetta · $tokens tokenia';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'Korjaisi';
+
+  @override
+  String get dreamReportFixed => 'Korjattu';
+
+  @override
+  String get dreamReportWouldAsk => 'Kysyisi sinulta';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'Ehdottaisi tehtäviä';
+
+  @override
+  String get dreamReportLearnedWords => 'Opitut sanat';
+
+  @override
+  String get dreamReportFeedback => 'Ilmoitettu Omi-tiimille';
+
+  @override
+  String get dreamReportDeletedItem => 'Poistettu kohde';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return '$count/$limit ajoa tänään';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count muutosta odottaa',
+      one: '1 muutos odottaa',
+      zero: 'Ei odottavia muutoksia',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count manuaalista ajoa jäljellä tänään',
+      one: '1 manuaalinen ajo jäljellä tänään',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes korjausta',
+      one: '1 korjaus',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks ehdotusta',
+      one: '1 ehdotus',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count vanhempaa muutosta ohitettu',
+      one: '1 vanhempi muutos ohitettu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ilmoitusta pidätetty yksityisyyden vuoksi',
+      one: '1 ilmoitus pidätetty yksityisyyden vuoksi',
+    );
+    return '$_temp0';
+  }
 }

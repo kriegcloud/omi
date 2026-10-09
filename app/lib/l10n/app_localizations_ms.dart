@@ -9946,11 +9946,6 @@ class AppLocalizationsMs extends AppLocalizations {
       'Storan Pendant penuh dan ia masih dalam mod rakaman, jadi audio yang tersimpan tidak dapat dipindahkan. Tekan butang Pendant untuk menghentikan rakaman, kemudian segerakkan semula.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'Tidak dirakam ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return 'Profil Suara $name';
   }
@@ -12446,4 +12441,399 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'Tunjukkan pada skrin kunci';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'Akaun ini sedang dipadamkan. Log masuk dengan akaun lain, atau tunggu beberapa minit dan cuba lagi.';
+
+  @override
+  String get onboardingSetupTitle => 'Menyediakan Omi anda';
+
+  @override
+  String get onboardingSetupSubtitle => 'Beri Omi sedikit masa untuk memperibadikan';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'Menyediakan ruang kerja anda';
+
+  @override
+  String get onboardingSetupStepLanguage => 'Menala transkripsi mengikut bahasa anda';
+
+  @override
+  String get onboardingSetupStepMemory => 'Menyediakan memori anda';
+
+  @override
+  String get onboardingSetupStepDevices => 'Menyambungkan peranti anda';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'Memperibadikan pengalaman anda';
+
+  @override
+  String get onboardingRatingPromptTitle => 'Adakah anda menikmati Omi?';
+
+  @override
+  String get onboardingRatingPromptYes => 'Ya';
+
+  @override
+  String get onboardingRatingPromptNo => 'Tidak';
+
+  @override
+  String get partialRecording => 'Rakaman separa';
+
+  @override
+  String get importTranscriptFiles => 'Fail transkrip';
+
+  @override
+  String get importTranscriptFilesDescription => 'Pilih transkrip SRT, VTT atau TXT, atau ZIP yang mengandunginya';
+
+  @override
+  String get importTooManyAttempts => 'Terlalu banyak import sekarang. Cuba lagi kemudian.';
+
+  @override
+  String get importFileTooLarge => 'Fail ini terlalu besar untuk diimport.';
+
+  @override
+  String get importUnsupportedFileType => 'Jenis fail ini tidak boleh diimport.';
+
+  @override
+  String get reviewTitle => 'Semakan';
+
+  @override
+  String get reviewEntryTitle => 'Soalan untuk anda';
+
+  @override
+  String reviewRemaining(int count) {
+    return '$count lagi';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'Siapa yang berkata ini?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'Orang yang sama dengan “$name”?';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'Bagaimana ejaannya?';
+
+  @override
+  String get reviewPlayClip => 'Main klip';
+
+  @override
+  String get reviewStopClip => 'Henti klip';
+
+  @override
+  String get reviewOpenDetailsHint => 'Membuka butiran';
+
+  @override
+  String get reviewAnswerMe => 'Saya';
+
+  @override
+  String get reviewAnswerOther => 'Lain-lain';
+
+  @override
+  String get reviewAddTask => 'Tambah Tugasan';
+
+  @override
+  String get reviewAnswerFailed => 'Jawapan anda tidak dapat disimpan. Cuba lagi.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'Jawapan ini melabel $count perbualan';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'Penutur tidak dikenali';
+
+  @override
+  String get reviewNewPersonName => 'Nama mereka';
+
+  @override
+  String get reviewSomeoneElse => 'Orang lain…';
+
+  @override
+  String get reviewConfirm => 'Sahkan';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return 'Sahkan $name';
+  }
+
+  @override
+  String get reviewNotSure => 'Tidak pasti';
+
+  @override
+  String get reviewOpenConversation => 'Perbualan';
+
+  @override
+  String get reviewTaskField => 'Tugasan';
+
+  @override
+  String get reviewDue => 'Tarikh akhir';
+
+  @override
+  String get reviewNoDate => 'Tiada';
+
+  @override
+  String get reviewProject => 'Projek';
+
+  @override
+  String get reviewReasonAlreadyDone => 'Sudah selesai';
+
+  @override
+  String get reviewReasonNotMine => 'Bukan milik saya';
+
+  @override
+  String get reviewReasonNotUseful => 'Tidak berguna';
+
+  @override
+  String get reviewYesMerge => 'Ya, gabungkan';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'Perbualan: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'Taip sendiri';
+
+  @override
+  String get reviewLoadFailed => 'Soalan anda tidak dapat dimuatkan.';
+
+  @override
+  String get reviewCaughtUpTitle => 'Tiada apa untuk dijawab';
+
+  @override
+  String get reviewCaughtUpBody => 'Omi hanya akan bertanya di sini apabila memerlukan anda.';
+
+  @override
+  String get reviewRecentChanges => 'Perubahan Terkini';
+
+  @override
+  String get reviewChangesIntro =>
+      'Apa yang Omi ubah sendiri dalam 30 hari lepas. Buat asal apa-apa yang nampak salah.';
+
+  @override
+  String get reviewChangeUndone => 'Dibuat asal. Omi tidak akan mengulanginya sendiri.';
+
+  @override
+  String get reviewChangeFailed => 'Perubahan ini tidak dapat dikemas kini. Cuba lagi.';
+
+  @override
+  String get reviewChangesLoadFailed => 'Perubahan terkini tidak dapat dimuatkan.';
+
+  @override
+  String get reviewNoChangesTitle => 'Belum ada perubahan';
+
+  @override
+  String get reviewNoChangesBody => 'Apabila Omi mengemas nota anda, perubahan akan muncul di sini.';
+
+  @override
+  String get reviewShowMore => 'Tunjuk Lagi';
+
+  @override
+  String get entityKeptCurrent => 'Dikemas kini oleh Omi';
+
+  @override
+  String get entityNotRight => 'Tidak betul?';
+
+  @override
+  String get entityCorrectionTitle => 'Apa yang tidak betul?';
+
+  @override
+  String get entityCorrectionHint => 'Beritahu Omi apa yang perlu dibetulkan';
+
+  @override
+  String get entityCorrectionSaved => 'Terima kasih. Omi akan membetulkannya.';
+
+  @override
+  String get entityCorrectionFailed => 'Pembetulan anda tidak dapat dihantar. Cuba lagi.';
+
+  @override
+  String get entityLoadFailed => 'Halaman ini tidak dapat dimuatkan.';
+
+  @override
+  String get entityProject => 'Projek';
+
+  @override
+  String get entityProjects => 'Projek';
+
+  @override
+  String get entityDecisions => 'Keputusan';
+
+  @override
+  String get entityOpenTasks => 'Tugasan terbuka';
+
+  @override
+  String get entityOpenThreads => 'Topik terbuka';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'Menunggu $name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'Tarikh akhir $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'Apa yang Omi tahu';
+
+  @override
+  String get entityRecentConversations => 'Perbualan terkini';
+
+  @override
+  String get tasksNoProject => 'Tiada projek';
+
+  @override
+  String get tasksGroupByProject => 'Kumpulkan mengikut Projek';
+
+  @override
+  String get tasksGroupByDate => 'Kumpulkan mengikut Tarikh';
+
+  @override
+  String get dreamReportTitle => 'Laporan Dream';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'Mod pratonton: Dream menunjukkan apa yang akan diubah, tetapi belum ada yang berubah dalam akaun anda.';
+
+  @override
+  String get dreamReportLiveBanner =>
+      'Dream menggunakan perubahan ini sendiri. Buat asal mana-mana dalam Perubahan Terkini.';
+
+  @override
+  String get dreamReportRunNow => 'Jalankan Sekarang';
+
+  @override
+  String get dreamReportRunLimit => 'Tiada larian manual lagi hari ini';
+
+  @override
+  String get dreamReportRunInProgress => 'Satu pusingan sedang berjalan. Cuba lagi dalam seminit.';
+
+  @override
+  String get dreamReportRunFailed => 'Tidak dapat menjalankan Dream. Cuba lagi.';
+
+  @override
+  String get dreamReportIdle => 'Belum ada yang baharu untuk disemak.';
+
+  @override
+  String get dreamReportLoadFailed => 'Tidak dapat memuatkan laporan Dream.';
+
+  @override
+  String get dreamReportEmptyTitle => 'Belum ada pusingan';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream menyemak perubahan dalam akaun anda kira-kira setiap jam.';
+
+  @override
+  String get dreamReportScheduled => 'Berjadual';
+
+  @override
+  String get dreamReportManual => 'Manual';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'Gagal ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'Berhenti pada had masa';
+
+  @override
+  String get dreamReportNothingFound => 'Tiada yang perlu dibetulkan';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return 'Membaca $records item · $tokens token';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'Akan membetulkan';
+
+  @override
+  String get dreamReportFixed => 'Dibetulkan';
+
+  @override
+  String get dreamReportWouldAsk => 'Akan bertanya kepada anda';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'Akan mencadangkan tugasan';
+
+  @override
+  String get dreamReportLearnedWords => 'Perkataan yang dipelajari';
+
+  @override
+  String get dreamReportFeedback => 'Dilaporkan kepada pasukan Omi';
+
+  @override
+  String get dreamReportDeletedItem => 'Item dipadam';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return '$count daripada $limit pusingan hari ini';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count perubahan menunggu',
+      one: '1 perubahan menunggu',
+      zero: 'Tiada perubahan menunggu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count larian manual lagi hari ini',
+      one: '1 larian manual lagi hari ini',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes pembetulan',
+      one: '1 pembetulan',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks cadangan',
+      one: '1 cadangan',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count perubahan lama dilangkau',
+      one: '1 perubahan lama dilangkau',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count laporan ditahan atas sebab privasi',
+      one: '1 laporan ditahan atas sebab privasi',
+    );
+    return '$_temp0';
+  }
 }

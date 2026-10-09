@@ -9917,11 +9917,6 @@ class AppLocalizationsVi extends AppLocalizations {
       'Bộ nhớ của Pendant đã đầy và nó vẫn đang ở chế độ ghi âm, nên không thể chuyển âm thanh đã lưu. Nhấn nút của Pendant để dừng ghi âm, sau đó đồng bộ lại.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'Không được ghi âm ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return 'Hồ sơ giọng nói của $name';
   }
@@ -12410,4 +12405,398 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'Hiển thị trên màn hình khóa';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'Tài khoản này đang được xóa. Hãy đăng nhập bằng tài khoản khác, hoặc chờ vài phút rồi thử lại.';
+
+  @override
+  String get onboardingSetupTitle => 'Đang thiết lập Omi của bạn';
+
+  @override
+  String get onboardingSetupSubtitle => 'Hãy cho Omi một chút thời gian để cá nhân hóa';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'Đang chuẩn bị không gian làm việc của bạn';
+
+  @override
+  String get onboardingSetupStepLanguage => 'Đang tinh chỉnh phiên âm theo ngôn ngữ của bạn';
+
+  @override
+  String get onboardingSetupStepMemory => 'Đang thiết lập bộ nhớ của bạn';
+
+  @override
+  String get onboardingSetupStepDevices => 'Đang kết nối các thiết bị của bạn';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'Đang cá nhân hóa trải nghiệm của bạn';
+
+  @override
+  String get onboardingRatingPromptTitle => 'Bạn có thích Omi không?';
+
+  @override
+  String get onboardingRatingPromptYes => 'Có';
+
+  @override
+  String get onboardingRatingPromptNo => 'Không';
+
+  @override
+  String get partialRecording => 'Bản ghi một phần';
+
+  @override
+  String get importTranscriptFiles => 'Tệp bản chép lời';
+
+  @override
+  String get importTranscriptFilesDescription => 'Chọn bản chép lời SRT, VTT hoặc TXT, hoặc tệp ZIP chứa chúng';
+
+  @override
+  String get importTooManyAttempts => 'Hiện có quá nhiều lượt nhập dữ liệu. Vui lòng thử lại sau.';
+
+  @override
+  String get importFileTooLarge => 'Tệp này quá lớn để nhập dữ liệu.';
+
+  @override
+  String get importUnsupportedFileType => 'Không thể nhập loại tệp này.';
+
+  @override
+  String get reviewTitle => 'Xem lại';
+
+  @override
+  String get reviewEntryTitle => 'Câu hỏi dành cho bạn';
+
+  @override
+  String reviewRemaining(int count) {
+    return 'Còn $count';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'Ai đã nói điều này?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'Có phải cùng người với “$name” không?';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'Từ này viết thế nào?';
+
+  @override
+  String get reviewPlayClip => 'Phát đoạn ghi';
+
+  @override
+  String get reviewStopClip => 'Dừng đoạn ghi';
+
+  @override
+  String get reviewOpenDetailsHint => 'Mở chi tiết';
+
+  @override
+  String get reviewAnswerMe => 'Tôi';
+
+  @override
+  String get reviewAnswerOther => 'Khác';
+
+  @override
+  String get reviewAddTask => 'Thêm tác vụ';
+
+  @override
+  String get reviewAnswerFailed => 'Không thể lưu câu trả lời của bạn. Hãy thử lại.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'Câu trả lời này gắn nhãn cho $count cuộc trò chuyện';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'Người nói không xác định';
+
+  @override
+  String get reviewNewPersonName => 'Tên của họ';
+
+  @override
+  String get reviewSomeoneElse => 'Người khác…';
+
+  @override
+  String get reviewConfirm => 'Xác nhận';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return 'Xác nhận $name';
+  }
+
+  @override
+  String get reviewNotSure => 'Không chắc';
+
+  @override
+  String get reviewOpenConversation => 'Cuộc trò chuyện';
+
+  @override
+  String get reviewTaskField => 'Tác vụ';
+
+  @override
+  String get reviewDue => 'Hạn';
+
+  @override
+  String get reviewNoDate => 'Không có';
+
+  @override
+  String get reviewProject => 'Dự án';
+
+  @override
+  String get reviewReasonAlreadyDone => 'Đã xong';
+
+  @override
+  String get reviewReasonNotMine => 'Không phải của tôi';
+
+  @override
+  String get reviewReasonNotUseful => 'Không hữu ích';
+
+  @override
+  String get reviewYesMerge => 'Có, gộp lại';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'Cuộc trò chuyện: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'Nhập tên';
+
+  @override
+  String get reviewLoadFailed => 'Không thể tải câu hỏi của bạn.';
+
+  @override
+  String get reviewCaughtUpTitle => 'Không có gì để trả lời';
+
+  @override
+  String get reviewCaughtUpBody => 'Omi chỉ hỏi ở đây khi cần bạn.';
+
+  @override
+  String get reviewRecentChanges => 'Thay đổi gần đây';
+
+  @override
+  String get reviewChangesIntro => 'Những gì Omi tự thay đổi trong 30 ngày qua. Hoàn tác bất cứ điều gì có vẻ sai.';
+
+  @override
+  String get reviewChangeUndone => 'Đã hoàn tác. Omi sẽ không tự làm lại điều này.';
+
+  @override
+  String get reviewChangeFailed => 'Không thể cập nhật thay đổi này. Hãy thử lại.';
+
+  @override
+  String get reviewChangesLoadFailed => 'Không thể tải các thay đổi gần đây.';
+
+  @override
+  String get reviewNoChangesTitle => 'Chưa có thay đổi nào';
+
+  @override
+  String get reviewNoChangesBody => 'Khi Omi sắp xếp ghi chú của bạn, các thay đổi sẽ hiện ở đây.';
+
+  @override
+  String get reviewShowMore => 'Xem thêm';
+
+  @override
+  String get entityKeptCurrent => 'Omi luôn cập nhật';
+
+  @override
+  String get entityNotRight => 'Chưa đúng?';
+
+  @override
+  String get entityCorrectionTitle => 'Điều gì chưa đúng?';
+
+  @override
+  String get entityCorrectionHint => 'Cho Omi biết cần sửa gì';
+
+  @override
+  String get entityCorrectionSaved => 'Cảm ơn. Omi sẽ sửa lại.';
+
+  @override
+  String get entityCorrectionFailed => 'Không thể gửi chỉnh sửa của bạn. Hãy thử lại.';
+
+  @override
+  String get entityLoadFailed => 'Không thể tải trang này.';
+
+  @override
+  String get entityProject => 'Dự án';
+
+  @override
+  String get entityProjects => 'Dự án';
+
+  @override
+  String get entityDecisions => 'Quyết định';
+
+  @override
+  String get entityOpenTasks => 'Tác vụ đang mở';
+
+  @override
+  String get entityOpenThreads => 'Vấn đề đang mở';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'Đang chờ $name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'Hạn $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'Những gì Omi biết';
+
+  @override
+  String get entityRecentConversations => 'Cuộc trò chuyện gần đây';
+
+  @override
+  String get tasksNoProject => 'Không có dự án';
+
+  @override
+  String get tasksGroupByProject => 'Nhóm theo dự án';
+
+  @override
+  String get tasksGroupByDate => 'Nhóm theo ngày';
+
+  @override
+  String get dreamReportTitle => 'Báo cáo Dream';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'Chế độ xem trước: Dream cho thấy những gì sẽ thay đổi, nhưng chưa có gì trong tài khoản của bạn bị thay đổi.';
+
+  @override
+  String get dreamReportLiveBanner =>
+      'Dream tự áp dụng các thay đổi này. Bạn có thể hoàn tác bất kỳ thay đổi nào trong Thay đổi gần đây.';
+
+  @override
+  String get dreamReportRunNow => 'Chạy ngay';
+
+  @override
+  String get dreamReportRunLimit => 'Hôm nay đã hết lượt chạy thủ công';
+
+  @override
+  String get dreamReportRunInProgress => 'Một lượt đang chạy. Hãy thử lại sau một phút.';
+
+  @override
+  String get dreamReportRunFailed => 'Không thể chạy Dream. Hãy thử lại.';
+
+  @override
+  String get dreamReportIdle => 'Chưa có gì mới để xem.';
+
+  @override
+  String get dreamReportLoadFailed => 'Không thể tải báo cáo Dream.';
+
+  @override
+  String get dreamReportEmptyTitle => 'Chưa có lượt nào';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream xem những gì đã thay đổi trong tài khoản của bạn khoảng mỗi giờ một lần.';
+
+  @override
+  String get dreamReportScheduled => 'Theo lịch';
+
+  @override
+  String get dreamReportManual => 'Thủ công';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'Thất bại ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'Dừng do hết giới hạn thời gian';
+
+  @override
+  String get dreamReportNothingFound => 'Không có gì cần sửa';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return 'Đã đọc $records mục · $tokens token';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'Sẽ sửa';
+
+  @override
+  String get dreamReportFixed => 'Đã sửa';
+
+  @override
+  String get dreamReportWouldAsk => 'Sẽ hỏi bạn';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'Sẽ gợi ý công việc';
+
+  @override
+  String get dreamReportLearnedWords => 'Từ đã học';
+
+  @override
+  String get dreamReportFeedback => 'Đã báo cáo cho nhóm Omi';
+
+  @override
+  String get dreamReportDeletedItem => 'Mục đã xóa';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return '$count/$limit lượt hôm nay';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thay đổi đang chờ',
+      one: '1 thay đổi đang chờ',
+      zero: 'Không có thay đổi nào đang chờ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Hôm nay còn $count lượt chạy thủ công',
+      one: 'Hôm nay còn 1 lượt chạy thủ công',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes bản sửa',
+      one: '1 bản sửa',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks gợi ý',
+      one: '1 gợi ý',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thay đổi cũ hơn đã bị bỏ qua',
+      one: '1 thay đổi cũ hơn đã bị bỏ qua',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count báo cáo bị giữ lại vì quyền riêng tư',
+      one: '1 báo cáo bị giữ lại vì quyền riêng tư',
+    );
+    return '$_temp0';
+  }
 }

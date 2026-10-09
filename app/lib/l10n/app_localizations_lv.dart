@@ -9947,11 +9947,6 @@ class AppLocalizationsLv extends AppLocalizations {
       'Pendant atmiņa ir pilna, un tas joprojām ir ierakstīšanas režīmā, tāpēc saglabāto audio nevar pārsūtīt. Nospiediet Pendant pogu, lai apturētu ierakstīšanu, un pēc tam sinhronizējiet vēlreiz.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'Nav ierakstīts ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return '$name balss profils';
   }
@@ -12443,4 +12438,398 @@ class AppLocalizationsLv extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'Rādīt bloķēšanas ekrānā';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'Šis konts tiek dzēsts. Pierakstieties ar citu kontu vai uzgaidiet dažas minūtes un mēģiniet vēlreiz.';
+
+  @override
+  String get onboardingSetupTitle => 'Tiek iestatīts jūsu Omi';
+
+  @override
+  String get onboardingSetupSubtitle => 'Dodiet Omi brīdi, lai personalizētos';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'Tiek sagatavota jūsu darbvieta';
+
+  @override
+  String get onboardingSetupStepLanguage => 'Transkripcija tiek pielāgota jūsu valodai';
+
+  @override
+  String get onboardingSetupStepMemory => 'Tiek iestatīta jūsu atmiņa';
+
+  @override
+  String get onboardingSetupStepDevices => 'Tiek savienotas jūsu ierīces';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'Tiek personalizēta jūsu pieredze';
+
+  @override
+  String get onboardingRatingPromptTitle => 'Vai jums patīk Omi?';
+
+  @override
+  String get onboardingRatingPromptYes => 'Jā';
+
+  @override
+  String get onboardingRatingPromptNo => 'Nē';
+
+  @override
+  String get partialRecording => 'Daļējs ieraksts';
+
+  @override
+  String get importTranscriptFiles => 'Transkripciju faili';
+
+  @override
+  String get importTranscriptFilesDescription => 'Atlasiet SRT, VTT vai TXT transkripcijas vai ZIP arhīvu ar tām';
+
+  @override
+  String get importTooManyAttempts => 'Pašlaik ir pārāk daudz importēšanu. Mēģiniet vēlreiz vēlāk.';
+
+  @override
+  String get importFileTooLarge => 'Šis fails ir pārāk liels importēšanai.';
+
+  @override
+  String get importUnsupportedFileType => 'Šāda veida failu nevar importēt.';
+
+  @override
+  String get reviewTitle => 'Pārskatīšana';
+
+  @override
+  String get reviewEntryTitle => 'Jautājumi jums';
+
+  @override
+  String reviewRemaining(int count) {
+    return 'Atlikuši: $count';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'Kas to teica?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'Vai tā ir tā pati persona, kas „$name”?';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'Kā tas tiek rakstīts?';
+
+  @override
+  String get reviewPlayClip => 'Atskaņot fragmentu';
+
+  @override
+  String get reviewStopClip => 'Apturēt fragmentu';
+
+  @override
+  String get reviewOpenDetailsHint => 'Atver detaļas';
+
+  @override
+  String get reviewAnswerMe => 'Es';
+
+  @override
+  String get reviewAnswerOther => 'Cits';
+
+  @override
+  String get reviewAddTask => 'Pievienot uzdevumu';
+
+  @override
+  String get reviewAnswerFailed => 'Neizdevās saglabāt atbildi. Mēģiniet vēlreiz.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'Šī atbilde atzīmē sarunas: $count';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'Nezināms runātājs';
+
+  @override
+  String get reviewNewPersonName => 'Viņu vārds';
+
+  @override
+  String get reviewSomeoneElse => 'Kāds cits…';
+
+  @override
+  String get reviewConfirm => 'Apstiprināt';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return 'Apstiprināt: $name';
+  }
+
+  @override
+  String get reviewNotSure => 'Neesmu pārliecināts';
+
+  @override
+  String get reviewOpenConversation => 'Saruna';
+
+  @override
+  String get reviewTaskField => 'Uzdevums';
+
+  @override
+  String get reviewDue => 'Termiņš';
+
+  @override
+  String get reviewNoDate => 'Nav';
+
+  @override
+  String get reviewProject => 'Projekts';
+
+  @override
+  String get reviewReasonAlreadyDone => 'Jau izdarīts';
+
+  @override
+  String get reviewReasonNotMine => 'Nav mans';
+
+  @override
+  String get reviewReasonNotUseful => 'Nav noderīgs';
+
+  @override
+  String get reviewYesMerge => 'Jā, apvienot';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'Sarunas: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'Ievadīt';
+
+  @override
+  String get reviewLoadFailed => 'Neizdevās ielādēt jūsu jautājumus.';
+
+  @override
+  String get reviewCaughtUpTitle => 'Nav, uz ko atbildēt';
+
+  @override
+  String get reviewCaughtUpBody => 'Omi šeit jautās tikai tad, kad būs vajadzīgs jūsu padoms.';
+
+  @override
+  String get reviewRecentChanges => 'Nesenās izmaiņas';
+
+  @override
+  String get reviewChangesIntro =>
+      'Ko Omi pats ir mainījis pēdējo 30 dienu laikā. Atceliet visu, kas izskatās nepareizi.';
+
+  @override
+  String get reviewChangeUndone => 'Atcelts. Omi to pats neatkārtos.';
+
+  @override
+  String get reviewChangeFailed => 'Neizdevās atjaunināt šo izmaiņu. Mēģiniet vēlreiz.';
+
+  @override
+  String get reviewChangesLoadFailed => 'Neizdevās ielādēt nesenās izmaiņas.';
+
+  @override
+  String get reviewNoChangesTitle => 'Izmaiņu vēl nav';
+
+  @override
+  String get reviewNoChangesBody => 'Kad Omi sakārtos jūsu piezīmes, izmaiņas parādīsies šeit.';
+
+  @override
+  String get reviewShowMore => 'Rādīt vairāk';
+
+  @override
+  String get entityKeptCurrent => 'Aktuālu uztur Omi';
+
+  @override
+  String get entityNotRight => 'Nav pareizi?';
+
+  @override
+  String get entityCorrectionTitle => 'Kas nav pareizi?';
+
+  @override
+  String get entityCorrectionHint => 'Pastāstiet Omi, kas jālabo';
+
+  @override
+  String get entityCorrectionSaved => 'Paldies. Omi to izlabos.';
+
+  @override
+  String get entityCorrectionFailed => 'Neizdevās nosūtīt labojumu. Mēģiniet vēlreiz.';
+
+  @override
+  String get entityLoadFailed => 'Neizdevās ielādēt šo lapu.';
+
+  @override
+  String get entityProject => 'Projekts';
+
+  @override
+  String get entityProjects => 'Projekti';
+
+  @override
+  String get entityDecisions => 'Lēmumi';
+
+  @override
+  String get entityOpenTasks => 'Atvērtie uzdevumi';
+
+  @override
+  String get entityOpenThreads => 'Atvērtie jautājumi';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'Gaida: $name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'Termiņš: $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'Ko Omi zina';
+
+  @override
+  String get entityRecentConversations => 'Nesenās sarunas';
+
+  @override
+  String get tasksNoProject => 'Nav projekta';
+
+  @override
+  String get tasksGroupByProject => 'Grupēt pēc projekta';
+
+  @override
+  String get tasksGroupByDate => 'Grupēt pēc datuma';
+
+  @override
+  String get dreamReportTitle => 'Dream ziņojums';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'Priekšskatījuma režīms: Dream parāda, ko tas mainītu, taču jūsu kontā pagaidām nekas nemainās.';
+
+  @override
+  String get dreamReportLiveBanner => 'Dream šīs izmaiņas piemēro pats. Jebkuru varat atsaukt sadaļā Nesenās izmaiņas.';
+
+  @override
+  String get dreamReportRunNow => 'Palaist tagad';
+
+  @override
+  String get dreamReportRunLimit => 'Šodien manuālo palaidienu vairs nav';
+
+  @override
+  String get dreamReportRunInProgress => 'Piegājiens jau norit. Mēģiniet vēlreiz pēc minūtes.';
+
+  @override
+  String get dreamReportRunFailed => 'Neizdevās palaist Dream. Mēģiniet vēlreiz.';
+
+  @override
+  String get dreamReportIdle => 'Pagaidām nav nekā jauna, ko pārskatīt.';
+
+  @override
+  String get dreamReportLoadFailed => 'Neizdevās ielādēt Dream ziņojumu.';
+
+  @override
+  String get dreamReportEmptyTitle => 'Piegājienu vēl nav';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream aptuveni reizi stundā pārskata, kas jūsu kontā ir mainījies.';
+
+  @override
+  String get dreamReportScheduled => 'Pēc grafika';
+
+  @override
+  String get dreamReportManual => 'Manuāli';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'Neizdevās ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'Apturēts pie laika ierobežojuma';
+
+  @override
+  String get dreamReportNothingFound => 'Nav ko labot';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return 'Izlasīti $records vienumi · $tokens marķieri';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'Labotu';
+
+  @override
+  String get dreamReportFixed => 'Labots';
+
+  @override
+  String get dreamReportWouldAsk => 'Jautātu jums';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'Ieteiktu uzdevumus';
+
+  @override
+  String get dreamReportLearnedWords => 'Apgūtie vārdi';
+
+  @override
+  String get dreamReportFeedback => 'Paziņots Omi komandai';
+
+  @override
+  String get dreamReportDeletedItem => 'Izdzēsts vienums';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return 'Šodien $count no $limit piegājieniem';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count izmaiņas gaida',
+      one: '1 izmaiņa gaida',
+      zero: 'Nav gaidošu izmaiņu',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Šodien atlikuši $count manuāli palaidieni',
+      one: 'Šodien atlicis 1 manuāls palaidiens',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes labojumi',
+      one: '1 labojums',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks ieteikumi',
+      one: '1 ieteikums',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count vecākas izmaiņas izlaistas',
+      one: '1 vecāka izmaiņa izlaista',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ziņojumi aizturēti privātuma dēļ',
+      one: '1 ziņojums aizturēts privātuma dēļ',
+    );
+    return '$_temp0';
+  }
 }

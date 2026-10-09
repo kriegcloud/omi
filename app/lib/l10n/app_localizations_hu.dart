@@ -9962,11 +9962,6 @@ class AppLocalizationsHu extends AppLocalizations {
       'A Pendant tárhelye megtelt, és még mindig felvételi módban van, ezért a tárolt hang nem vihető át. Nyomja meg a Pendant gombját a felvétel leállításához, majd szinkronizáljon újra.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'Nincs rögzítve ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return '$name hangprofilja';
   }
@@ -12463,4 +12458,400 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'Megjelenítés a zárolási képernyőn';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'Ez a fiók törlés alatt áll. Jelentkezz be egy másik fiókkal, vagy várj néhány percet, és próbáld újra.';
+
+  @override
+  String get onboardingSetupTitle => 'Az Omi beállítása';
+
+  @override
+  String get onboardingSetupSubtitle => 'Adj egy pillanatot az Ominak a testreszabásra';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'A munkaterületed előkészítése';
+
+  @override
+  String get onboardingSetupStepLanguage => 'Az átírás hangolása a nyelvedhez';
+
+  @override
+  String get onboardingSetupStepMemory => 'A memóriád beállítása';
+
+  @override
+  String get onboardingSetupStepDevices => 'Az eszközeid csatlakoztatása';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'Az élményed személyre szabása';
+
+  @override
+  String get onboardingRatingPromptTitle => 'Tetszik az Omi?';
+
+  @override
+  String get onboardingRatingPromptYes => 'Igen';
+
+  @override
+  String get onboardingRatingPromptNo => 'Nem';
+
+  @override
+  String get partialRecording => 'Részleges felvétel';
+
+  @override
+  String get importTranscriptFiles => 'Átiratfájlok';
+
+  @override
+  String get importTranscriptFilesDescription =>
+      'Válassz SRT, VTT vagy TXT átiratokat, vagy egy őket tartalmazó ZIP-fájlt';
+
+  @override
+  String get importTooManyAttempts => 'Jelenleg túl sok az importálás. Próbálja újra később.';
+
+  @override
+  String get importFileTooLarge => 'Ez a fájl túl nagy az importáláshoz.';
+
+  @override
+  String get importUnsupportedFileType => 'Ez a fájltípus nem importálható.';
+
+  @override
+  String get reviewTitle => 'Áttekintés';
+
+  @override
+  String get reviewEntryTitle => 'Kérdések neked';
+
+  @override
+  String reviewRemaining(int count) {
+    return '$count maradt';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'Ki mondta ezt?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'Ugyanaz a személy, mint „$name”?';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'Hogyan írják ezt?';
+
+  @override
+  String get reviewPlayClip => 'Klip lejátszása';
+
+  @override
+  String get reviewStopClip => 'Klip leállítása';
+
+  @override
+  String get reviewOpenDetailsHint => 'Megnyitja a részleteket';
+
+  @override
+  String get reviewAnswerMe => 'Én';
+
+  @override
+  String get reviewAnswerOther => 'Egyéb';
+
+  @override
+  String get reviewAddTask => 'Feladat hozzáadása';
+
+  @override
+  String get reviewAnswerFailed => 'A válaszod mentése nem sikerült. Próbáld újra.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'Ez a válasz $count beszélgetést címkéz';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'Ismeretlen beszélő';
+
+  @override
+  String get reviewNewPersonName => 'A nevük';
+
+  @override
+  String get reviewSomeoneElse => 'Valaki más…';
+
+  @override
+  String get reviewConfirm => 'Megerősítés';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return '$name megerősítése';
+  }
+
+  @override
+  String get reviewNotSure => 'Nem tudom';
+
+  @override
+  String get reviewOpenConversation => 'Beszélgetés';
+
+  @override
+  String get reviewTaskField => 'Feladat';
+
+  @override
+  String get reviewDue => 'Határidő';
+
+  @override
+  String get reviewNoDate => 'Nincs';
+
+  @override
+  String get reviewProject => 'Projekt';
+
+  @override
+  String get reviewReasonAlreadyDone => 'Már kész';
+
+  @override
+  String get reviewReasonNotMine => 'Nem az enyém';
+
+  @override
+  String get reviewReasonNotUseful => 'Nem hasznos';
+
+  @override
+  String get reviewYesMerge => 'Igen, egyesítés';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'Beszélgetések: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'Beírom';
+
+  @override
+  String get reviewLoadFailed => 'A kérdéseid betöltése nem sikerült.';
+
+  @override
+  String get reviewCaughtUpTitle => 'Nincs mire válaszolni';
+
+  @override
+  String get reviewCaughtUpBody => 'Az Omi csak akkor kérdez itt, ha szüksége van rád.';
+
+  @override
+  String get reviewRecentChanges => 'Legutóbbi módosítások';
+
+  @override
+  String get reviewChangesIntro =>
+      'Mit módosított az Omi magától az elmúlt 30 napban. Vond vissza, ami rossznak tűnik.';
+
+  @override
+  String get reviewChangeUndone => 'Visszavonva. Az Omi ezt nem fogja magától megismételni.';
+
+  @override
+  String get reviewChangeFailed => 'A módosítás frissítése nem sikerült. Próbáld újra.';
+
+  @override
+  String get reviewChangesLoadFailed => 'A legutóbbi módosítások betöltése nem sikerült.';
+
+  @override
+  String get reviewNoChangesTitle => 'Még nincs módosítás';
+
+  @override
+  String get reviewNoChangesBody => 'Amikor az Omi rendezi a jegyzeteidet, a módosítások itt jelennek meg.';
+
+  @override
+  String get reviewShowMore => 'Továbbiak';
+
+  @override
+  String get entityKeptCurrent => 'Az Omi tartja naprakészen';
+
+  @override
+  String get entityNotRight => 'Nem pontos?';
+
+  @override
+  String get entityCorrectionTitle => 'Mi nem pontos?';
+
+  @override
+  String get entityCorrectionHint => 'Mondd meg az Ominak, mit javítson';
+
+  @override
+  String get entityCorrectionSaved => 'Köszönjük. Az Omi kijavítja.';
+
+  @override
+  String get entityCorrectionFailed => 'A javítás elküldése nem sikerült. Próbáld újra.';
+
+  @override
+  String get entityLoadFailed => 'Az oldal betöltése nem sikerült.';
+
+  @override
+  String get entityProject => 'Projekt';
+
+  @override
+  String get entityProjects => 'Projektek';
+
+  @override
+  String get entityDecisions => 'Döntések';
+
+  @override
+  String get entityOpenTasks => 'Nyitott feladatok';
+
+  @override
+  String get entityOpenThreads => 'Nyitott témák';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'Várakozás rá: $name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'Határidő: $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'Mit tud az Omi';
+
+  @override
+  String get entityRecentConversations => 'Legutóbbi beszélgetések';
+
+  @override
+  String get tasksNoProject => 'Nincs projekt';
+
+  @override
+  String get tasksGroupByProject => 'Csoportosítás projekt szerint';
+
+  @override
+  String get tasksGroupByDate => 'Csoportosítás dátum szerint';
+
+  @override
+  String get dreamReportTitle => 'Dream-jelentés';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'Előnézeti mód: a Dream megmutatja, mit módosítana, de a fiókodban még semmi sem változik.';
+
+  @override
+  String get dreamReportLiveBanner =>
+      'A Dream ezeket a módosításokat magától alkalmazza. Bármelyiket visszavonhatod a Legutóbbi módosítások oldalon.';
+
+  @override
+  String get dreamReportRunNow => 'Futtatás most';
+
+  @override
+  String get dreamReportRunLimit => 'Mára nem maradt kézi futtatás';
+
+  @override
+  String get dreamReportRunInProgress => 'Már fut egy menet. Próbáld újra egy perc múlva.';
+
+  @override
+  String get dreamReportRunFailed => 'A Dream futtatása nem sikerült. Próbáld újra.';
+
+  @override
+  String get dreamReportIdle => 'Még nincs mit átnézni.';
+
+  @override
+  String get dreamReportLoadFailed => 'A Dream-jelentés betöltése nem sikerült.';
+
+  @override
+  String get dreamReportEmptyTitle => 'Még nem volt futás';
+
+  @override
+  String get dreamReportEmptyBody => 'A Dream nagyjából óránként átnézi, mi változott a fiókodban.';
+
+  @override
+  String get dreamReportScheduled => 'Ütemezett';
+
+  @override
+  String get dreamReportManual => 'Kézi';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'Sikertelen ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'Elérte az időkorlátot, és leállt';
+
+  @override
+  String get dreamReportNothingFound => 'Nincs javítanivaló';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return '$records elem beolvasva · $tokens token';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'Javítana';
+
+  @override
+  String get dreamReportFixed => 'Javítva';
+
+  @override
+  String get dreamReportWouldAsk => 'Megkérdezne';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'Feladatokat javasolna';
+
+  @override
+  String get dreamReportLearnedWords => 'Megtanult szavak';
+
+  @override
+  String get dreamReportFeedback => 'Jelentve az Omi csapatnak';
+
+  @override
+  String get dreamReportDeletedItem => 'Törölt elem';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return '$count/$limit futás ma';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count módosítás vár',
+      one: '1 módosítás vár',
+      zero: 'Nincs várakozó módosítás',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ma még $count kézi futtatás maradt',
+      one: 'Ma még 1 kézi futtatás maradt',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes javítás',
+      one: '1 javítás',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks javaslat',
+      one: '1 javaslat',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count régebbi módosítás kihagyva',
+      one: '1 régebbi módosítás kihagyva',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count jelentés visszatartva adatvédelmi okból',
+      one: '1 jelentés visszatartva adatvédelmi okból',
+    );
+    return '$_temp0';
+  }
 }

@@ -9861,11 +9861,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'ذاكرة Pendant ممتلئة وما زال في وضع التسجيل، لذا لا يمكن نقل الصوت المخزّن. اضغط على زر Pendant لإيقاف التسجيل، ثم أعد المزامنة.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'لم يتم التسجيل ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return 'الملف الصوتي لـ $name';
   }
@@ -12344,4 +12339,397 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'إظهار على شاشة القفل';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'يجري حذف هذا الحساب. سجّل الدخول بحساب آخر، أو انتظر بضع دقائق ثم حاول مرة أخرى.';
+
+  @override
+  String get onboardingSetupTitle => 'إعداد Omi الخاص بك';
+
+  @override
+  String get onboardingSetupSubtitle => 'امنح Omi لحظة للتخصيص';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'تجهيز مساحة عملك';
+
+  @override
+  String get onboardingSetupStepLanguage => 'ضبط النسخ النصي على لغتك';
+
+  @override
+  String get onboardingSetupStepMemory => 'إعداد ذاكرتك';
+
+  @override
+  String get onboardingSetupStepDevices => 'توصيل أجهزتك';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'تخصيص تجربتك';
+
+  @override
+  String get onboardingRatingPromptTitle => 'هل تستمتع باستخدام Omi؟';
+
+  @override
+  String get onboardingRatingPromptYes => 'نعم';
+
+  @override
+  String get onboardingRatingPromptNo => 'لا';
+
+  @override
+  String get partialRecording => 'تسجيل جزئي';
+
+  @override
+  String get importTranscriptFiles => 'ملفات النصوص';
+
+  @override
+  String get importTranscriptFilesDescription => 'اختر نصوصًا بصيغة SRT أو VTT أو TXT، أو ملف ZIP يضمها';
+
+  @override
+  String get importTooManyAttempts => 'عدد كبير جدًا من عمليات الاستيراد حاليًا. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get importFileTooLarge => 'هذا الملف كبير جدًا بحيث لا يمكن استيراده.';
+
+  @override
+  String get importUnsupportedFileType => 'لا يمكن استيراد هذا النوع من الملفات.';
+
+  @override
+  String get reviewTitle => 'المراجعة';
+
+  @override
+  String get reviewEntryTitle => 'أسئلة لك';
+
+  @override
+  String reviewRemaining(int count) {
+    return 'تبقّى $count';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'من قال هذا؟';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'هل هو نفس الشخص “$name”؟';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'كيف تُكتب هذه؟';
+
+  @override
+  String get reviewPlayClip => 'تشغيل المقطع';
+
+  @override
+  String get reviewStopClip => 'إيقاف المقطع';
+
+  @override
+  String get reviewOpenDetailsHint => 'يفتح التفاصيل';
+
+  @override
+  String get reviewAnswerMe => 'أنا';
+
+  @override
+  String get reviewAnswerOther => 'آخر';
+
+  @override
+  String get reviewAddTask => 'إضافة مهمة';
+
+  @override
+  String get reviewAnswerFailed => 'تعذّر حفظ إجابتك. حاول مرة أخرى.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'تصنّف هذه الإجابة $count محادثات';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'متحدث غير معروف';
+
+  @override
+  String get reviewNewPersonName => 'اسمه';
+
+  @override
+  String get reviewSomeoneElse => 'شخص آخر…';
+
+  @override
+  String get reviewConfirm => 'تأكيد';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return 'تأكيد $name';
+  }
+
+  @override
+  String get reviewNotSure => 'لست متأكدًا';
+
+  @override
+  String get reviewOpenConversation => 'المحادثة';
+
+  @override
+  String get reviewTaskField => 'المهمة';
+
+  @override
+  String get reviewDue => 'الاستحقاق';
+
+  @override
+  String get reviewNoDate => 'لا يوجد';
+
+  @override
+  String get reviewProject => 'المشروع';
+
+  @override
+  String get reviewReasonAlreadyDone => 'تم بالفعل';
+
+  @override
+  String get reviewReasonNotMine => 'ليست لي';
+
+  @override
+  String get reviewReasonNotUseful => 'غير مفيدة';
+
+  @override
+  String get reviewYesMerge => 'نعم، ادمج';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'المحادثات: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'اكتبها';
+
+  @override
+  String get reviewLoadFailed => 'تعذّر تحميل أسئلتك.';
+
+  @override
+  String get reviewCaughtUpTitle => 'لا شيء للإجابة عنه';
+
+  @override
+  String get reviewCaughtUpBody => 'سيسألك Omi هنا فقط عندما يحتاج إليك.';
+
+  @override
+  String get reviewRecentChanges => 'التغييرات الأخيرة';
+
+  @override
+  String get reviewChangesIntro => 'ما غيّره Omi من تلقاء نفسه خلال آخر 30 يومًا. تراجع عن أي شيء يبدو خاطئًا.';
+
+  @override
+  String get reviewChangeUndone => 'تم التراجع. لن يكرر Omi هذا من تلقاء نفسه.';
+
+  @override
+  String get reviewChangeFailed => 'تعذّر تحديث هذا التغيير. حاول مرة أخرى.';
+
+  @override
+  String get reviewChangesLoadFailed => 'تعذّر تحميل التغييرات الأخيرة.';
+
+  @override
+  String get reviewNoChangesTitle => 'لا توجد تغييرات بعد';
+
+  @override
+  String get reviewNoChangesBody => 'عندما يرتّب Omi ملاحظاتك، ستظهر التغييرات هنا.';
+
+  @override
+  String get reviewShowMore => 'عرض المزيد';
+
+  @override
+  String get entityKeptCurrent => 'يحافظ عليه Omi محدّثًا';
+
+  @override
+  String get entityNotRight => 'غير صحيح؟';
+
+  @override
+  String get entityCorrectionTitle => 'ما الخطأ؟';
+
+  @override
+  String get entityCorrectionHint => 'أخبر Omi بما يجب إصلاحه';
+
+  @override
+  String get entityCorrectionSaved => 'شكرًا. سيصلح Omi ذلك.';
+
+  @override
+  String get entityCorrectionFailed => 'تعذّر إرسال تصحيحك. حاول مرة أخرى.';
+
+  @override
+  String get entityLoadFailed => 'تعذّر تحميل هذه الصفحة.';
+
+  @override
+  String get entityProject => 'المشروع';
+
+  @override
+  String get entityProjects => 'المشاريع';
+
+  @override
+  String get entityDecisions => 'القرارات';
+
+  @override
+  String get entityOpenTasks => 'المهام المفتوحة';
+
+  @override
+  String get entityOpenThreads => 'المواضيع المفتوحة';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'بانتظار $name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'الاستحقاق $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'ما يعرفه Omi';
+
+  @override
+  String get entityRecentConversations => 'المحادثات الأخيرة';
+
+  @override
+  String get tasksNoProject => 'بدون مشروع';
+
+  @override
+  String get tasksGroupByProject => 'التجميع حسب المشروع';
+
+  @override
+  String get tasksGroupByDate => 'التجميع حسب التاريخ';
+
+  @override
+  String get dreamReportTitle => 'تقرير Dream';
+
+  @override
+  String get dreamReportShadowBanner => 'وضع المعاينة: يعرض Dream ما كان سيغيّره، لكن لا يتغيّر شيء في حسابك حتى الآن.';
+
+  @override
+  String get dreamReportLiveBanner =>
+      'يطبّق Dream هذه التغييرات تلقائيًا. يمكنك التراجع عن أي منها من التغييرات الأخيرة.';
+
+  @override
+  String get dreamReportRunNow => 'تشغيل الآن';
+
+  @override
+  String get dreamReportRunLimit => 'لم يتبقَّ أي تشغيل يدوي اليوم';
+
+  @override
+  String get dreamReportRunInProgress => 'هناك جولة قيد التشغيل بالفعل. حاول مرة أخرى بعد دقيقة.';
+
+  @override
+  String get dreamReportRunFailed => 'تعذّر تشغيل Dream. حاول مرة أخرى.';
+
+  @override
+  String get dreamReportIdle => 'لا يوجد شيء جديد للمراجعة بعد.';
+
+  @override
+  String get dreamReportLoadFailed => 'تعذّر تحميل تقرير Dream.';
+
+  @override
+  String get dreamReportEmptyTitle => 'لا توجد جولات بعد';
+
+  @override
+  String get dreamReportEmptyBody => 'يراجع Dream ما تغيّر في حسابك مرة كل ساعة تقريبًا.';
+
+  @override
+  String get dreamReportScheduled => 'مجدول';
+
+  @override
+  String get dreamReportManual => 'يدوي';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'فشل ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'توقف عند حد الوقت';
+
+  @override
+  String get dreamReportNothingFound => 'لا شيء لإصلاحه';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return 'تمت قراءة $records عنصر · $tokens رمز';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'كان سيصلح';
+
+  @override
+  String get dreamReportFixed => 'تم الإصلاح';
+
+  @override
+  String get dreamReportWouldAsk => 'كان سيسألك';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'كان سيقترح مهامّ';
+
+  @override
+  String get dreamReportLearnedWords => 'كلمات تعلّمها';
+
+  @override
+  String get dreamReportFeedback => 'تم الإبلاغ لفريق Omi';
+
+  @override
+  String get dreamReportDeletedItem => 'عنصر محذوف';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return '$count من $limit جولات اليوم';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تغيير في الانتظار',
+      one: 'تغيير واحد في الانتظار',
+      zero: 'لا توجد تغييرات في الانتظار',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تبقّى $count تشغيل يدوي اليوم',
+      one: 'تبقّى تشغيل يدوي واحد اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes إصلاح',
+      one: 'إصلاح واحد',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks اقتراح',
+      one: 'اقتراح واحد',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم تخطي $count تغيير أقدم',
+      one: 'تم تخطي تغيير أقدم واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تقرير محجوب حفاظًا على الخصوصية',
+      one: 'تقرير واحد محجوب حفاظًا على الخصوصية',
+    );
+    return '$_temp0';
+  }
 }

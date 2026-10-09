@@ -9842,11 +9842,6 @@ class AppLocalizationsHe extends AppLocalizations {
       'האחסון של ה-Pendant מלא והוא עדיין במצב הקלטה, ולכן לא ניתן להעביר את השמע השמור. לחצו על כפתור ה-Pendant כדי לעצור את ההקלטה, ולאחר מכן סנכרנו שוב.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'לא הוקלט ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return 'פרופיל הקול של $name';
   }
@@ -12324,4 +12319,397 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'הצגה במסך הנעילה';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'החשבון הזה נמחק כעת. היכנסו עם חשבון אחר, או המתינו כמה דקות ונסו שוב.';
+
+  @override
+  String get onboardingSetupTitle => 'מגדירים את ה-Omi שלך';
+
+  @override
+  String get onboardingSetupSubtitle => 'תנו ל-Omi רגע להתאים את עצמו אליכם';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'מכינים את סביבת העבודה שלך';
+
+  @override
+  String get onboardingSetupStepLanguage => 'מכוונים את התמלול לשפה שלך';
+
+  @override
+  String get onboardingSetupStepMemory => 'מגדירים את הזיכרון שלך';
+
+  @override
+  String get onboardingSetupStepDevices => 'מחברים את המכשירים שלך';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'מתאימים אישית את החוויה שלך';
+
+  @override
+  String get onboardingRatingPromptTitle => 'נהנים מ-Omi?';
+
+  @override
+  String get onboardingRatingPromptYes => 'כן';
+
+  @override
+  String get onboardingRatingPromptNo => 'לא';
+
+  @override
+  String get partialRecording => 'הקלטה חלקית';
+
+  @override
+  String get importTranscriptFiles => 'קובצי תמלול';
+
+  @override
+  String get importTranscriptFilesDescription => 'בחר תמלולים בפורמט SRT, VTT או TXT, או קובץ ZIP שמכיל אותם';
+
+  @override
+  String get importTooManyAttempts => 'יותר מדי ייבואים כרגע. נסו שוב מאוחר יותר.';
+
+  @override
+  String get importFileTooLarge => 'הקובץ גדול מדי לייבוא.';
+
+  @override
+  String get importUnsupportedFileType => 'לא ניתן לייבא סוג קובץ זה.';
+
+  @override
+  String get reviewTitle => 'סקירה';
+
+  @override
+  String get reviewEntryTitle => 'שאלות בשבילך';
+
+  @override
+  String reviewRemaining(int count) {
+    return 'נשארו $count';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'מי אמר את זה?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'אותו אדם כמו “$name”?';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'איך זה נכתב?';
+
+  @override
+  String get reviewPlayClip => 'הפעל קטע';
+
+  @override
+  String get reviewStopClip => 'עצור קטע';
+
+  @override
+  String get reviewOpenDetailsHint => 'פותח פרטים';
+
+  @override
+  String get reviewAnswerMe => 'אני';
+
+  @override
+  String get reviewAnswerOther => 'אחר';
+
+  @override
+  String get reviewAddTask => 'הוסף משימה';
+
+  @override
+  String get reviewAnswerFailed => 'לא ניתן היה לשמור את התשובה. נסה שוב.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'התשובה הזו מסמנת $count שיחות';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'דובר לא מזוהה';
+
+  @override
+  String get reviewNewPersonName => 'השם שלו';
+
+  @override
+  String get reviewSomeoneElse => 'מישהו אחר…';
+
+  @override
+  String get reviewConfirm => 'אשר';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return 'אשר את $name';
+  }
+
+  @override
+  String get reviewNotSure => 'לא בטוח';
+
+  @override
+  String get reviewOpenConversation => 'שיחה';
+
+  @override
+  String get reviewTaskField => 'משימה';
+
+  @override
+  String get reviewDue => 'תאריך יעד';
+
+  @override
+  String get reviewNoDate => 'ללא';
+
+  @override
+  String get reviewProject => 'פרויקט';
+
+  @override
+  String get reviewReasonAlreadyDone => 'כבר בוצע';
+
+  @override
+  String get reviewReasonNotMine => 'לא שלי';
+
+  @override
+  String get reviewReasonNotUseful => 'לא שימושי';
+
+  @override
+  String get reviewYesMerge => 'כן, מזג';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'שיחות: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'הקלד';
+
+  @override
+  String get reviewLoadFailed => 'לא ניתן היה לטעון את השאלות שלך.';
+
+  @override
+  String get reviewCaughtUpTitle => 'אין מה לענות';
+
+  @override
+  String get reviewCaughtUpBody => 'Omi ישאל כאן רק כשהוא צריך אותך.';
+
+  @override
+  String get reviewRecentChanges => 'שינויים אחרונים';
+
+  @override
+  String get reviewChangesIntro => 'מה ש-Omi שינה בעצמו ב-30 הימים האחרונים. בטל כל דבר שנראה שגוי.';
+
+  @override
+  String get reviewChangeUndone => 'בוטל. Omi לא יחזור על זה בעצמו.';
+
+  @override
+  String get reviewChangeFailed => 'לא ניתן היה לעדכן שינוי זה. נסה שוב.';
+
+  @override
+  String get reviewChangesLoadFailed => 'לא ניתן היה לטעון את השינויים האחרונים.';
+
+  @override
+  String get reviewNoChangesTitle => 'עדיין אין שינויים';
+
+  @override
+  String get reviewNoChangesBody => 'כש-Omi מסדר את ההערות שלך, השינויים יופיעו כאן.';
+
+  @override
+  String get reviewShowMore => 'הצג עוד';
+
+  @override
+  String get entityKeptCurrent => 'מעודכן על ידי Omi';
+
+  @override
+  String get entityNotRight => 'לא נכון?';
+
+  @override
+  String get entityCorrectionTitle => 'מה לא נכון?';
+
+  @override
+  String get entityCorrectionHint => 'ספר ל-Omi מה לתקן';
+
+  @override
+  String get entityCorrectionSaved => 'תודה. Omi יתקן את זה.';
+
+  @override
+  String get entityCorrectionFailed => 'לא ניתן היה לשלוח את התיקון. נסה שוב.';
+
+  @override
+  String get entityLoadFailed => 'לא ניתן היה לטעון את הדף הזה.';
+
+  @override
+  String get entityProject => 'פרויקט';
+
+  @override
+  String get entityProjects => 'פרויקטים';
+
+  @override
+  String get entityDecisions => 'החלטות';
+
+  @override
+  String get entityOpenTasks => 'משימות פתוחות';
+
+  @override
+  String get entityOpenThreads => 'נושאים פתוחים';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'ממתין ל-$name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'יעד: $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'מה ש-Omi יודע';
+
+  @override
+  String get entityRecentConversations => 'שיחות אחרונות';
+
+  @override
+  String get tasksNoProject => 'ללא פרויקט';
+
+  @override
+  String get tasksGroupByProject => 'קבץ לפי פרויקט';
+
+  @override
+  String get tasksGroupByDate => 'קבץ לפי תאריך';
+
+  @override
+  String get dreamReportTitle => 'דוח Dream';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'מצב תצוגה מקדימה: Dream מראה מה היה משנה, אבל שום דבר בחשבון שלך לא משתנה בינתיים.';
+
+  @override
+  String get dreamReportLiveBanner => 'Dream מחיל את השינויים האלה בעצמו. אפשר לבטל כל אחד מהם בשינויים אחרונים.';
+
+  @override
+  String get dreamReportRunNow => 'הפעל עכשיו';
+
+  @override
+  String get dreamReportRunLimit => 'לא נותרו הרצות ידניות להיום';
+
+  @override
+  String get dreamReportRunInProgress => 'הרצה כבר מתבצעת. נסה שוב בעוד דקה.';
+
+  @override
+  String get dreamReportRunFailed => 'לא ניתן להפעיל את Dream. נסה שוב.';
+
+  @override
+  String get dreamReportIdle => 'עדיין אין משהו חדש לבדוק.';
+
+  @override
+  String get dreamReportLoadFailed => 'לא ניתן לטעון את דוח Dream.';
+
+  @override
+  String get dreamReportEmptyTitle => 'עדיין אין הרצות';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream בודק מה השתנה בחשבון שלך בערך פעם בשעה.';
+
+  @override
+  String get dreamReportScheduled => 'מתוזמן';
+
+  @override
+  String get dreamReportManual => 'ידני';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'נכשל ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'נעצר בגבול הזמן';
+
+  @override
+  String get dreamReportNothingFound => 'אין מה לתקן';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return 'נקראו $records פריטים · $tokens אסימונים';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'היה מתקן';
+
+  @override
+  String get dreamReportFixed => 'תוקן';
+
+  @override
+  String get dreamReportWouldAsk => 'היה שואל אותך';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'היה מציע משימות';
+
+  @override
+  String get dreamReportLearnedWords => 'מילים שנלמדו';
+
+  @override
+  String get dreamReportFeedback => 'דווח לצוות Omi';
+
+  @override
+  String get dreamReportDeletedItem => 'פריט שנמחק';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return '$count מתוך $limit הרצות היום';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count שינויים ממתינים',
+      one: 'שינוי אחד ממתין',
+      zero: 'אין שינויים ממתינים',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'נותרו $count הרצות ידניות להיום',
+      one: 'נותרה הרצה ידנית אחת להיום',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes תיקונים',
+      one: 'תיקון אחד',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks הצעות',
+      one: 'הצעה אחת',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count שינויים ישנים יותר דולגו',
+      one: 'שינוי ישן אחד דולג',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count דוחות נעצרו מטעמי פרטיות',
+      one: 'דוח אחד נעצר מטעמי פרטיות',
+    );
+    return '$_temp0';
+  }
 }

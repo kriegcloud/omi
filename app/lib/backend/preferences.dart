@@ -634,6 +634,10 @@ class SharedPreferencesUtil {
 
   set deviceName(String value) => saveString('deviceName', value);
 
+  String get customBackendUrl => getString('customBackendUrl');
+
+  set customBackendUrl(String value) => saveString('customBackendUrl', value);
+
   String get deviceName => getString('deviceName');
 
   bool get deviceIsV2 => getBool('deviceIsV2');
@@ -706,6 +710,12 @@ class SharedPreferencesUtil {
   }
 
   bool get useCustomStt => customSttConfig.isEnabled;
+
+  /// sttConfigId of the on-device config the paywall's "switch to free" saved, or ''.
+  /// Lets a later paid plan release exactly that pin and never a user's own Custom STT.
+  String get paywallOnDeviceSttConfigId => getString('paywallOnDeviceSttConfigId');
+
+  set paywallOnDeviceSttConfigId(String value) => saveString('paywallOnDeviceSttConfigId', value);
 
   // Whether offline recordings auto-sync to Omi when the device connects.
   // Defaults to true (auto-sync on) — the feature is opt-out from introduction.
@@ -880,11 +890,12 @@ class SharedPreferencesUtil {
   set conversationSilenceDuration(int value) => saveInt('conversationSilenceDuration', value);
 
   String get transcriptionModel => getString('transcriptionModel3', defaultValue: 'soniox');
-
   set transcriptionModel(String value) => saveString('transcriptionModel3', value);
 
-  bool get onboardingCompleted => getBool('onboardingCompleted');
+  String get ratingAskAnswer => getString('ratingAskAnswer'); // '' until "Are you enjoying Omi?" is answered
+  set ratingAskAnswer(String value) => saveString('ratingAskAnswer', value); // 'yes' | 'no'
 
+  bool get onboardingCompleted => getBool('onboardingCompleted');
   set onboardingCompleted(bool value) => saveBool('onboardingCompleted', value);
 
   bool get permissionsCompleted => getBool('permissionsCompleted');

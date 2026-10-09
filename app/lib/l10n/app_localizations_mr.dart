@@ -9929,11 +9929,6 @@ class AppLocalizationsMr extends AppLocalizations {
       'Pendant चे स्टोरेज भरले आहे आणि ते अजूनही रेकॉर्डिंग मोडमध्ये आहे, त्यामुळे साठवलेला ऑडिओ हस्तांतरित करता येत नाही. रेकॉर्डिंग थांबवण्यासाठी Pendant चे बटण दाबा, नंतर पुन्हा सिंक करा.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'रेकॉर्ड झाले नाही ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return '$name यांची व्हॉइस प्रोफाइल';
   }
@@ -12422,4 +12417,397 @@ class AppLocalizationsMr extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'लॉक स्क्रीनवर दाखवा';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'हे खाते हटवले जात आहे. दुसऱ्या खात्याने साइन इन करा, किंवा काही मिनिटे थांबून पुन्हा प्रयत्न करा.';
+
+  @override
+  String get onboardingSetupTitle => 'तुमचा Omi सेट केला जात आहे';
+
+  @override
+  String get onboardingSetupSubtitle => 'Omi ला वैयक्तिकरणासाठी थोडा वेळ द्या';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'तुमचे वर्कस्पेस तयार केले जात आहे';
+
+  @override
+  String get onboardingSetupStepLanguage => 'तुमच्या भाषेसाठी ट्रान्सक्रिप्शन ट्यून केले जात आहे';
+
+  @override
+  String get onboardingSetupStepMemory => 'तुमची मेमरी सेट केली जात आहे';
+
+  @override
+  String get onboardingSetupStepDevices => 'तुमची डिव्हाइसेस कनेक्ट केली जात आहेत';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'तुमचा अनुभव वैयक्तिकृत केला जात आहे';
+
+  @override
+  String get onboardingRatingPromptTitle => 'तुम्हाला Omi आवडत आहे का?';
+
+  @override
+  String get onboardingRatingPromptYes => 'हो';
+
+  @override
+  String get onboardingRatingPromptNo => 'नाही';
+
+  @override
+  String get partialRecording => 'अंशतः रेकॉर्डिंग';
+
+  @override
+  String get importTranscriptFiles => 'प्रतिलेख फाइल्स';
+
+  @override
+  String get importTranscriptFilesDescription => 'SRT, VTT किंवा TXT प्रतिलेख किंवा त्यांची ZIP फाइल निवडा';
+
+  @override
+  String get importTooManyAttempts => 'सध्या खूप जास्त आयात होत आहेत. नंतर पुन्हा प्रयत्न करा.';
+
+  @override
+  String get importFileTooLarge => 'ही फाइल आयात करण्यासाठी खूप मोठी आहे.';
+
+  @override
+  String get importUnsupportedFileType => 'या प्रकारची फाइल आयात करता येत नाही.';
+
+  @override
+  String get reviewTitle => 'पुनरावलोकन';
+
+  @override
+  String get reviewEntryTitle => 'तुमच्यासाठी प्रश्न';
+
+  @override
+  String reviewRemaining(int count) {
+    return '$count बाकी';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'हे कोण म्हणाले?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return '“$name” हीच व्यक्ती आहे का?';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'हे कसे लिहितात?';
+
+  @override
+  String get reviewPlayClip => 'क्लिप प्ले करा';
+
+  @override
+  String get reviewStopClip => 'क्लिप थांबवा';
+
+  @override
+  String get reviewOpenDetailsHint => 'तपशील उघडते';
+
+  @override
+  String get reviewAnswerMe => 'मी';
+
+  @override
+  String get reviewAnswerOther => 'इतर';
+
+  @override
+  String get reviewAddTask => 'टास्क जोडा';
+
+  @override
+  String get reviewAnswerFailed => 'तुमचे उत्तर सेव्ह करता आले नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'हे उत्तर $count संभाषणांना लेबल लावते';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'अज्ञात वक्ता';
+
+  @override
+  String get reviewNewPersonName => 'त्यांचे नाव';
+
+  @override
+  String get reviewSomeoneElse => 'इतर कोणीतरी…';
+
+  @override
+  String get reviewConfirm => 'पुष्टी करा';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return '$name ची पुष्टी करा';
+  }
+
+  @override
+  String get reviewNotSure => 'खात्री नाही';
+
+  @override
+  String get reviewOpenConversation => 'संभाषण';
+
+  @override
+  String get reviewTaskField => 'टास्क';
+
+  @override
+  String get reviewDue => 'अंतिम तारीख';
+
+  @override
+  String get reviewNoDate => 'काहीही नाही';
+
+  @override
+  String get reviewProject => 'प्रोजेक्ट';
+
+  @override
+  String get reviewReasonAlreadyDone => 'आधीच झाले';
+
+  @override
+  String get reviewReasonNotMine => 'माझे नाही';
+
+  @override
+  String get reviewReasonNotUseful => 'उपयुक्त नाही';
+
+  @override
+  String get reviewYesMerge => 'होय, विलीन करा';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'संभाषणे: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'टाइप करा';
+
+  @override
+  String get reviewLoadFailed => 'तुमचे प्रश्न लोड करता आले नाहीत.';
+
+  @override
+  String get reviewCaughtUpTitle => 'उत्तर देण्यासारखे काही नाही';
+
+  @override
+  String get reviewCaughtUpBody => 'Omi ला तुमची गरज असेल तेव्हाच येथे विचारेल.';
+
+  @override
+  String get reviewRecentChanges => 'अलीकडील बदल';
+
+  @override
+  String get reviewChangesIntro => 'गेल्या 30 दिवसांत Omi ने स्वतः काय बदलले. चुकीचे वाटेल ते पूर्ववत करा.';
+
+  @override
+  String get reviewChangeUndone => 'पूर्ववत केले. Omi हे स्वतः पुन्हा करणार नाही.';
+
+  @override
+  String get reviewChangeFailed => 'हा बदल अपडेट करता आला नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get reviewChangesLoadFailed => 'अलीकडील बदल लोड करता आले नाहीत.';
+
+  @override
+  String get reviewNoChangesTitle => 'अजून कोणतेही बदल नाहीत';
+
+  @override
+  String get reviewNoChangesBody => 'Omi ने तुमच्या नोट्स नीट लावल्या की बदल येथे दिसतील.';
+
+  @override
+  String get reviewShowMore => 'आणखी दाखवा';
+
+  @override
+  String get entityKeptCurrent => 'Omi द्वारे अद्ययावत ठेवलेले';
+
+  @override
+  String get entityNotRight => 'बरोबर नाही?';
+
+  @override
+  String get entityCorrectionTitle => 'काय बरोबर नाही?';
+
+  @override
+  String get entityCorrectionHint => 'काय दुरुस्त करायचे ते Omi ला सांगा';
+
+  @override
+  String get entityCorrectionSaved => 'धन्यवाद. Omi हे दुरुस्त करेल.';
+
+  @override
+  String get entityCorrectionFailed => 'तुमची दुरुस्ती पाठवता आली नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get entityLoadFailed => 'हे पेज लोड करता आले नाही.';
+
+  @override
+  String get entityProject => 'प्रोजेक्ट';
+
+  @override
+  String get entityProjects => 'प्रोजेक्ट';
+
+  @override
+  String get entityDecisions => 'निर्णय';
+
+  @override
+  String get entityOpenTasks => 'खुले टास्क';
+
+  @override
+  String get entityOpenThreads => 'खुले मुद्दे';
+
+  @override
+  String entityWaitingOn(String name) {
+    return '$name ची प्रतीक्षा';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'अंतिम तारीख $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'Omi ला काय माहीत आहे';
+
+  @override
+  String get entityRecentConversations => 'अलीकडील संभाषणे';
+
+  @override
+  String get tasksNoProject => 'प्रोजेक्ट नाही';
+
+  @override
+  String get tasksGroupByProject => 'प्रोजेक्टनुसार गटबद्ध करा';
+
+  @override
+  String get tasksGroupByDate => 'तारखेनुसार गटबद्ध करा';
+
+  @override
+  String get dreamReportTitle => 'Dream अहवाल';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'पूर्वावलोकन मोड: Dream काय बदलले असते ते दाखवते, पण तुमच्या खात्यात अजून काहीही बदलत नाही.';
+
+  @override
+  String get dreamReportLiveBanner => 'Dream हे बदल स्वतःच लागू करते. कोणताही बदल अलीकडील बदल मध्ये पूर्ववत करा.';
+
+  @override
+  String get dreamReportRunNow => 'आता चालवा';
+
+  @override
+  String get dreamReportRunLimit => 'आज एकही मॅन्युअल रन शिल्लक नाही';
+
+  @override
+  String get dreamReportRunInProgress => 'एक पास आधीच सुरू आहे. एका मिनिटाने पुन्हा प्रयत्न करा.';
+
+  @override
+  String get dreamReportRunFailed => 'Dream चालवता आले नाही. पुन्हा प्रयत्न करा.';
+
+  @override
+  String get dreamReportIdle => 'पाहण्यासाठी अजून काही नवीन नाही.';
+
+  @override
+  String get dreamReportLoadFailed => 'Dream अहवाल लोड करता आला नाही.';
+
+  @override
+  String get dreamReportEmptyTitle => 'अजून एकही पास नाही';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream साधारण दर तासाला तुमच्या खात्यात काय बदलले ते पाहते.';
+
+  @override
+  String get dreamReportScheduled => 'शेड्यूल केलेले';
+
+  @override
+  String get dreamReportManual => 'मॅन्युअल';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'अयशस्वी ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'वेळमर्यादेवर थांबले';
+
+  @override
+  String get dreamReportNothingFound => 'दुरुस्त करण्यासारखे काही नाही';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return '$records आयटम वाचले · $tokens टोकन';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'दुरुस्त केले असते';
+
+  @override
+  String get dreamReportFixed => 'दुरुस्त केले';
+
+  @override
+  String get dreamReportWouldAsk => 'तुम्हाला विचारले असते';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'कामे सुचवली असती';
+
+  @override
+  String get dreamReportLearnedWords => 'शिकलेले शब्द';
+
+  @override
+  String get dreamReportFeedback => 'Omi टीमला कळवले';
+
+  @override
+  String get dreamReportDeletedItem => 'हटवलेला आयटम';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return 'आज $count/$limit पास';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count बदल प्रतीक्षेत',
+      one: '1 बदल प्रतीक्षेत',
+      zero: 'कोणताही बदल प्रतीक्षेत नाही',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'आज $count मॅन्युअल रन शिल्लक',
+      one: 'आज 1 मॅन्युअल रन शिल्लक',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes दुरुस्त्या',
+      one: '1 दुरुस्ती',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks सूचना',
+      one: '1 सूचना',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count जुने बदल वगळले',
+      one: '1 जुना बदल वगळला',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'गोपनीयतेसाठी $count अहवाल रोखले',
+      one: 'गोपनीयतेसाठी 1 अहवाल रोखला',
+    );
+    return '$_temp0';
+  }
 }

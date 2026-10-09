@@ -9969,11 +9969,6 @@ class AppLocalizationsRo extends AppLocalizations {
       'Spațiul de stocare al Pendantului este plin și acesta este încă în modul de înregistrare, așa că audio-ul stocat nu poate fi transferat. Apăsați butonul Pendantului pentru a opri înregistrarea, apoi sincronizați din nou.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'Neînregistrat ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return 'Profilul vocal al lui $name';
   }
@@ -12470,4 +12465,397 @@ class AppLocalizationsRo extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'Afișează pe ecranul de blocare';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'Acest cont este în curs de ștergere. Conectează-te cu alt cont sau așteaptă câteva minute și încearcă din nou.';
+
+  @override
+  String get onboardingSetupTitle => 'Se configurează Omi';
+
+  @override
+  String get onboardingSetupSubtitle => 'Dă-i lui Omi un moment să se personalizeze';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'Se pregătește spațiul tău de lucru';
+
+  @override
+  String get onboardingSetupStepLanguage => 'Se ajustează transcrierea pentru limba ta';
+
+  @override
+  String get onboardingSetupStepMemory => 'Se configurează memoria ta';
+
+  @override
+  String get onboardingSetupStepDevices => 'Se conectează dispozitivele tale';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'Se personalizează experiența ta';
+
+  @override
+  String get onboardingRatingPromptTitle => 'Îți place Omi?';
+
+  @override
+  String get onboardingRatingPromptYes => 'Da';
+
+  @override
+  String get onboardingRatingPromptNo => 'Nu';
+
+  @override
+  String get partialRecording => 'Înregistrare parțială';
+
+  @override
+  String get importTranscriptFiles => 'Fișiere de transcriere';
+
+  @override
+  String get importTranscriptFilesDescription => 'Selectează transcrieri SRT, VTT sau TXT ori o arhivă ZIP cu ele';
+
+  @override
+  String get importTooManyAttempts => 'Prea multe importuri în acest moment. Încearcă din nou mai târziu.';
+
+  @override
+  String get importFileTooLarge => 'Acest fișier este prea mare pentru a fi importat.';
+
+  @override
+  String get importUnsupportedFileType => 'Acest tip de fișier nu poate fi importat.';
+
+  @override
+  String get reviewTitle => 'Revizuire';
+
+  @override
+  String get reviewEntryTitle => 'Întrebări pentru tine';
+
+  @override
+  String reviewRemaining(int count) {
+    return 'Mai sunt $count';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'Cine a spus asta?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'Aceeași persoană cu „$name”?';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'Cum se scrie asta?';
+
+  @override
+  String get reviewPlayClip => 'Redă clipul';
+
+  @override
+  String get reviewStopClip => 'Oprește clipul';
+
+  @override
+  String get reviewOpenDetailsHint => 'Deschide detaliile';
+
+  @override
+  String get reviewAnswerMe => 'Eu';
+
+  @override
+  String get reviewAnswerOther => 'Altcineva';
+
+  @override
+  String get reviewAddTask => 'Adaugă sarcina';
+
+  @override
+  String get reviewAnswerFailed => 'Răspunsul tău nu a putut fi salvat. Încearcă din nou.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'Acest răspuns etichetează $count conversații';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'Vorbitor necunoscut';
+
+  @override
+  String get reviewNewPersonName => 'Numele lui';
+
+  @override
+  String get reviewSomeoneElse => 'Altcineva…';
+
+  @override
+  String get reviewConfirm => 'Confirmă';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return 'Confirmă $name';
+  }
+
+  @override
+  String get reviewNotSure => 'Nu sunt sigur';
+
+  @override
+  String get reviewOpenConversation => 'Conversație';
+
+  @override
+  String get reviewTaskField => 'Sarcină';
+
+  @override
+  String get reviewDue => 'Termen';
+
+  @override
+  String get reviewNoDate => 'Niciunul';
+
+  @override
+  String get reviewProject => 'Proiect';
+
+  @override
+  String get reviewReasonAlreadyDone => 'Deja făcută';
+
+  @override
+  String get reviewReasonNotMine => 'Nu e a mea';
+
+  @override
+  String get reviewReasonNotUseful => 'Nu e utilă';
+
+  @override
+  String get reviewYesMerge => 'Da, îmbină';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'Conversații: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'Scrie-l';
+
+  @override
+  String get reviewLoadFailed => 'Întrebările tale nu au putut fi încărcate.';
+
+  @override
+  String get reviewCaughtUpTitle => 'Nimic de răspuns';
+
+  @override
+  String get reviewCaughtUpBody => 'Omi te va întreba aici doar când are nevoie de tine.';
+
+  @override
+  String get reviewRecentChanges => 'Modificări recente';
+
+  @override
+  String get reviewChangesIntro => 'Ce a schimbat Omi singur în ultimele 30 de zile. Anulează orice pare greșit.';
+
+  @override
+  String get reviewChangeUndone => 'Anulat. Omi nu va mai face asta singur.';
+
+  @override
+  String get reviewChangeFailed => 'Modificarea nu a putut fi actualizată. Încearcă din nou.';
+
+  @override
+  String get reviewChangesLoadFailed => 'Modificările recente nu au putut fi încărcate.';
+
+  @override
+  String get reviewNoChangesTitle => 'Nicio modificare încă';
+
+  @override
+  String get reviewNoChangesBody => 'Când Omi îți ordonează notițele, modificările apar aici.';
+
+  @override
+  String get reviewShowMore => 'Arată mai multe';
+
+  @override
+  String get entityKeptCurrent => 'Menținut la zi de Omi';
+
+  @override
+  String get entityNotRight => 'Nu e corect?';
+
+  @override
+  String get entityCorrectionTitle => 'Ce nu e corect?';
+
+  @override
+  String get entityCorrectionHint => 'Spune-i lui Omi ce să corecteze';
+
+  @override
+  String get entityCorrectionSaved => 'Mulțumim. Omi va corecta.';
+
+  @override
+  String get entityCorrectionFailed => 'Corectarea nu a putut fi trimisă. Încearcă din nou.';
+
+  @override
+  String get entityLoadFailed => 'Această pagină nu a putut fi încărcată.';
+
+  @override
+  String get entityProject => 'Proiect';
+
+  @override
+  String get entityProjects => 'Proiecte';
+
+  @override
+  String get entityDecisions => 'Decizii';
+
+  @override
+  String get entityOpenTasks => 'Sarcini deschise';
+
+  @override
+  String get entityOpenThreads => 'Subiecte deschise';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'Se așteaptă $name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'Termen: $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'Ce știe Omi';
+
+  @override
+  String get entityRecentConversations => 'Conversații recente';
+
+  @override
+  String get tasksNoProject => 'Fără proiect';
+
+  @override
+  String get tasksGroupByProject => 'Grupează după proiect';
+
+  @override
+  String get tasksGroupByDate => 'Grupează după dată';
+
+  @override
+  String get dreamReportTitle => 'Raport Dream';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'Mod previzualizare: Dream arată ce ar modifica, dar în contul tău nu se schimbă încă nimic.';
+
+  @override
+  String get dreamReportLiveBanner => 'Dream aplică singur aceste modificări. Le poți anula din Modificări recente.';
+
+  @override
+  String get dreamReportRunNow => 'Rulează acum';
+
+  @override
+  String get dreamReportRunLimit => 'Nu mai ai rulări manuale azi';
+
+  @override
+  String get dreamReportRunInProgress => 'O rulare este deja în desfășurare. Încearcă din nou peste un minut.';
+
+  @override
+  String get dreamReportRunFailed => 'Nu s-a putut rula Dream. Încearcă din nou.';
+
+  @override
+  String get dreamReportIdle => 'Încă nu e nimic nou de verificat.';
+
+  @override
+  String get dreamReportLoadFailed => 'Nu s-a putut încărca raportul Dream.';
+
+  @override
+  String get dreamReportEmptyTitle => 'Încă nu există rulări';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream verifică ce s-a schimbat în contul tău aproximativ o dată pe oră.';
+
+  @override
+  String get dreamReportScheduled => 'Programată';
+
+  @override
+  String get dreamReportManual => 'Manuală';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'Eșuată ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'Oprită la limita de timp';
+
+  @override
+  String get dreamReportNothingFound => 'Nimic de remediat';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return 'Au fost citite $records elemente · $tokens tokeni';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'Ar remedia';
+
+  @override
+  String get dreamReportFixed => 'Remediat';
+
+  @override
+  String get dreamReportWouldAsk => 'Te-ar întreba';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'Ar sugera sarcini';
+
+  @override
+  String get dreamReportLearnedWords => 'Cuvinte învățate';
+
+  @override
+  String get dreamReportFeedback => 'Raportat echipei Omi';
+
+  @override
+  String get dreamReportDeletedItem => 'Element șters';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return '$count din $limit rulări astăzi';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count de modificări în așteptare',
+      one: '1 modificare în așteptare',
+      zero: 'Nicio modificare în așteptare',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Au mai rămas $count de rulări manuale azi',
+      one: 'A mai rămas 1 rulare manuală azi',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes de remedieri',
+      one: '1 remediere',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks de sugestii',
+      one: '1 sugestie',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count de modificări mai vechi omise',
+      one: '1 modificare mai veche omisă',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count de rapoarte reținute pentru confidențialitate',
+      one: '1 raport reținut pentru confidențialitate',
+    );
+    return '$_temp0';
+  }
 }

@@ -9916,11 +9916,6 @@ class AppLocalizationsSk extends AppLocalizations {
       'Úložisko Pendantu je plné a stále je v režime nahrávania, takže uložený zvuk nemožno preniesť. Stlačením tlačidla na Pendante zastavte nahrávanie a potom znova synchronizujte.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'Nezaznamenané ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return 'Hlasový profil: $name';
   }
@@ -12411,4 +12406,398 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'Zobraziť na zamknutej obrazovke';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'Tento účet sa odstraňuje. Prihláste sa iným účtom alebo počkajte niekoľko minút a skúste to znova.';
+
+  @override
+  String get onboardingSetupTitle => 'Nastavujeme váš Omi';
+
+  @override
+  String get onboardingSetupSubtitle => 'Dajte Omi chvíľu na prispôsobenie';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'Pripravujeme váš pracovný priestor';
+
+  @override
+  String get onboardingSetupStepLanguage => 'Ladíme prepis na váš jazyk';
+
+  @override
+  String get onboardingSetupStepMemory => 'Nastavujeme vašu pamäť';
+
+  @override
+  String get onboardingSetupStepDevices => 'Pripájame vaše zariadenia';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'Prispôsobujeme váš zážitok';
+
+  @override
+  String get onboardingRatingPromptTitle => 'Páči sa vám Omi?';
+
+  @override
+  String get onboardingRatingPromptYes => 'Áno';
+
+  @override
+  String get onboardingRatingPromptNo => 'Nie';
+
+  @override
+  String get partialRecording => 'Čiastočná nahrávka';
+
+  @override
+  String get importTranscriptFiles => 'Súbory prepisov';
+
+  @override
+  String get importTranscriptFilesDescription => 'Vyberte prepisy SRT, VTT alebo TXT, alebo ZIP s nimi';
+
+  @override
+  String get importTooManyAttempts => 'Práve prebieha príliš veľa importov. Skúste to neskôr.';
+
+  @override
+  String get importFileTooLarge => 'Tento súbor je príliš veľký na import.';
+
+  @override
+  String get importUnsupportedFileType => 'Tento typ súboru nie je možné importovať.';
+
+  @override
+  String get reviewTitle => 'Kontrola';
+
+  @override
+  String get reviewEntryTitle => 'Otázky pre vás';
+
+  @override
+  String reviewRemaining(int count) {
+    return 'Zostáva $count';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'Kto to povedal?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'Je to ten istý človek ako „$name“?';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'Ako sa to píše?';
+
+  @override
+  String get reviewPlayClip => 'Prehrať úryvok';
+
+  @override
+  String get reviewStopClip => 'Zastaviť úryvok';
+
+  @override
+  String get reviewOpenDetailsHint => 'Otvorí podrobnosti';
+
+  @override
+  String get reviewAnswerMe => 'Ja';
+
+  @override
+  String get reviewAnswerOther => 'Iné';
+
+  @override
+  String get reviewAddTask => 'Pridať úlohu';
+
+  @override
+  String get reviewAnswerFailed => 'Odpoveď sa nepodarilo uložiť. Skúste to znova.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'Táto odpoveď označí konverzácie: $count';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'Neznámy rečník';
+
+  @override
+  String get reviewNewPersonName => 'Ich meno';
+
+  @override
+  String get reviewSomeoneElse => 'Niekto iný…';
+
+  @override
+  String get reviewConfirm => 'Potvrdiť';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return 'Potvrdiť: $name';
+  }
+
+  @override
+  String get reviewNotSure => 'Neviem';
+
+  @override
+  String get reviewOpenConversation => 'Konverzácia';
+
+  @override
+  String get reviewTaskField => 'Úloha';
+
+  @override
+  String get reviewDue => 'Termín';
+
+  @override
+  String get reviewNoDate => 'Žiadny';
+
+  @override
+  String get reviewProject => 'Projekt';
+
+  @override
+  String get reviewReasonAlreadyDone => 'Už hotovo';
+
+  @override
+  String get reviewReasonNotMine => 'Nie je moja';
+
+  @override
+  String get reviewReasonNotUseful => 'Nie je užitočné';
+
+  @override
+  String get reviewYesMerge => 'Áno, zlúčiť';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'Konverzácie: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'Zadať ručne';
+
+  @override
+  String get reviewLoadFailed => 'Vaše otázky sa nepodarilo načítať.';
+
+  @override
+  String get reviewCaughtUpTitle => 'Nie je na čo odpovedať';
+
+  @override
+  String get reviewCaughtUpBody => 'Omi sa tu opýta, len keď vás bude potrebovať.';
+
+  @override
+  String get reviewRecentChanges => 'Nedávne zmeny';
+
+  @override
+  String get reviewChangesIntro => 'Čo Omi samo zmenilo za posledných 30 dní. Vráťte späť všetko, čo vyzerá zle.';
+
+  @override
+  String get reviewChangeUndone => 'Vrátené späť. Omi to samo znova neurobí.';
+
+  @override
+  String get reviewChangeFailed => 'Túto zmenu sa nepodarilo aktualizovať. Skúste to znova.';
+
+  @override
+  String get reviewChangesLoadFailed => 'Nedávne zmeny sa nepodarilo načítať.';
+
+  @override
+  String get reviewNoChangesTitle => 'Zatiaľ žiadne zmeny';
+
+  @override
+  String get reviewNoChangesBody => 'Keď Omi upratá vaše poznámky, zmeny sa zobrazia tu.';
+
+  @override
+  String get reviewShowMore => 'Zobraziť viac';
+
+  @override
+  String get entityKeptCurrent => 'Aktuálnosť udržiava Omi';
+
+  @override
+  String get entityNotRight => 'Nie je to správne?';
+
+  @override
+  String get entityCorrectionTitle => 'Čo nie je správne?';
+
+  @override
+  String get entityCorrectionHint => 'Povedzte Omi, čo opraviť';
+
+  @override
+  String get entityCorrectionSaved => 'Vďaka. Omi to opraví.';
+
+  @override
+  String get entityCorrectionFailed => 'Opravu sa nepodarilo odoslať. Skúste to znova.';
+
+  @override
+  String get entityLoadFailed => 'Túto stránku sa nepodarilo načítať.';
+
+  @override
+  String get entityProject => 'Projekt';
+
+  @override
+  String get entityProjects => 'Projekty';
+
+  @override
+  String get entityDecisions => 'Rozhodnutia';
+
+  @override
+  String get entityOpenTasks => 'Otvorené úlohy';
+
+  @override
+  String get entityOpenThreads => 'Otvorené témy';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'Čaká sa na: $name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'Termín: $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'Čo Omi vie';
+
+  @override
+  String get entityRecentConversations => 'Nedávne konverzácie';
+
+  @override
+  String get tasksNoProject => 'Bez projektu';
+
+  @override
+  String get tasksGroupByProject => 'Zoskupiť podľa projektu';
+
+  @override
+  String get tasksGroupByDate => 'Zoskupiť podľa dátumu';
+
+  @override
+  String get dreamReportTitle => 'Správa Dream';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'Režim ukážky: Dream ukazuje, čo by zmenil, ale vo vašom účte sa zatiaľ nič nemení.';
+
+  @override
+  String get dreamReportLiveBanner =>
+      'Dream tieto zmeny vykonáva sám. Ktorúkoľvek z nich môžete vrátiť v Nedávnych zmenách.';
+
+  @override
+  String get dreamReportRunNow => 'Spustiť teraz';
+
+  @override
+  String get dreamReportRunLimit => 'Dnes už nezostali žiadne ručné spustenia';
+
+  @override
+  String get dreamReportRunInProgress => 'Beh už prebieha. Skúste to znova o minútu.';
+
+  @override
+  String get dreamReportRunFailed => 'Dream sa nepodarilo spustiť. Skúste to znova.';
+
+  @override
+  String get dreamReportIdle => 'Zatiaľ nie je čo nové skontrolovať.';
+
+  @override
+  String get dreamReportLoadFailed => 'Správu Dream sa nepodarilo načítať.';
+
+  @override
+  String get dreamReportEmptyTitle => 'Zatiaľ žiadne behy';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream približne raz za hodinu skontroluje, čo sa vo vašom účte zmenilo.';
+
+  @override
+  String get dreamReportScheduled => 'Naplánované';
+
+  @override
+  String get dreamReportManual => 'Ručne';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'Zlyhalo ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'Zastavené na časovom limite';
+
+  @override
+  String get dreamReportNothingFound => 'Nie je čo opraviť';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return 'Prečítaných položiek: $records · tokenov: $tokens';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'Opravil by';
+
+  @override
+  String get dreamReportFixed => 'Opravené';
+
+  @override
+  String get dreamReportWouldAsk => 'Opýtal by sa vás';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'Navrhol by úlohy';
+
+  @override
+  String get dreamReportLearnedWords => 'Naučené slová';
+
+  @override
+  String get dreamReportFeedback => 'Nahlásené tímu Omi';
+
+  @override
+  String get dreamReportDeletedItem => 'Odstránená položka';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return 'Dnes $count z $limit behov';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count zmien čaká',
+      one: '1 zmena čaká',
+      zero: 'Žiadne čakajúce zmeny',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Dnes zostáva $count ručných spustení',
+      one: 'Dnes zostáva 1 ručné spustenie',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes opráv',
+      one: '1 oprava',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks návrhov',
+      one: '1 návrh',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count starších zmien preskočených',
+      one: '1 staršia zmena preskočená',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hlásení zadržaných z dôvodu súkromia',
+      one: '1 hlásenie zadržané z dôvodu súkromia',
+    );
+    return '$_temp0';
+  }
 }

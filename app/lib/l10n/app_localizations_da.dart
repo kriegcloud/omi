@@ -9910,11 +9910,6 @@ class AppLocalizationsDa extends AppLocalizations {
       'Din Pendants lager er fuldt, og den er stadig i optagetilstand, så den gemte lyd kan ikke overføres. Tryk på Pendantens knap for at stoppe optagelsen, og synkroniser derefter igen.';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return 'Ikke optaget ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return 'Stemmeprofil for $name';
   }
@@ -12403,4 +12398,398 @@ class AppLocalizationsDa extends AppLocalizations {
 
   @override
   String get showOnLockScreen => 'Vis på låseskærmen';
+
+  @override
+  String get accountDeletionInProgressSignInAgain =>
+      'Denne konto er ved at blive slettet. Log ind med en anden konto, eller vent et par minutter og prøv igen.';
+
+  @override
+  String get onboardingSetupTitle => 'Gør din Omi klar';
+
+  @override
+  String get onboardingSetupSubtitle => 'Giv Omi et øjeblik til at tilpasse sig';
+
+  @override
+  String get onboardingSetupStepWorkspace => 'Forbereder dit arbejdsområde';
+
+  @override
+  String get onboardingSetupStepLanguage => 'Tilpasser transskription til dit sprog';
+
+  @override
+  String get onboardingSetupStepMemory => 'Sætter din hukommelse op';
+
+  @override
+  String get onboardingSetupStepDevices => 'Forbinder dine enheder';
+
+  @override
+  String get onboardingSetupStepPersonalize => 'Tilpasser din oplevelse';
+
+  @override
+  String get onboardingRatingPromptTitle => 'Kan du lide Omi?';
+
+  @override
+  String get onboardingRatingPromptYes => 'Ja';
+
+  @override
+  String get onboardingRatingPromptNo => 'Nej';
+
+  @override
+  String get partialRecording => 'Delvis optagelse';
+
+  @override
+  String get importTranscriptFiles => 'Transskriptionsfiler';
+
+  @override
+  String get importTranscriptFilesDescription => 'Vælg SRT-, VTT- eller TXT-transskriptioner eller en ZIP med dem';
+
+  @override
+  String get importTooManyAttempts => 'For mange importer lige nu. Prøv igen senere.';
+
+  @override
+  String get importFileTooLarge => 'Denne fil er for stor til at blive importeret.';
+
+  @override
+  String get importUnsupportedFileType => 'Denne filtype kan ikke importeres.';
+
+  @override
+  String get reviewTitle => 'Gennemgang';
+
+  @override
+  String get reviewEntryTitle => 'Spørgsmål til dig';
+
+  @override
+  String reviewRemaining(int count) {
+    return '$count tilbage';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => 'Hvem sagde det her?';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return 'Samme person som “$name”?';
+  }
+
+  @override
+  String get reviewQuestionSpelling => 'Hvordan staves dette?';
+
+  @override
+  String get reviewPlayClip => 'Afspil klip';
+
+  @override
+  String get reviewStopClip => 'Stop klip';
+
+  @override
+  String get reviewOpenDetailsHint => 'Åbner detaljer';
+
+  @override
+  String get reviewAnswerMe => 'Mig';
+
+  @override
+  String get reviewAnswerOther => 'Andre';
+
+  @override
+  String get reviewAddTask => 'Tilføj opgave';
+
+  @override
+  String get reviewAnswerFailed => 'Dit svar kunne ikke gemmes. Prøv igen.';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return 'Dette svar mærker $count samtaler';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => 'Ukendt taler';
+
+  @override
+  String get reviewNewPersonName => 'Deres navn';
+
+  @override
+  String get reviewSomeoneElse => 'En anden…';
+
+  @override
+  String get reviewConfirm => 'Bekræft';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return 'Bekræft $name';
+  }
+
+  @override
+  String get reviewNotSure => 'Ikke sikker';
+
+  @override
+  String get reviewOpenConversation => 'Samtale';
+
+  @override
+  String get reviewTaskField => 'Opgave';
+
+  @override
+  String get reviewDue => 'Frist';
+
+  @override
+  String get reviewNoDate => 'Ingen';
+
+  @override
+  String get reviewProject => 'Projekt';
+
+  @override
+  String get reviewReasonAlreadyDone => 'Allerede gjort';
+
+  @override
+  String get reviewReasonNotMine => 'Ikke min';
+
+  @override
+  String get reviewReasonNotUseful => 'Ikke nyttig';
+
+  @override
+  String get reviewYesMerge => 'Ja, flet';
+
+  @override
+  String reviewConversationCount(int count) {
+    return 'Samtaler: $count';
+  }
+
+  @override
+  String get reviewSpellingCustom => 'Skriv det';
+
+  @override
+  String get reviewLoadFailed => 'Dine spørgsmål kunne ikke indlæses.';
+
+  @override
+  String get reviewCaughtUpTitle => 'Intet at svare på';
+
+  @override
+  String get reviewCaughtUpBody => 'Omi spørger kun her, når den har brug for dig.';
+
+  @override
+  String get reviewRecentChanges => 'Seneste ændringer';
+
+  @override
+  String get reviewChangesIntro =>
+      'Hvad Omi har ændret på egen hånd de seneste 30 dage. Fortryd alt, der ser forkert ud.';
+
+  @override
+  String get reviewChangeUndone => 'Fortrudt. Omi gør det ikke igen på egen hånd.';
+
+  @override
+  String get reviewChangeFailed => 'Ændringen kunne ikke opdateres. Prøv igen.';
+
+  @override
+  String get reviewChangesLoadFailed => 'Seneste ændringer kunne ikke indlæses.';
+
+  @override
+  String get reviewNoChangesTitle => 'Ingen ændringer endnu';
+
+  @override
+  String get reviewNoChangesBody => 'Når Omi rydder op i dine noter, vises ændringerne her.';
+
+  @override
+  String get reviewShowMore => 'Vis mere';
+
+  @override
+  String get entityKeptCurrent => 'Holdt opdateret af Omi';
+
+  @override
+  String get entityNotRight => 'Passer det ikke?';
+
+  @override
+  String get entityCorrectionTitle => 'Hvad passer ikke?';
+
+  @override
+  String get entityCorrectionHint => 'Fortæl Omi, hvad der skal rettes';
+
+  @override
+  String get entityCorrectionSaved => 'Tak. Omi retter det.';
+
+  @override
+  String get entityCorrectionFailed => 'Din rettelse kunne ikke sendes. Prøv igen.';
+
+  @override
+  String get entityLoadFailed => 'Siden kunne ikke indlæses.';
+
+  @override
+  String get entityProject => 'Projekt';
+
+  @override
+  String get entityProjects => 'Projekter';
+
+  @override
+  String get entityDecisions => 'Beslutninger';
+
+  @override
+  String get entityOpenTasks => 'Åbne opgaver';
+
+  @override
+  String get entityOpenThreads => 'Åbne tråde';
+
+  @override
+  String entityWaitingOn(String name) {
+    return 'Venter på $name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return 'Frist $date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'Hvad Omi ved';
+
+  @override
+  String get entityRecentConversations => 'Seneste samtaler';
+
+  @override
+  String get tasksNoProject => 'Intet projekt';
+
+  @override
+  String get tasksGroupByProject => 'Gruppér efter projekt';
+
+  @override
+  String get tasksGroupByDate => 'Gruppér efter dato';
+
+  @override
+  String get dreamReportTitle => 'Dream-rapport';
+
+  @override
+  String get dreamReportShadowBanner =>
+      'Forhåndsvisning: Dream viser, hvad der ville blive ændret, men intet i din konto ændres endnu.';
+
+  @override
+  String get dreamReportLiveBanner => 'Dream anvender disse ændringer selv. Fortryd dem under Seneste ændringer.';
+
+  @override
+  String get dreamReportRunNow => 'Kør nu';
+
+  @override
+  String get dreamReportRunLimit => 'Ingen manuelle kørsler tilbage i dag';
+
+  @override
+  String get dreamReportRunInProgress => 'En kørsel er allerede i gang. Prøv igen om et øjeblik.';
+
+  @override
+  String get dreamReportRunFailed => 'Dream kunne ikke køres. Prøv igen.';
+
+  @override
+  String get dreamReportIdle => 'Intet nyt at se på endnu.';
+
+  @override
+  String get dreamReportLoadFailed => 'Dream-rapporten kunne ikke indlæses.';
+
+  @override
+  String get dreamReportEmptyTitle => 'Ingen kørsler endnu';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream ser på, hvad der er ændret i din konto, cirka en gang i timen.';
+
+  @override
+  String get dreamReportScheduled => 'Planlagt';
+
+  @override
+  String get dreamReportManual => 'Manuel';
+
+  @override
+  String dreamReportFailed(String error) {
+    return 'Mislykkedes ($error)';
+  }
+
+  @override
+  String get dreamReportTimedOut => 'Stoppet ved tidsgrænsen';
+
+  @override
+  String get dreamReportNothingFound => 'Intet at rette';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return 'Læste $records elementer · $tokens tokens';
+  }
+
+  @override
+  String get dreamReportWouldFix => 'Ville rette';
+
+  @override
+  String get dreamReportFixed => 'Rettet';
+
+  @override
+  String get dreamReportWouldAsk => 'Ville spørge dig';
+
+  @override
+  String get dreamReportWouldSuggestTasks => 'Ville foreslå opgaver';
+
+  @override
+  String get dreamReportLearnedWords => 'Ord, den har lært';
+
+  @override
+  String get dreamReportFeedback => 'Rapporteret til Omi-teamet';
+
+  @override
+  String get dreamReportDeletedItem => 'Slettet element';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return '$count af $limit kørsler i dag';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ændringer venter',
+      one: '1 ændring venter',
+      zero: 'Ingen ændringer venter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count manuelle kørsler tilbage i dag',
+      one: '1 manuel kørsel tilbage i dag',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes rettelser',
+      one: '1 rettelse',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks forslag',
+      one: '1 forslag',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ældre ændringer sprunget over',
+      one: '1 ældre ændring sprunget over',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rapporter tilbageholdt af hensyn til privatlivet',
+      one: '1 rapport tilbageholdt af hensyn til privatlivet',
+    );
+    return '$_temp0';
+  }
 }

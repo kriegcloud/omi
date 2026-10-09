@@ -9739,11 +9739,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pendantFullSyncBlocked => 'Pendant 的存储空间已满，且仍处于录音模式，因此无法传输已存储的音频。请按下 Pendant 的按钮停止录音，然后重新同步。';
 
   @override
-  String conversationsNotCapturedCount(int count) {
-    return '未记录 ($count)';
-  }
-
-  @override
   String speechProfileOwnerTitle(String name) {
     return '$name的语音档案';
   }
@@ -12204,4 +12199,395 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get showOnLockScreen => '在锁定屏幕上显示';
+
+  @override
+  String get accountDeletionInProgressSignInAgain => '此账号正在删除中。请使用其他账号登录，或等待几分钟后重试。';
+
+  @override
+  String get onboardingSetupTitle => '正在设置你的 Omi';
+
+  @override
+  String get onboardingSetupSubtitle => '请稍等片刻，Omi 正在为你个性化设置';
+
+  @override
+  String get onboardingSetupStepWorkspace => '正在准备你的工作区';
+
+  @override
+  String get onboardingSetupStepLanguage => '正在根据你的语言优化转写';
+
+  @override
+  String get onboardingSetupStepMemory => '正在设置你的记忆';
+
+  @override
+  String get onboardingSetupStepDevices => '正在连接你的设备';
+
+  @override
+  String get onboardingSetupStepPersonalize => '正在个性化你的体验';
+
+  @override
+  String get onboardingRatingPromptTitle => '你喜欢 Omi 吗？';
+
+  @override
+  String get onboardingRatingPromptYes => '是';
+
+  @override
+  String get onboardingRatingPromptNo => '否';
+
+  @override
+  String get partialRecording => '部分录音';
+
+  @override
+  String get importTranscriptFiles => '转录文件';
+
+  @override
+  String get importTranscriptFilesDescription => '选择 SRT、VTT 或 TXT 转录文件，或包含它们的 ZIP 文件';
+
+  @override
+  String get importTooManyAttempts => '当前导入次数过多，请稍后再试。';
+
+  @override
+  String get importFileTooLarge => '此文件过大，无法导入。';
+
+  @override
+  String get importUnsupportedFileType => '无法导入此类型的文件。';
+
+  @override
+  String get reviewTitle => '审核';
+
+  @override
+  String get reviewEntryTitle => '给你的问题';
+
+  @override
+  String reviewRemaining(int count) {
+    return '还剩 $count 个';
+  }
+
+  @override
+  String get reviewQuestionSpeaker => '这是谁说的？';
+
+  @override
+  String reviewQuestionSamePerson(String name) {
+    return '和“$name”是同一个人吗？';
+  }
+
+  @override
+  String get reviewQuestionSpelling => '这个怎么拼写？';
+
+  @override
+  String get reviewPlayClip => '播放片段';
+
+  @override
+  String get reviewStopClip => '停止播放片段';
+
+  @override
+  String get reviewOpenDetailsHint => '打开详情';
+
+  @override
+  String get reviewAnswerMe => '我';
+
+  @override
+  String get reviewAnswerOther => '其他';
+
+  @override
+  String get reviewAddTask => '添加任务';
+
+  @override
+  String get reviewAnswerFailed => '无法保存你的回答，请重试。';
+
+  @override
+  String reviewAnswersConversations(int count) {
+    return '此回答将标记 $count 段对话';
+  }
+
+  @override
+  String get reviewUnknownSpeaker => '未知说话人';
+
+  @override
+  String get reviewNewPersonName => '他们的名字';
+
+  @override
+  String get reviewSomeoneElse => '其他人…';
+
+  @override
+  String get reviewConfirm => '确认';
+
+  @override
+  String reviewConfirmPerson(String name) {
+    return '确认$name';
+  }
+
+  @override
+  String get reviewNotSure => '不确定';
+
+  @override
+  String get reviewOpenConversation => '对话';
+
+  @override
+  String get reviewTaskField => '任务';
+
+  @override
+  String get reviewDue => '截止日期';
+
+  @override
+  String get reviewNoDate => '无';
+
+  @override
+  String get reviewProject => '项目';
+
+  @override
+  String get reviewReasonAlreadyDone => '已完成';
+
+  @override
+  String get reviewReasonNotMine => '不是我的';
+
+  @override
+  String get reviewReasonNotUseful => '没有用';
+
+  @override
+  String get reviewYesMerge => '是，合并';
+
+  @override
+  String reviewConversationCount(int count) {
+    return '对话：$count';
+  }
+
+  @override
+  String get reviewSpellingCustom => '手动输入';
+
+  @override
+  String get reviewLoadFailed => '无法加载你的问题。';
+
+  @override
+  String get reviewCaughtUpTitle => '没有需要回答的问题';
+
+  @override
+  String get reviewCaughtUpBody => '只有需要你时，Omi 才会在这里提问。';
+
+  @override
+  String get reviewRecentChanges => '最近更改';
+
+  @override
+  String get reviewChangesIntro => '过去 30 天内 Omi 自行做出的更改。看起来不对的都可以撤销。';
+
+  @override
+  String get reviewChangeUndone => '已撤销。Omi 不会自行再次这样做。';
+
+  @override
+  String get reviewChangeFailed => '无法更新此更改，请重试。';
+
+  @override
+  String get reviewChangesLoadFailed => '无法加载最近更改。';
+
+  @override
+  String get reviewNoChangesTitle => '暂无更改';
+
+  @override
+  String get reviewNoChangesBody => 'Omi 整理你的笔记后，更改会显示在这里。';
+
+  @override
+  String get reviewShowMore => '显示更多';
+
+  @override
+  String get entityKeptCurrent => '由 Omi 保持最新';
+
+  @override
+  String get entityNotRight => '不对？';
+
+  @override
+  String get entityCorrectionTitle => '哪里不对？';
+
+  @override
+  String get entityCorrectionHint => '告诉 Omi 需要修正什么';
+
+  @override
+  String get entityCorrectionSaved => '谢谢，Omi 会修正。';
+
+  @override
+  String get entityCorrectionFailed => '无法发送你的更正，请重试。';
+
+  @override
+  String get entityLoadFailed => '无法加载此页面。';
+
+  @override
+  String get entityProject => '项目';
+
+  @override
+  String get entityProjects => '项目';
+
+  @override
+  String get entityDecisions => '决定';
+
+  @override
+  String get entityOpenTasks => '未完成的任务';
+
+  @override
+  String get entityOpenThreads => '未解决的事项';
+
+  @override
+  String entityWaitingOn(String name) {
+    return '等待$name';
+  }
+
+  @override
+  String entityDue(String date) {
+    return '截止日期：$date';
+  }
+
+  @override
+  String get entityWhatOmiKnows => 'Omi 知道的内容';
+
+  @override
+  String get entityRecentConversations => '最近的对话';
+
+  @override
+  String get tasksNoProject => '无项目';
+
+  @override
+  String get tasksGroupByProject => '按项目分组';
+
+  @override
+  String get tasksGroupByDate => '按日期分组';
+
+  @override
+  String get dreamReportTitle => 'Dream 报告';
+
+  @override
+  String get dreamReportShadowBanner => '预览模式：Dream 会显示它将要更改的内容，但目前不会更改你账户中的任何内容。';
+
+  @override
+  String get dreamReportLiveBanner => 'Dream 会自动应用这些更改。你可以在“最近更改”中撤销任何更改。';
+
+  @override
+  String get dreamReportRunNow => '立即运行';
+
+  @override
+  String get dreamReportRunLimit => '今天的手动运行次数已用完';
+
+  @override
+  String get dreamReportRunInProgress => '已有一次运行正在进行。请一分钟后重试。';
+
+  @override
+  String get dreamReportRunFailed => '无法运行 Dream。请重试。';
+
+  @override
+  String get dreamReportIdle => '暂时没有新内容需要查看。';
+
+  @override
+  String get dreamReportLoadFailed => '无法加载 Dream 报告。';
+
+  @override
+  String get dreamReportEmptyTitle => '还没有运行记录';
+
+  @override
+  String get dreamReportEmptyBody => 'Dream 大约每小时查看一次你账户中的更改。';
+
+  @override
+  String get dreamReportScheduled => '定时';
+
+  @override
+  String get dreamReportManual => '手动';
+
+  @override
+  String dreamReportFailed(String error) {
+    return '失败（$error）';
+  }
+
+  @override
+  String get dreamReportTimedOut => '已达时间上限而停止';
+
+  @override
+  String get dreamReportNothingFound => '没有需要修复的内容';
+
+  @override
+  String dreamReportStats(int records, int tokens) {
+    return '已读取 $records 项 · $tokens 个 token';
+  }
+
+  @override
+  String get dreamReportWouldFix => '将会修复';
+
+  @override
+  String get dreamReportFixed => '已修复';
+
+  @override
+  String get dreamReportWouldAsk => '将会询问你';
+
+  @override
+  String get dreamReportWouldSuggestTasks => '将会建议任务';
+
+  @override
+  String get dreamReportLearnedWords => '学到的词语';
+
+  @override
+  String get dreamReportFeedback => '已报告给 Omi 团队';
+
+  @override
+  String get dreamReportDeletedItem => '已删除的项目';
+
+  @override
+  String dreamReportPasses(int count, int limit) {
+    return '今天已运行 $count/$limit 次';
+  }
+
+  @override
+  String dreamReportQueued(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 项更改等待处理',
+      one: '1 项更改等待处理',
+      zero: '没有等待处理的更改',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportRunsLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '今天还可手动运行 $count 次',
+      one: '今天还可手动运行 1 次',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportFound(int fixes, int asks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      fixes,
+      locale: localeName,
+      other: '$fixes 项修复',
+      one: '1 项修复',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      asks,
+      locale: localeName,
+      other: '$asks 条建议',
+      one: '1 条建议',
+    );
+    return '$_temp0 · $_temp1';
+  }
+
+  @override
+  String dreamReportDropped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '已跳过 $count 项较早的更改',
+      one: '已跳过 1 项较早的更改',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String dreamReportPrivacyHeld(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '出于隐私考虑，已扣留 $count 份报告',
+      one: '出于隐私考虑，已扣留 1 份报告',
+    );
+    return '$_temp0';
+  }
 }
