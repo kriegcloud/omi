@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import os
 import heapq
+import math
 import time
 from dataclasses import dataclass, field
 from typing import Callable, Any, Dict, List, Mapping, Optional, Sequence, Set, Tuple
@@ -92,6 +93,8 @@ class SpeakerResolution:
     match_scores: List[dict] = field(default_factory=list)
     voice_identity_statuses: Dict[int, str] = field(default_factory=dict)
     """Evidence states for automatic voices only; manual receipts remain authoritative."""
+    owner_voiceprint_available: bool = False
+    """Whether this pass's validated roster included the owner for identity comparison."""
 
 
 def _seg(segment: Any, name: str, default: Any = None) -> Any:
@@ -511,9 +514,10 @@ def resolve_conversation_speakers(
                 # Acoustic contradiction within this provider voice: no majority
                 # can establish which person uttered an unembedded short reply.
                 contradicted.add(segment_id)
-        elif _duration(segment) < MIN_EMBED_SECONDS:
+        elif _duration(segment) < MIN_EMBED_SECONDS and not _seg(segment, 'is_user', False):
             # A distinct provider voice has no compatible acoustic vote. Temporal
             # proximity cannot promote it to its neighbour's owner/person identity.
+            # Missing votes do not contradict an independently accepted owner.
             contradicted.add(segment_id)
         # Otherwise it was embeddable but not embedded yet (budget, missing audio):
         # it keeps capture's id rather than borrowing a neighbour's voice.
@@ -607,6 +611,7 @@ def resolve_conversation_speakers(
     except Exception:
         match_scores.record_failure(None)
     return SpeakerResolution(
+        owner_voiceprint_available=OWNER_IDENTITY in prints,
         contradicted_segment_ids=contradicted,
         speaker_ids=speaker_ids,
         significant_speaker_ids=significant,
@@ -634,13 +639,17 @@ def _coverage(
     manual_speakers: Mapping[int, Identity],
     abstained: Set[str],
 ) -> float:
-    embeddable = [s for s in eligible if _duration(s) >= MIN_EMBED_SECONDS]
-    total = sum(_duration(s) for s in embeddable)
+    # Finite speech duration still counts when its text window cannot be placed,
+    # including negative-start windows. Only nonfinite durations are unusable.
+    embeddable = [
+        (s, duration) for s in eligible if math.isfinite(duration := _duration(s)) and duration >= MIN_EMBED_SECONDS
+    ]
+    total = sum(duration for _, duration in embeddable)
     if total <= 0:
         return 1.0
     placed = sum(
-        _duration(s)
-        for s in embeddable
+        duration
+        for s, duration in embeddable
         if _seg(s, 'id') not in abstained
         and (_seg(s, 'id') in vectors or int(_seg(s, 'speaker_id')) in manual_speakers)
     )
