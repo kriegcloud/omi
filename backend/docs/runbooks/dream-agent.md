@@ -1,5 +1,30 @@
 # Dream agent phase 1
 
+## Target neighbourhoods and read-only planning
+
+Dirty reads admit at most four editable targets to leave prompt capacity for
+context. Retrieval adds explicit people/entities and conversation tasks,
+same-subject canonical facts, Typesense rare-token/vocabulary-near-match hits,
+existing Pinecone conversation and canonical memory semantic hits, then nearby
+conversations and screen records. Reads remain owner scoped and visibility checked.
+Queries and result counts are bounded; a retrieval failure fails the pass, rather
+than silently treating a partial neighbourhood as complete evidence.
+
+Context is evidence only in both stages. Guards reject context targets and
+merges whose second operand is context. All role and eligibility metadata enters
+the shared byte-based budget gate. Context admission also reserves worst-case
+triage input/completion before fitting reasoning. Reports include role counts;
+diagnostics never include record contents.
+
+The owner's agent can call `await utils.dream_agent.dry_run(uid, records,
+targets=[...], vocabulary=[...])` inside a pod with authorized, decrypted,
+visibility-checked records. This function performs no database reads, admission,
+product mutations, or report persistence. It returns a plan, guard rejection
+counts, role counts and tokens. The configured inference gateway retains its
+ordinary usage accounting. Supply `turn` for a fully offline replay. Do not print
+or publish the returned private plan. The implementing agent runs synthetic
+fixtures only and does not access production customer records.
+
 The worker defaults off in code. The production runtime declarations enable shadow
 for David's two allowlisted UIDs only; TestFlight stays disabled. Prod backend and
 backend-sync declare 24 scheduled passes/user/day, 20 manual runs/user/day and a
@@ -403,3 +428,37 @@ good Markdown overview, clean bilingual and grounded empty-title cases. The dev
 eval applies the same policy and privacy checks, records raw/post-guard edits by
 kind plus rejection counts, and requires five repeats of every case. See that
 folder's README for the verified dev tunnel procedure.
+
+
+## Tiered apply policy
+
+When mode is `on`, only `title`, `overview`, `spelling` and vocabulary additions
+apply automatically, after existing quality/evidence guards. `close_task`,
+`retire_task`, `merge_people`, `merge_memories`, `memory` and `entity_summary`
+become `agent_proposal` items in the existing Review queue, exposed through
+`GET /v2/review/items` and its v2 answer endpoint. Released v1 item and entity-page
+contracts remain unchanged and hide this new kind. Review must be enabled
+for either journaled effects or proposals; a disabled Review surface never routes
+risky edits into automatic writes. All accepted operations use the same undo and
+do-not-redo journal. A dismissal permanently suppresses its semantic operation key.
+
+`config/dream_agent.py` owns AUTO/SUGGEST. Optional
+`DREAM_AGENT_AUTO_APPLY_KINDS` is a comma-separated subset of the safe AUTO kinds;
+unset uses the defaults and empty makes every operation a suggestion. Unknown
+kinds and attempts to elevate risky kinds are ignored, counted in
+`omi_dream_policy_warning_total`, and logged as counts without raw values.
+Per-kind undo-rate demotion also routes safe edits to Review.
+
+Suggestions retain encrypted owner-visible and storage evidence snapshots.
+Accept revalidates all evidence and the current task generation, then the existing
+writer fences storage in its transaction; stale accepts return 409. New
+suggestions share Dream question attention accounting, capped at three per pass
+and UTC day, and also respect the per-pass edit cap and remaining answer headroom.
+Retries of unchanged proposals use no new slot. Shadow mode continues to record
+proposals without enqueueing or applying anything; each edit and vocabulary term
+in its report is labeled `auto` or `suggest`.
+
+The OpenAPI schema and Review/Dream Dart DTOs are regenerated from source. Mobile
+rendering of `agent_proposal` is separate owner work, detailed in
+`backend/docs/review_surface.mdx`. This source change does not enable flags,
+change cohorts/schedules, or deploy anything.
