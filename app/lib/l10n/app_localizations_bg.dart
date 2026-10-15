@@ -12447,6 +12447,15 @@ class AppLocalizationsBg extends AppLocalizations {
   String get reviewRecentChanges => 'Скорошни промени';
 
   @override
+  String get reviewChangeAfter => 'След';
+
+  @override
+  String get reviewChangeBefore => 'Преди';
+
+  @override
+  String get reviewChangeRemoved => 'Премахнато от активния списък';
+
+  @override
   String get reviewChangesIntro =>
       'Какво промени Omi сам през последните 30 дни. Отменете всичко, което изглежда грешно.';
 
@@ -13440,4 +13449,28 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get onboardingPermissionTapToFix => 'Докоснете, за да поправите';
+
+  @override
+  String get homePendingTitle => 'Разговори на път';
+
+  @override
+  String get homePendingCatchingUp => 'Наваксваме по-ранното аудио';
+
+  @override
+  String get onTheWayTitle => 'На път';
+
+  @override
+  String get onTheWayAlmostReady => 'Почти готово';
+
+  @override
+  String get activityEmpty => 'Все още няма активност';
+
+  @override
+  String get activityNewSemantics => 'Активност, нови елементи';
+
+  @override
+  String get activityLoadFailed => 'Не можахме да заредим цялата ви активност';
+
+  @override
+  String get activityNewItem => 'Ново';
 }
