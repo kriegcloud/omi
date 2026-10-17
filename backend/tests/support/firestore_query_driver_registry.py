@@ -283,7 +283,7 @@ _add(
         'database.action_items.delete_action_items_for_conversation', base={'uid': UID, 'conversation_id': 'conv-1'}
     )
 )
-_add(DriverEntry('database.action_items.get_action_item_ids', base={'uid': UID}))
+_add(DriverEntry('database.action_items.get_action_item_ids', base={'uid': UID}, neutrals={'budget': _BUDGET}))
 _add(
     DriverEntry(
         'database.action_items.get_action_items',
@@ -335,7 +335,10 @@ _add(
 )
 _add(
     DriverEntry(
-        'database.action_items.get_visible_action_item_ids', base={'uid': UID}, domains={'completed': [False, True]}
+        'database.action_items.get_visible_action_item_ids',
+        base={'uid': UID},
+        domains={'completed': [False, True]},
+        neutrals={'budget': _BUDGET},
     )
 )
 _add(DriverEntry('database.action_items.iter_all_action_items', base={'uid': UID}))
@@ -925,6 +928,12 @@ _add(
     DriverEntry(
         'database.conversations.get_conversations_without_photos',
         base={'uid': UID},
+        domains={'list_fields_only': [False, True]},
+        patchers=(
+            lambda client: unittest.mock.patch.object(
+                importlib.import_module('database.conversations'), 'indexed_list_reads_enabled', return_value=True
+            ),
+        ),
         profiles=WITHOUT_PHOTOS_PROFILES,
         neutrals={'limit': _LIMIT, 'offset': _OFFSET, 'budget': _BUDGET},
     )
@@ -2068,7 +2077,7 @@ _add(
             'database.sync_backfill_sequencer.has_pending',
             'database.sync_backfill_sequencer.pending_head',
         ),
-        reason='oldest-pending probe observed inside the listed claim, inspection and presence consumers',
+        reason='configured pending probe observed inside the listed claim, inspection and presence consumers',
     )
 )
 _add(
@@ -2098,12 +2107,26 @@ def _seed_sync_retirement(client, combo, trial):
 
 
 _SYNC_PROD = (_stub('database.sync_backfill_sequencer.production_stage', True),)
+
+
+def _sync_order_trial(client, combo, trial):
+    client.backfill_newest_first = bool(trial % 2)
+
+
+def _sync_order_patch(client):
+    return unittest.mock.patch(
+        'database.sync_backfill_sequencer.newest_first', side_effect=lambda uid: client.backfill_newest_first
+    )
+
+
 _add(
     DriverEntry(
         'database.sync_backfill_sequencer.claim_next',
         base={'uid': UID},
         domains={'now': [None, T0], 'expected_job_id': [None, 'expected-job']},
-        patchers=_SYNC_PROD,
+        trials=2,
+        setup=_sync_order_trial,
+        patchers=(*_SYNC_PROD, _sync_order_patch),
     )
 )
 _add(
@@ -2156,7 +2179,7 @@ _add(
     DriverEntry(
         'database.sync_backfill_sequencer.retire_expired',
         base={'uid': UID, 'job_id': 'shape-job'},
-        domains={'now': [None, T0], 'epoch': [None, 1]},
+        domains={'now': [None, T0], 'epoch': [None, 1], 'allow_active_owner': [False, True]},
         setup=_seed_sync_retirement,
         patchers=_SYNC_PROD,
     )
@@ -2170,8 +2193,16 @@ _add(
         patchers=_SYNC_PROD,
     )
 )
-_add(DriverEntry('database.sync_backfill_sequencer.pending_head', base={'uid': UID}, patchers=_SYNC_PROD))
-_add(DriverEntry('database.sync_backfill_sequencer.has_pending', base={'uid': UID}, patchers=_SYNC_PROD))
+for _sync_probe in ('pending_head', 'has_pending'):
+    _add(
+        DriverEntry(
+            f'database.sync_backfill_sequencer.{_sync_probe}',
+            base={'uid': UID},
+            trials=2,
+            setup=_sync_order_trial,
+            patchers=(*_SYNC_PROD, _sync_order_patch),
+        )
+    )
 _add(
     DriverEntry(
         'database.sync_backfill_sequencer.waiting_sample',
@@ -2459,7 +2490,8 @@ _add(
         base={'uid': UID},
         domains={'limit': [None, 200]},
         neutrals={
-            'include_dismissed': (False, 'post-read visibility filter; does not alter the Firestore query shape')
+            'include_dismissed': (False, 'post-read visibility filter; does not alter the Firestore query shape'),
+            'memoize': (False, 'task-attempt memo opt-in; read-through only, does not alter the Firestore query shape'),
         },
     )
 )
@@ -2905,6 +2937,13 @@ _add(
 )
 
 
+_add(
+    DriverEntry(
+        'utils.sync.cap_hold.pending_holds',
+        base={'uid': UID},
+        neutrals={'limit': (10, 'bounded recovery page; does not affect filters')},
+    )
+)
 _add(DriverEntry('database.locked_content.has_recoverable_locked_content', base={'uid': UID}))
 _add(
     CoveredByEntry(
@@ -2965,5 +3004,14 @@ _add(
         'utils.sync.reprocess.sweep',
         neutrals={'now': (T0.timestamp(), 'operand clock only'), 'limit': _LIMIT},
         patchers=(_stub('utils.sync.reprocess._mutate', None), _stub('utils.sync.reprocess.owns_runtime', True)),
+    )
+)
+
+
+_add(
+    DriverEntry(
+        'database.summary_debt_queries.due_conversations',
+        neutrals={'now': (T0.timestamp(), 'timestamp operand only'), 'limit': _LIMIT},
+        domains={'after': [None, {'due': T0.timestamp(), 'path': 'users/synthetic/conversations/c'}]},
     )
 )
