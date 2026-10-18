@@ -1,3 +1,5 @@
+from database import sync_redrive
+from utils.sync import redrive_policy
 from utils.observability.sync_phases import sync_attempt, set_sync_metrics_lane
 import asyncio
 import json
@@ -135,6 +137,7 @@ from utils.subscription import (
 )
 from utils.sync import playback as sync_playback
 from config.capture_evidence import capture_evidence_dark_write_enabled
+from config.rollout_cohorts import warm_rollout_cohorts
 from utils.capture_evidence import parse_sync_file_claims
 from utils.sync.files import (
     decode_files_to_wav,
@@ -191,6 +194,8 @@ from utils.sync.capture_manifest import (
 )
 from utils.sync.lanes import CaptureTimeTrust, SyncLane, classify_sync_lane
 from utils.sync import backfill_cutover, legacy_fresh, stage as sync_stage, uid_sequencer
+from config.sync_owner_concurrency import preparation_width
+from utils.sync.owner_prefetch import warm_owner
 from utils.sync.provenance import capture_matches_server_conversation as _capture_matches_server_conversation
 
 # Only the API process importing this router owns held-audio STT recovery.
@@ -1736,10 +1741,28 @@ def get_sync_job_status(job_id: str, uid: str = Depends(auth.get_current_user_ui
     if durable is not None:
         return with_poll_hint(durable, surface_open=surface_open)
     job = get_sync_job(job_id)
+    if job and job['uid'] != uid:
+        raise HTTPException(status_code=403, detail="Not authorized to view this sync job")
+    # A read can reconcile a proven content completion without rewriting Redis,
+    # binding a run lease or competing with the worker's terminal authority.
+    from utils.sync.completed_status import get_completed_legacy_status
+
+    try:
+        completed = get_completed_legacy_status(job_id, uid, job)
+    except Exception as error:
+        logger.error('event=sync_status_reconciliation outcome=retrying exception_type=%s', type(error).__name__)
+        raise _sync_finalization_retrying()
+    if completed is not None:
+        record_fallback(
+            component='sync_dispatch',
+            from_mode='redis_status',
+            to_mode='durable_completion',
+            reason='unavailable',
+            outcome='recovered',
+        )
+        return with_poll_hint(completed, surface_open=surface_open)
     if not job:
         raise HTTPException(status_code=404, detail="Sync job not found or expired")
-    if job['uid'] != uid:
-        raise HTTPException(status_code=403, detail="Not authorized to view this sync job")
 
     # A stale state can only be finalized by the holder of the same run lease
     # as Cloud Tasks/inline execution. Re-read after acquiring it so an active
@@ -1967,6 +1990,8 @@ async def run_sync_job(request: Request, task_retry_count: int = Depends(verify_
         payload = await request.json()
     except Exception:
         return await _run_sync_job_body(request, task_retry_count)
+    if isinstance(payload, dict) and isinstance(payload.get('uid'), str):
+        await warm_rollout_cohorts(payload['uid'])
     if isinstance(payload, dict) and payload.get('kind') == 'sync_reprocess':
         return await enrichment_response(payload)
     epoch = payload.get('sequencer_epoch') if isinstance(payload, dict) else None
@@ -2163,6 +2188,11 @@ async def _run_sync_job_body(request: Request, task_retry_count: int):
             ledger_fence_active = await run_blocking(db_executor, sync_job_uses_ledger_fence, job)
             if ledger_fence_active and runtime_fence_mode is not SyncLedgerFenceMode.ACTIVE:
                 return JSONResponse(status_code=503, content={'status': 'fence_mode_mismatch'})
+        if not job and redrive_policy.enabled():
+            custody = await run_blocking(db_executor, sync_redrive.preserve_missing_job, uid, job_id, payload)
+            # ACK only after durable custody. Neither branch deletes staged
+            # bytes or releases a partial ledger claim to blind provider retry.
+            return JSONResponse(status_code=200, content={'status': custody})
         if not job:
             # Job TTL (24h) expired before dispatch — staged blobs are gone or
             # about to be (1-day lifecycle); the app re-uploads on 404.
@@ -2223,6 +2253,15 @@ async def _run_sync_job_body(request: Request, task_retry_count: int):
                 content_id=content_id,
                 run_lock_token=lock_token,
             )
+        elif redrive_policy.legacy_convergence_enabled():
+            converged = await run_blocking(
+                db_executor,
+                sync_redrive.converge_legacy_completion,
+                job_id=job_id,
+                uid=uid,
+                content_id=content_id,
+                run_lock_token=lock_token,
+            )
         if converged is not None:
             await _delete_staged_blobs_async(blob_paths)
             if sync_lane == SyncLane.BACKFILL.value:
@@ -2252,6 +2291,20 @@ async def _run_sync_job_body(request: Request, task_retry_count: int):
             logger.info('event=sync_transcription_job outcome=skipped reason=account_cutover lane=%s', sync_lane)
             return JSONResponse(status_code=200, content={'status': 'skipped', 'reason': 'account_cutover'})
 
+        sequencer_epoch = payload.get('sequencer_epoch')
+        if (
+            sync_lane == SyncLane.BACKFILL.value
+            and isinstance(sequencer_epoch, int)
+            and sequencer_epoch > 0
+            and preparation_width() > 1
+        ):
+            # Pure future downloads share this instance with a possible next
+            # task. They hold no Cloud Tasks slot, job lock, ledger claim, or
+            # conversation authority. A cross-instance delivery simply misses.
+            start_background_task(
+                run_blocking(storage_executor, warm_owner, uid, job_id, sequencer_epoch),
+                name='sync:owner-prefetch',
+            )
         if not await run_blocking(storage_executor, _download_staged_files, blob_paths):
             # Blobs deleted by the bucket's 1-day lifecycle (deep queue backlog).
             await _finalize_sync_job_failure(
