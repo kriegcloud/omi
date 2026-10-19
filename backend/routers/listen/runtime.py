@@ -13,6 +13,8 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, cast
 from fastapi.websockets import WebSocketDisconnect
 from starlette.websockets import WebSocketState
 
+from config.ladder_v1 import enabled as ladder_enabled
+from config import ladder_v1 as ladder_policy
 from database import conversation_tombstones
 from database.firestore_read_metrics import FirestoreReadSite
 from database.live_language_profile import get_live_language_sessions
@@ -55,6 +57,7 @@ from utils.metrics import BACKEND_LISTEN_ACTIVE_WS_CONNECTIONS
 from utils.notifications import send_credit_limit_notification, send_silent_user_notification
 from utils.onboarding import OnboardingHandler
 from utils.observability.journeys import ClientJourneyAttempt
+from utils.observability.listen_loop import ensure_loop_lag_probe
 from utils.observability.routing_cohort import RoutingCohort, current_routing_cohort
 from utils.observability.transcription import (
     LiveSTTAttempt,
@@ -804,12 +807,24 @@ class ListenSessionRuntime:
 
     async def _refresh_credits(self, *, transcription_seconds: int = 0) -> None:
         admission = getattr(getattr(self, 'receiver', None), 'cap_admission', None)
+        now = time.time()
+        subscription = await self.persistence.call(user_db.get_user_valid_subscription, self.request.uid)
+        ladder_session = (
+            ladder_enabled('LADDER_V1_BUDGET_ENFORCEMENT_ENABLED')
+            and ladder_policy.entitlements(subscription) is not None
+        )
+        invalidated = await self.persistence.call(check_credits_invalidation, self.request.uid)
         if admission is not None:
-            await admission.refresh()
+            await admission.refresh(force=bool(invalidated), subscription=subscription)
             if getattr(self.receiver, 'cap_paused', False) and admission.managed:
                 await self.receiver.initialize_stt()
-        now = time.time()
-        invalidated = await self.persistence.call(check_credits_invalidation, self.request.uid)
+        credit_admission = (
+            admission
+            if admission is not None
+            and getattr(admission, 'reason', None) != 'legacy_dispatch_disabled'
+            and (admission.omi_selected or not customer_funded(self.stt_service))
+            else None
+        )
         needs_refresh = (
             not self.state.remaining_seconds_cache_initialized
             or invalidated
@@ -820,7 +835,13 @@ class ListenSessionRuntime:
                 and now - self.state.remaining_seconds_cache_ts >= 60
             )
         )
-        if needs_refresh:
+        if ladder_session and credit_admission is not None:
+            # The funded admission above already read this flush's shared budget.
+            # Reuse it rather than scanning the same monthly rollups twice.
+            self.state.remaining_seconds_cache = credit_admission.remaining
+            self.state.remaining_seconds_cache_ts = now
+            self.state.remaining_seconds_cache_initialized = True
+        elif needs_refresh:
             self.state.remaining_seconds_cache = await self.persistence.call(
                 get_remaining_transcription_seconds, self.request.uid, source=self.request.source
             )
@@ -829,14 +850,13 @@ class ListenSessionRuntime:
         elif self.state.remaining_seconds_cache is not None and transcription_seconds > 0:
             self.state.remaining_seconds_cache = max(0, self.state.remaining_seconds_cache - transcription_seconds)
         remaining = self.state.remaining_seconds_cache
-        if admission is not None and (admission.omi_selected or not customer_funded(self.stt_service)):
-            remaining = admission.remaining
-        subscription = await self.persistence.call(user_db.get_user_valid_subscription, self.request.uid)
+        if credit_admission is not None:
+            remaining = credit_admission.remaining
         if remaining is not None and remaining <= FREEMIUM_THRESHOLD_SECONDS and not self.state.freemium_threshold_sent:
             if should_emit_plus_meter_warning(subscription):
                 await self.asend_event(
                     FreemiumThresholdReachedEvent(
-                        remaining_seconds=remaining, action=FREEMIUM_ACTION_SETUP_ON_DEVICE_STT
+                        remaining_seconds=int(remaining), action=FREEMIUM_ACTION_SETUP_ON_DEVICE_STT
                     )
                 )
                 self.state.freemium_threshold_sent = True
@@ -884,6 +904,7 @@ class ListenSessionRuntime:
         if not self.state.last_usage_record_timestamp:
             return 0
         speech_seconds = 0
+        speech_ms = 0
         if self.receiver.vad_gate is not None:
             speech_ms = self.receiver.vad_gate.consume_speech_ms_delta()
             speech_seconds = speech_ms // 1000
@@ -913,6 +934,14 @@ class ListenSessionRuntime:
         )
         words = self.state.words_transcribed_since_last_record
         self.state.words_transcribed_since_last_record = 0
+        usage_metadata: Dict[str, Any] = live_usage_metadata(self)
+        if (
+            ladder_enabled('LADDER_V1_LANE_METERING_ENABLED')
+            and managed_chain_enabled(self)
+            and self.receiver.vad_gate is not None
+        ):
+            # The managed session consumes only speech from accepted sends, excluding replay.
+            usage_metadata = dict(usage_metadata, accepted_speech_seconds=speech_ms / 1000)
         if seconds or words or speech_seconds:
             await self.persistence.call(
                 record_usage,
@@ -920,7 +949,7 @@ class ListenSessionRuntime:
                 transcription_seconds=seconds,
                 words_transcribed=words,
                 speech_seconds=speech_seconds,
-                usage_metadata=live_usage_metadata(self),
+                usage_metadata=usage_metadata,
             )
         if not final:
             self.state.last_usage_record_timestamp = now
@@ -1342,6 +1371,10 @@ class ListenSessionRuntime:
 
 async def run_listen_session(request: ListenRequest) -> None:
     runtime: Optional[ListenSessionRuntime] = None
+    try:
+        ensure_loop_lag_probe()
+    except Exception as error:
+        logger.warning('listen loop lag probe start failed: %s', type(error).__name__)
     try:
         runtime = ListenSessionRuntime(request)
         await runtime.run()
