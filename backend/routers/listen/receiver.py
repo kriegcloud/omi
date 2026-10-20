@@ -10,8 +10,8 @@ import time
 import uuid
 
 from config.stt_cap_dispatch import execution_admission_enabled as stt_cap_dispatch_enabled
+from config.stt_cap_dispatch import execution_admission_configured as stt_cap_dispatch_configured
 from utils.stt_cap_dispatch import LiveAdmission, current_live_admission, suppress_socket_audio
-from utils.observability.stt_cap_dispatch import record_audio as record_cap_audio
 from utils.manual_speaker_assignments import acknowledged_teaching
 from utils.other.live_audio_archive import LiveAudioArchive
 from utils.sync.live_cap_hold import LiveHeldAudio
@@ -20,10 +20,6 @@ from typing import Any, Dict, List, Optional, Tuple, cast
 
 from config import audio_timeline as audio_flags
 from config.translation import resolve_ondemand_config
-from config.capture_evidence import (
-    capture_evidence_dark_write_enabled,
-    listen_committed_capture_coverage_enabled,
-)
 from routers.listen.contracts import ConversationCaptureOrigin
 from routers.listen.batch_preview import capture_batch_preview
 from routers.listen.demand_routing import attach_live_demand
@@ -83,7 +79,7 @@ from utils.stt.live_failure import (
     terminate_live_stt_backoff,
 )
 from utils.stt.live_chain import LiveChainExhausted, ProviderChainUnavailable
-from utils.stt.live_recovery import select_live_replacement
+from utils.stt.live_recovery import release_session_local_exclusions, select_live_replacement
 from config.live_stt_recovery import current_recovery_enabled, session_recovery_enabled
 from utils.stt.soniox_capture_axis import validation_detail
 from utils.stt.soniox_idle import SonioxIdleBudget
@@ -157,6 +153,7 @@ from utils.transcribe_decisions import (
 from utils.log_sanitizer import sanitize
 from utils.listen_audio import ChannelConfig, mix_n_channel_buffers, resample_pcm
 from utils.observability.fallback import record_fallback
+from utils.observability.listen_close import note_ws_close
 from utils.observability.listen_loop import FrameTimer
 from utils.observability.transcription import (
     emit_listen_vad_gate_metrics,
@@ -263,11 +260,10 @@ class ListenReceiver(ReplayFilterMixin):
     def __init__(self, host: Any, channel_configs: List[ChannelConfig], channel_id_to_index: Dict[int, int]):
         self.soniox_idle_budget = SonioxIdleBudget()
         self.host = host
-        self.cap_admission = (
-            LiveAdmission(host.request.uid, host.request.source)
-            if stt_cap_dispatch_enabled() and not host.use_custom_stt
-            else None
-        )
+        self.cap_admission: LiveAdmission | None = None
+        if stt_cap_dispatch_configured() and not host.use_custom_stt:
+            if stt_cap_dispatch_enabled(host.request.uid, 'live'):
+                self.cap_admission = LiveAdmission(host.request.uid, host.request.source)
         self.live_hold = LiveHeldAudio(host) if self.cap_admission is not None else None
         self._cap_init_lock = asyncio.Lock()
         self._cap_hold_stop = asyncio.Event()
@@ -363,17 +359,14 @@ class ListenReceiver(ReplayFilterMixin):
             # Pin the persistence mode for the recording's life; the flag is
             # never re-read per message or per callback.
             self.capture_timeline_v2 = host.state.capture_timeline_v2 = audio_flags.audio_timeline_v2_enabled()
-            self.capture_timeline_spans = host.state.capture_timeline_spans = audio_flags.audio_timeline_spans_enabled()
+            self.capture_timeline_spans = host.state.capture_timeline_spans = True
             host.state.capture_timeline = self.capture_timeline
             # Conversation ownership of recent capture ranges. Entries are
             # *runs* (contiguous samples under one conversation), coalesced by
             # `_note_accepted_frame`, so retention is time-based (120 s) and a
             # hard entry cap counts conversation switches, not frames.
             host.state.conversation_sample_ranges = deque(maxlen=CAPTURE_RANGE_MAX_RUNS)
-            if capture_evidence_dark_write_enabled():
-                host.state.source_position_map = SourcePositionMap(
-                    committed=listen_committed_capture_coverage_enabled()
-                )
+            host.state.source_position_map = SourcePositionMap(committed=True)
         # The loop this receiver serves. Deepgram's SDK delivers transcripts on
         # its own thread; those callbacks hop back onto this loop (see
         # `_run_on_listen_loop`) so timeline/send-map state is only ever
@@ -491,7 +484,7 @@ class ListenReceiver(ReplayFilterMixin):
         is retained as explicitly unplaced under its provider SEND owner.
         """
         source_map = getattr(self.host.state, 'source_position_map', None)
-        if source_map is not None and capture_evidence_dark_write_enabled():
+        if source_map is not None:
             source_map.remember_transcripts(segments)
         _strip_capture_word_ranges(segments)
         segments = self._filter_replayed_segments(segments, provider)
@@ -562,7 +555,7 @@ class ListenReceiver(ReplayFilterMixin):
         LIVE_SPEAKER_CAPTURE_CLOCK=false restores legacy speaker-ID timing.
         """
         source_map = getattr(self.host.state, 'source_position_map', None)
-        if source_map is not None and capture_evidence_dark_write_enabled():
+        if source_map is not None:
             source_map.remember_transcripts(segments)
         _strip_capture_word_ranges(segments)
         segments = self._filter_replayed_segments(segments, provider)
@@ -1009,7 +1002,6 @@ class ListenReceiver(ReplayFilterMixin):
                     sample_rate,
                     self.host.stt_language,
                     profile=self.host.language_profile,
-                    keywords=keywords,
                     idle_budget=self.soniox_idle_budget,
                 )
             # Soniox identifies language itself, so no language gate on the fallbacks;
@@ -1035,7 +1027,6 @@ class ListenReceiver(ReplayFilterMixin):
                     sample_rate,
                     self.host.stt_language,
                     profile=self.host.language_profile,
-                    keywords=keywords,
                     idle_budget=self.soniox_idle_budget,
                 ),
                 connect_modulate=(
@@ -1570,12 +1561,12 @@ class ListenReceiver(ReplayFilterMixin):
         serves: its family dialled, connected, and passed the serving gate
         after this session condemned it. Keeping it failed would pair the
         controller ledger with a receiver-side veto and exhaust the walk on
-        the next ordinary death. Providers that never re-dialled here keep
-        their session exclusion — this releases only the family now serving,
-        and the provider-level circuit breaker still owns cross-session
-        health.
+        the next ordinary death. Other providers keep their session exclusion
+        unless replay overflow alone excluded them; the provider-level circuit
+        breaker still owns cross-session health.
         """
         family = provider_for_service(serving_provider) or serving_provider
+        release_session_local_exclusions(self, family)
         released = family in self._stt_failed_providers
         self._stt_failed_providers.discard(family)
         identity = self.recovery._serving_identity if self.recovery is not None else None
@@ -1905,6 +1896,10 @@ class ListenReceiver(ReplayFilterMixin):
         if admission is not None and not admission.packet_allowed(
             buffer, self.host.stt_service, self.host.request.sample_rate
         ):
+            held_seconds = len(buffer) / (2 * self.host.request.sample_rate)
+            # Stamp the receipt span before awaiting custody, so a concurrent usage
+            # flush already sees this audio as held rather than billing it.
+            admission.note_held(self.host.state.last_audio_received_time or time.time(), held_seconds)
             hold = getattr(self, 'live_hold', None)
             if hold is not None and buffer:
                 start = self._stt_buffer_start_sample
@@ -1920,13 +1915,7 @@ class ListenReceiver(ReplayFilterMixin):
                     await hold.append_async(
                         bytes(buffer), self.host.request.sample_rate, timestamp, self.host.state.current_conversation_id
                     )
-            record_cap_audio(
-                'live',
-                'suppressed',
-                self.host.stt_service,
-                len(buffer) / (2 * self.host.request.sample_rate),
-                admission.reason == 'plan_allowance_exhausted',
-            )
+            admission.record_suppressed(self.host.stt_service, held_seconds)
             buffer.clear()
             self._stt_buffer_start_sample = None
             await self._emit_stt_cap_live_held()
@@ -2171,14 +2160,11 @@ class ListenReceiver(ReplayFilterMixin):
                 pcm, self.host.stt_service, TARGET_SAMPLE_RATE
             )
             suppressed = denied or should_send and suppress_socket_audio(self.stt_sockets_multi[channel_index], pcm)
-            if denied:
-                record_cap_audio(
-                    'live',
-                    'suppressed',
-                    self.host.stt_service,
-                    len(pcm) / (2 * TARGET_SAMPLE_RATE),
-                    admission is not None and admission.reason == 'plan_allowance_exhausted',
-                )
+            if denied and admission is not None:
+                admission.record_suppressed(self.host.stt_service, len(pcm) / (2 * TARGET_SAMPLE_RATE))
+            if suppressed and admission is not None:
+                # Both denials happen at receipt, so this frame's wall span is held.
+                admission.note_held(now, len(pcm) / (2 * TARGET_SAMPLE_RATE))
             if suppressed:
                 hold = getattr(self, 'live_hold', None)
                 if hold is not None:
@@ -2286,14 +2272,14 @@ class ListenReceiver(ReplayFilterMixin):
             if not self.host.state.realtime_demand.observe(payload):
                 logger.debug('Ignored malformed or over-budget client_state')
             config = resolve_ondemand_config()
-            if config.shadow_enabled or config.gate_enabled:
-                if self.translation_demand.observe(payload, lease_v1_enabled=config.lease_v1_enabled):
+            if config.gate_enabled:
+                if self.translation_demand.observe(payload):
                     if self._translation_expiry_task is not None:
                         self._translation_expiry_task.cancel()
-                    snapshot = self.translation_demand.snapshot(lease_v1_enabled=config.lease_v1_enabled)
+                    snapshot = self.translation_demand.snapshot()
                     get_translation_metrics().demand(
                         snapshot.policy.value,
-                        'enforced' if config.gate_enabled else 'shadow',
+                        'enforced',
                         self._telemetry_platform(),
                     )
                     if snapshot.expires_at is not None:
@@ -2307,7 +2293,7 @@ class ListenReceiver(ReplayFilterMixin):
                         self.host.spawn(
                             self.host.transcripts.on_translation_demand_changed(), name='translation_demand_reconcile'
                         )
-        elif kind == 'capture_evidence_frame' and capture_evidence_dark_write_enabled():
+        elif kind == 'capture_evidence_frame':
             # The next binary message alone may consume this claim. A new
             # control message supersedes an unpaired one, never a later frame.
             self._pending_source_frame = payload
@@ -2327,10 +2313,9 @@ class ListenReceiver(ReplayFilterMixin):
     async def _expire_translation_demand(self, expires_at: float) -> None:
         interrupted = await self.host.wait(max(0.0, expires_at - time.monotonic()))
         if not interrupted and self.host.transcripts is not None:
-            config = resolve_ondemand_config()
             get_translation_metrics().demand(
-                self.translation_demand.snapshot(lease_v1_enabled=config.lease_v1_enabled).policy.value,
-                'enforced' if config.gate_enabled else 'shadow',
+                self.translation_demand.snapshot().policy.value,
+                'enforced',
                 self._telemetry_platform(),
             )
             coordinator = getattr(self.host.transcripts, 'translation_coordinator', None)
@@ -2408,6 +2393,7 @@ class ListenReceiver(ReplayFilterMixin):
                 self.host.state.last_activity_time = time.time()
                 if message.get('type') == 'websocket.disconnect':
                     self.host.state.close_code = message.get('code', 1000)
+                    note_ws_close(self.host.state, 'client', self.host.state.close_code)
                     if self.recovery is not None:
                         self.client_closing = True
                         if self.shutdown_deadline is None:
@@ -2521,8 +2507,8 @@ class ListenReceiver(ReplayFilterMixin):
                         self.host.audio_bytes_send(decoded, now)
                 elif message.get('text') is not None:
                     await self._handle_text(message['text'])
-        except WebSocketDisconnect:
-            pass
+        except WebSocketDisconnect as error:
+            note_ws_close(self.host.state, 'client', error.code)
         except Exception as error:
             logger.error('Listen receive failure type=%s', type(error).__name__)
             self.host.state.close_code = 1011

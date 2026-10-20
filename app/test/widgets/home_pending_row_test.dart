@@ -13,7 +13,6 @@ import 'package:omi/backend/schema/pending_work.dart';
 import 'package:omi/services/pending_work/pending_work_store.dart';
 import 'package:omi/l10n/app_localizations.dart';
 import 'package:omi/models/sync_state.dart';
-import 'package:omi/pages/conversations/widgets/capture_recovery_banner.dart';
 import 'package:omi/pages/conversations/conversations_page.dart' show dateFilterIncludesToday;
 import 'package:omi/pages/conversations/on_the_way_page.dart';
 import 'package:omi/pages/conversations/sync_pending_work.dart';
@@ -307,7 +306,6 @@ void main() {
             const Scaffold(
               body: CustomScrollView(
                 slivers: [
-                  SliverToBoxAdapter(child: CaptureRecoveryBanner()),
                   SliverToBoxAdapter(child: HomePendingRow(showTodayHeader: true)),
                 ],
               ),
@@ -377,6 +375,16 @@ void main() {
       await pumpWithServerWork(tester, _FakeSync(wals: [_wal('phone', 4, WalStatus.uploaded)]), store);
 
       expect(find.text('Transcribing…'), findsOneWidget, reason: 'the recording only, not the job again');
+    });
+
+    testWidgets('a refused recording does not hide a server sync job', (tester) async {
+      final store = await serverWork([
+        const PendingWorkItem(id: 'sync:j', kind: 'sync_job', state: 'transcribing', conversationIds: []),
+      ]);
+      await pumpWithServerWork(tester, _FakeSync(wals: [_wal('too-old', 3, WalStatus.outsideRecoveryWindow)]), store);
+
+      expect(find.text('1 recording need attention'), findsOneWidget);
+      expect(find.text('Transcribing…'), findsOneWidget, reason: 'nothing on the phone is uploading the job');
     });
 
     testWidgets('shows how close each recording is to done', (tester) async {
