@@ -14,10 +14,11 @@ from config.batch_pipeline import (
     recovery_dispatch_interval_seconds,
 )
 from database.batch_pipeline_store import FirestoreStore
+from database.batch_pipeline_shadow_hook import shadow_from_env
 from database.batch_pipeline_staging import reap
 from utils.batch_pipeline.intake import artifacts_for
 from utils.batch_pipeline.live import drain_recordings
-from utils.batch_pipeline.projection import Projector
+from utils.batch_pipeline.projection import Projector, error_type
 from utils.executors import run_blocking, start_background_task, sync_executor
 from utils.batch_pipeline.contracts import PoolCapacity, WorkResult
 from utils.batch_pipeline.leader import SERVING_MAINTENANCE, LeaderLease
@@ -123,7 +124,7 @@ class Serving:
                 priority = self.projector.project_owner(owner_id, recovered=recovered)
             except Exception as error:
                 logging.getLogger(__name__).error(
-                    'event=batch_projection action=owner_chain outcome=retry exception_type=%s', type(error).__name__
+                    'event=batch_projection action=owner_chain outcome=retry exception_type=%s', error_type(error)
                 )
         # Projection and the local gauges stay per instance: projection is
         # throughput (ordered and fenced in its own transactions) and every
@@ -194,7 +195,7 @@ class Serving:
 def serving_for_stage(stage: str) -> Serving:
     if stage != current_stage():
         raise ValueError('worker and serving stages must match')
-    store = FirestoreStore(f'batch_pipeline_{stage}')
+    store = shadow_from_env(FirestoreStore(f'batch_pipeline_{stage}'))
     artifacts = artifacts_for(store)
     projector = Projector(store, artifacts.load_result, fetch_audio=artifacts.fetch_audio)
     from utils.batch_pipeline.quarantine_recovery import QuarantineRecovery

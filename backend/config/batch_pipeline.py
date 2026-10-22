@@ -215,6 +215,15 @@ def long_speech_handoff_enabled() -> bool:
     return os.getenv('BATCH_PIPELINE_LONG_SPEECH_HANDOFF_ENABLED', 'true').strip().lower() != 'false'
 
 
+def second_multilingual_enabled() -> bool:
+    """Kill switch (unset is on; only ``false`` disables it).
+
+    A long-speech handoff unit whose Modulate recovery came back valid-empty gets
+    one Deepgram multilingual call inside the same paid recovery intent.
+    """
+    return os.getenv('BATCH_PIPELINE_SECOND_MULTILINGUAL_ENABLED', 'true').strip().lower() != 'false'
+
+
 def worker_validation_disposition_enabled() -> bool:
     """Ship-on deterministic validation handoff; false restores bounded GPU retries."""
     return os.getenv('BATCH_PIPELINE_WORKER_VALIDATION_DISPOSITION_ENABLED', 'true').strip().lower() == 'true'
@@ -300,6 +309,13 @@ def sweep_owner_chain_enabled() -> bool:
     from config.policy import kill_switch
 
     return kill_switch('BATCH_PIPELINE_SWEEP_OWNER_CHAIN_ENABLED')
+
+
+def projection_predecessor_replay_enabled() -> bool:
+    """Kill switch: blocked page successors wake their owner's missing head."""
+    from config.policy import kill_switch
+
+    return kill_switch('BATCH_PIPELINE_PROJECTION_PREDECESSOR_REPLAY_ENABLED')
 
 
 def projection_pending_page_enabled() -> bool:

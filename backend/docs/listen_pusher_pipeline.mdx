@@ -6,6 +6,15 @@ description: "Sequence diagrams and finalization policy for the /v4/listen WebSo
 
 # Listen + Pusher Pipeline — Sequence Diagrams
 
+At a new recording reservation during a partial batch ramp, the owner-load
+predicate in `config/policy/ramp.py` keeps heavy owners on the legacy route.
+`BATCH_PIPELINE_RAMP_EXCLUDE_HEAVY_OWNERS=off` disables this admission narrowing.
+The check runs at the existing database write boundary, never on audio frames
+or pusher flushes. An existing `batch_live_v1` owner keeps draining through
+finalization and WAL retries even if its current load is heavy. Thresholds,
+telemetry and the separate heavy-owner qualification gate are documented in
+`batch-pipeline-serving.md`.
+
 Soniox transport exceptions log once at the first socket death, with bounded
 `operation`, `exception_class`, `received_close_code`, `sent_close_code`,
 `close_cause`, and `session_age_bucket` fields. `-1` means no close frame was
@@ -25,6 +34,15 @@ The [dispatch contract](stt-cap-dispatch.md) also documents sync holds, recovery
 BYOK funding, additive metrics and the per-client activation decision.
 Sync recovery fences a provider-bound `dispatched` receipt before paid STT or
 ingestion, and atomically checkpoints ingest proof alongside the conversation.
+Before every new recovery provider intent (including retries), an always-on,
+shared Redis Lua token bucket admits both audio seconds and one intent. Defaults
+are 60 audio-hours/hour and 12k intents/hour with at most one minute of burst
+credit. Pacing denial or Redis failure checkpoints `next_attempt_at` on the hold
+without creating an attempt or metered charge; release preserves that deadline.
+The durable sweep rotates owners in one-candidate rounds, newest-first inside
+each user's consent/cutoff. Sealing, cleanup and cached-result settlement remain
+independent. See [recovery pacing](stt-cap-dispatch.md#shared-recovery-pacing)
+for settings, telemetry and operational limits.
 Known non-calls clear the intent. After 30 minutes, ambiguous work reconciles
 from that proof or gets one second dispatch; a second ambiguity retains the audio
 as failed reconciliation. Successful siblings finalize independently. Flagged
@@ -662,6 +680,20 @@ mentor lane was deleted after v2 reached 100%. Any other env value invokes
 neither path. The shared bounded flag cache, failure diagnostics and rollback
 latency are defined in the
 [proactivity v2 contract](proactivity_v2/CONTRACT.md#enablement-prerequisites).
+
+Live episodes (`utils/episodes/live.py`, kill switch `EPISODES_ENABLED`) see the
+same realtime batches after the paywall check and before mentor admission. They
+buffer final segments per user in process and, when a moment ends (a pause of
+45 seconds, 600 words, or a move to another conversation), schedule one tracked
+background update. The update first requires the client-capability marker
+(`episodes:client_seen:{uid}`, left by the user's app calling `/v1/episodes` from a channel in `EPISODES_CLIENT_CHANNELS`;
+`utils/episodes/client_gate.py`): without it the moment is dropped and counted,
+so users on clients that cannot show episodes cost nothing. It then makes one gpt-5-nano call over the compact episode
+state plus only that moment's text. It never blocks the fan-out, writes no
+conversation, task or memory, and is restarted from durable state by finalization
+(`finalize_persisted_conversation` calls `utils/episodes/service.on_conversation_finalized`
+after `complete_finalization_fanout`, bounded and fail-open). See
+`backend/utils/episodes/ARCHITECTURE.md`.
 
 Provider speaker labels are connection-local. Before a live segment enters a
 conversation, listen stamps the actual `stt_provider` and an opaque
@@ -2566,6 +2598,34 @@ owner cards from an older backend are withheld by the client. Visibility stamps
 the exact issued prompt/evidence/segment identity once, even if Yes/No/Skip
 committed first and changed the transcript fingerprint. This bookkeeping never
 clears the consumed marker or restores playback/answer/issuance authority.
+
+### Paid access during speaker browsing
+
+Empty-query speaker search (`speaker_id=user` for Me, or an owned person ID)
+uses the bounded snapshot-cursor conversation scan. Speaker/discard predicates
+run before a request-scoped `PaidLockRecovery` admits historical locked matches;
+otherwise the search helper would discard them before recovery could run.
+The same fresh active-paid/ordinary-allowance policy owns both selection and
+durable access-only writes. BYOK/reviewer overrides cannot authorize recovery,
+and `processing_deferred` backlogs retain their explicit processing choice.
+
+Only the selected response page is unlocked through `update_conversation` under
+the account write fence, before redaction/serialization. Skipped pages, unrelated
+speakers and pagination lookahead are never rewritten. Existing scan/document
+caps, date filters and truncation headers remain unchanged. Free/inactive/
+exhausted matches stay hidden, including in pagination. Authority/persistence
+failures return retryable 503; no transcription, summaries or billing is started.
+Unlocked or unrelated rows add no entitlement dependency. This boundary is shared
+with the list/detail/keyword recovery work in #22031, not a second plan policy.
+
+Verification and rollout checklist:
+
+- [x] First-action HTTP browse for Me and a named person; subsequent detail and
+  a new client lifetime read the durable access patch and original content.
+- [x] Denial, unknown authority, failed-write retry, deferred backlog, bounded
+  page-only writes and truncation regressions exercise production behavior.
+- [ ] Merge/release and privately verify the affected account before closing
+  #20590. Local fixtures do not establish production entitlement or recovery.
 
 ### People-stats aggregate cache
 
@@ -5733,8 +5793,8 @@ effects-only obligations retain their existing coalescing policy. The global
 enabled flag is the kill switch; setting the percentage to zero restores the
 explicit allowlist cohort.
 
-The scheduled backend-sync sweep has `SUMMARY_DEBT_REPAIR_ENABLED=true`.
-It admits at most ten eligible completed server-minimum rows per two-minute
+The scheduled backend-sync sweep is held off in production
+(`SUMMARY_DEBT_REPAIR_ENABLED=false`, deferred 2026-10-20). When enabled, it admits at most ten eligible completed server-minimum rows per two-minute
 tick, rotating a page of at most 100 rows behind a global lease. It respects
 manual edits, deletion, privacy, BYOK, active owners and transcript revisions;
 it neither infers historical title provenance nor overrides finalization jobs.
@@ -6081,6 +6141,42 @@ Listen owns denied PCM before provider replay. Its sink accepts at most 15 secon
 of volatile PCM, persists short encrypted fragments and composes each continuous
 minute into one immutable held source. It freezes staging before composition;
 expired staging and post-publication fragment cleanup resume from server sweeps.
+Live immutable uploads use generation-zero puts and one transport retry, each
+with a 1.5-second socket inactivity timeout and a 4-second async wait deadline
+(including encoding, executor queueing and 412 verification). The upload wait
+therefore returns within 8 seconds plus event-loop scheduling. A late worker
+owns only upload/scratch; only the coordinator can proceed to the unchanged
+Firestore transaction. A 412 is adopted only after generation, bounded size and
+opaque capture metadata verification. Unknown outcomes retain their identity,
+futures and any known generation; recovery never deletes an uncertain source.
+The 8-second bound covers uploading one fragment, not an entire flush: summary
+initialization, capacity, receipt transactions, recovery, sealing, queue draining
+and lock waits retain their existing budgets.
+Transition/resume force-flushes give PCM tails below 250 ms a one-second grace
+from buffer opening. Compatible capture can join before encoding; channel,
+conversation owner, rate, UTC year/month and the existing 100 ms continuity
+check still partition buffers. Real boundary changes publish the old tail;
+close and custody pressure bypass grace. The one-second updater publishes an
+expired deferred tail even without more audio. Normal 15-second custody and
+four-fragment/minute limits are unchanged. `omi_held_content_transition_tail_total`
+has only `outcome=coalesced|sealed`: a deferred tail either receives compatible
+capture or is queued without a neighbour. Short final audio remains valid.
+
+V4 purge retains `terminal_receipts` on the existing
+`users/{uid}/stt_cap_holds/{hold_id}` tombstone. Schema version 1 contains `pieces`
+(an array of opaque SHA-256 piece IDs, `outcome`, source `seconds`, `attempt`,
+`provider`, and `conversation_ids`) plus the union `conversation_ids`.
+Outcomes are `transcribed`, `settled_empty`, `empty_plan` or `failed`; an empty
+VAD plan gets one source entry with attempt 0 and provider null. Ingest proofs
+are re-read before purge because they may be newer than the coordinator's row.
+Only allowlisted fields survive: no audio paths, text, provider results, plans
+or encrypted metadata. The same tombstone retains publication fragment IDs and
+its existing lifetime (no TTL; owner account erasure removes it). A sibling
+collection would split that barrier/retention authority without adding value.
+Legacy non-v4 erasure is unchanged. Failed reconciliation still retains audio.
+A final summary checkpoint writes `seconds=0.0` whenever count becomes zero,
+in the same fenced transaction; positive-count summaries keep fractional seconds.
+
 Pusher receives admitted audio/transcripts and has no duplicate cap-held PCM sink.
 Both lifespans await the lightweight sink registry before background drain/HTTP
 teardown; socket close flushes tails. GKE grace is 120 seconds with a 15-second
@@ -6100,6 +6196,13 @@ intent remains processing after a budget stop; a pre-cutoff unsealed source keep
 that choice open until sealing preserves its original creation/listing times. Only existing
 same-month user/upgrade consent may process audio. Existing UID/hold/text leases,
 cutoffs, reserved estimates, abuse and allowance checks still own admission.
+`STT_CAP_RECOVERY_COHORT`, when present, additionally intersects effective dispatch
+membership for consent/upgrade, API enqueue, redrive owner visits, worker entry,
+manifest recovery and every provider attempt. It shares dispatch's `uid:`, `pct:N`
+and `all` grammar; unset leaves existing scope unchanged and malformed (including
+empty) denies recovery. It never changes listen-side hold admission or staging
+seal/cleanup. The private probe identity is supplied through the private-values
+path, never committed; see [recovery-only probe narrowing](stt-cap-dispatch.md#recovery-only-probe-narrowing).
 Process death cannot erase the choice or require a client wakeup. The fixed
 60-second memory wakeup and processing self-respawn are retired.
 
