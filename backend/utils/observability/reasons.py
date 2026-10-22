@@ -31,6 +31,7 @@ class ReasonFamily(StrEnum):
     LIVE_STT = 'live_stt'
     WORKER_VALIDATION = 'worker_validation'
     RECOVERY_FAILURE = 'recovery_failure'
+    STALE_RECOVERY = 'stale_recovery'
     WORK_OUTCOME = 'work_outcome'
     QUARANTINE = 'quarantine'
     FALLBACK = 'fallback'
@@ -59,6 +60,18 @@ OMI_REASON_TOTAL = Counter(
 for _family in ReasonFamily:  # pre-initialise children so rate() sees them from the first scrape
     REASON_UNKNOWN_TOTAL.labels(family=_family.value)
     OMI_REASON_TOTAL.labels(family=_family.value)
+
+
+class StaleRecoveryOutcome(StrEnum):
+    """Disposition of one reconnect stale-row finalization attempt."""
+
+    UNKNOWN = 'unknown'
+    ACCEPTED = 'accepted'
+    NOT_ADMITTED = 'not_admitted'
+    ERROR = 'error'
+    OVERSIZED_CLOSE_ATTEMPTED = 'oversized_close_attempted'
+    CURRENT_SESSION = 'current_session'
+    CANCELLED = 'cancelled'
 
 
 class RetryReason(StrEnum):
@@ -103,6 +116,17 @@ class TransitionTailOutcome(StrEnum):
     UNKNOWN = 'unknown'
     COALESCED = 'coalesced'
     SEALED = 'sealed'
+
+
+class StagingRetryOutcome(StrEnum):
+    """Disposition of a held-audio staging attempt, including volatile custody."""
+
+    UNKNOWN = 'unknown'
+    RETRIED_OK = 'retried_ok'
+    DEFERRED = 'deferred'
+    EXHAUSTED = 'exhausted'
+    PERMANENT = 'permanent'
+    RETAINED = 'retained'
 
 
 class WorkOutcome(StrEnum):
