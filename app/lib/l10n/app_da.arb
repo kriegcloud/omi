@@ -3822,8 +3822,6 @@
     "playbackAudioUnavailable": "Lyd ikke tilgængelig",
     "playbackAudioLoadFailed": "Lyden kunne ikke indlæses",
     "playbackAudioNetworkFailed": "Tjek forbindelsen",
-    "forYou": "Til dig",
-    "stopThese": "Stop disse",
     "dismiss": "Afvis",
     "syncCardDownloadPercent": "{percent}%",
     "syncCardDownloadPercentSpeed": "{percent}% · {speed} KB/s",
@@ -4471,5 +4469,11 @@
     "retentionOfferAccept": "Bliv for {percent}% rabat",
     "retentionOfferBody": "Bliv og betal {price} om måneden de næste {months} måneder.",
     "retentionOfferApplied": "Færdig. {percent}% rabat de næste {months} måneder.",
-    "othersSpeakerLabel": "Andre"
+    "othersSpeakerLabel": "Andre",
+    "livePreviewLabel": "Live preview",
+    "livePreviewExplanation": "On-device preview. The final transcript replaces it shortly.",
+    "livePreviewListening": "Listening… words appear here as you speak.",
+    "livePreviewStarting": "Starting live preview…",
+    "livePreviewTranscribingTitle": "Transcribing…",
+    "livePreviewTranscribingMessage": "Your transcript appears in Conversations when processing finishes."
 }

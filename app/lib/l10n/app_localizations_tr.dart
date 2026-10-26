@@ -12258,12 +12258,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get playbackAudioNetworkFailed => 'Bağlantıyı Kontrol Edin';
 
   @override
-  String get forYou => 'Sizin İçin';
-
-  @override
-  String get stopThese => 'Bunları Durdur';
-
-  @override
   String get dismiss => 'Gizle';
 
   @override
@@ -14584,4 +14578,22 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get othersSpeakerLabel => 'Diğerleri';
+
+  @override
+  String get livePreviewLabel => 'Live preview';
+
+  @override
+  String get livePreviewExplanation => 'On-device preview. The final transcript replaces it shortly.';
+
+  @override
+  String get livePreviewListening => 'Listening… words appear here as you speak.';
+
+  @override
+  String get livePreviewStarting => 'Starting live preview…';
+
+  @override
+  String get livePreviewTranscribingTitle => 'Transcribing…';
+
+  @override
+  String get livePreviewTranscribingMessage => 'Your transcript appears in Conversations when processing finishes.';
 }

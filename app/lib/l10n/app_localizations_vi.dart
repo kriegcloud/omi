@@ -12245,12 +12245,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get playbackAudioNetworkFailed => 'Kiểm tra kết nối';
 
   @override
-  String get forYou => 'Dành Cho Bạn';
-
-  @override
-  String get stopThese => 'Dừng Loại Này';
-
-  @override
   String get dismiss => 'Ẩn';
 
   @override
@@ -14572,4 +14566,22 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get othersSpeakerLabel => 'Những người khác';
+
+  @override
+  String get livePreviewLabel => 'Live preview';
+
+  @override
+  String get livePreviewExplanation => 'On-device preview. The final transcript replaces it shortly.';
+
+  @override
+  String get livePreviewListening => 'Listening… words appear here as you speak.';
+
+  @override
+  String get livePreviewStarting => 'Starting live preview…';
+
+  @override
+  String get livePreviewTranscribingTitle => 'Transcribing…';
+
+  @override
+  String get livePreviewTranscribingMessage => 'Your transcript appears in Conversations when processing finishes.';
 }

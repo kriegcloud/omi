@@ -3876,8 +3876,6 @@
     "playbackAudioUnavailable": "A hang nem érhető el",
     "playbackAudioLoadFailed": "A hang nem tölthető be",
     "playbackAudioNetworkFailed": "Ellenőrizze a kapcsolatot",
-    "forYou": "Önnek",
-    "stopThese": "Ezek leállítása",
     "dismiss": "Elrejtés",
     "syncCardDownloadPercent": "{percent}%",
     "syncCardDownloadPercentSpeed": "{percent}% · {speed} KB/s",
@@ -4525,5 +4523,11 @@
     "retentionOfferAccept": "Maradj {percent}% kedvezménnyel",
     "retentionOfferBody": "Maradj, és fizess havi {price} összeget a következő {months} hónapban.",
     "retentionOfferApplied": "Kész. {percent}% kedvezmény a következő {months} hónapban.",
-    "othersSpeakerLabel": "Mások"
+    "othersSpeakerLabel": "Mások",
+    "livePreviewLabel": "Live preview",
+    "livePreviewExplanation": "On-device preview. The final transcript replaces it shortly.",
+    "livePreviewListening": "Listening… words appear here as you speak.",
+    "livePreviewStarting": "Starting live preview…",
+    "livePreviewTranscribingTitle": "Transcribing…",
+    "livePreviewTranscribingMessage": "Your transcript appears in Conversations when processing finishes."
 }

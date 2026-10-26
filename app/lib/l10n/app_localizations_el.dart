@@ -12327,12 +12327,6 @@ class AppLocalizationsEl extends AppLocalizations {
   String get playbackAudioNetworkFailed => 'Ελέγξτε τη σύνδεση';
 
   @override
-  String get forYou => 'Για εσάς';
-
-  @override
-  String get stopThese => 'Διακοπή αυτών';
-
-  @override
   String get dismiss => 'Απόρριψη';
 
   @override
@@ -14667,4 +14661,22 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get othersSpeakerLabel => 'Άλλοι';
+
+  @override
+  String get livePreviewLabel => 'Live preview';
+
+  @override
+  String get livePreviewExplanation => 'On-device preview. The final transcript replaces it shortly.';
+
+  @override
+  String get livePreviewListening => 'Listening… words appear here as you speak.';
+
+  @override
+  String get livePreviewStarting => 'Starting live preview…';
+
+  @override
+  String get livePreviewTranscribingTitle => 'Transcribing…';
+
+  @override
+  String get livePreviewTranscribingMessage => 'Your transcript appears in Conversations when processing finishes.';
 }

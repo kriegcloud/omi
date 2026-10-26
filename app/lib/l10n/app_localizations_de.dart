@@ -12342,12 +12342,6 @@ class AppLocalizationsDe extends AppLocalizations {
   String get playbackAudioNetworkFailed => 'Verbindung prüfen';
 
   @override
-  String get forYou => 'Für dich';
-
-  @override
-  String get stopThese => 'Diese stoppen';
-
-  @override
   String get dismiss => 'Ausblenden';
 
   @override
@@ -14680,4 +14674,22 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get othersSpeakerLabel => 'Andere';
+
+  @override
+  String get livePreviewLabel => 'Live preview';
+
+  @override
+  String get livePreviewExplanation => 'On-device preview. The final transcript replaces it shortly.';
+
+  @override
+  String get livePreviewListening => 'Listening… words appear here as you speak.';
+
+  @override
+  String get livePreviewStarting => 'Starting live preview…';
+
+  @override
+  String get livePreviewTranscribingTitle => 'Transcribing…';
+
+  @override
+  String get livePreviewTranscribingMessage => 'Your transcript appears in Conversations when processing finishes.';
 }

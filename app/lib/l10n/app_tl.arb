@@ -11203,8 +11203,6 @@
     "playbackAudioUnavailable": "Hindi Magagamit ang Audio",
     "playbackAudioLoadFailed": "Hindi Ma-load ang Audio",
     "playbackAudioNetworkFailed": "Suriin ang Koneksyon",
-    "forYou": "Para Sa Iyo",
-    "stopThese": "Itigil Ang Mga Ito",
     "dismiss": "Isara",
     "syncCardDownloadPercent": "{percent}%",
     "syncCardDownloadPercentSpeed": "{percent}% · {speed} KB/s",
@@ -11855,5 +11853,11 @@
     "retentionOfferAccept": "Manatili nang may {percent}% diskwento",
     "retentionOfferBody": "Manatili at magbayad ng {price} kada buwan sa susunod na {months} buwan.",
     "retentionOfferApplied": "Tapos na. {percent}% diskwento sa susunod na {months} buwan.",
-    "othersSpeakerLabel": "Iba pa"
+    "othersSpeakerLabel": "Iba pa",
+    "livePreviewLabel": "Live preview",
+    "livePreviewExplanation": "On-device preview. The final transcript replaces it shortly.",
+    "livePreviewListening": "Listening… words appear here as you speak.",
+    "livePreviewStarting": "Starting live preview…",
+    "livePreviewTranscribingTitle": "Transcribing…",
+    "livePreviewTranscribingMessage": "Your transcript appears in Conversations when processing finishes."
 }

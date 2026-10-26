@@ -24,6 +24,7 @@ except ImportError:
     open_dict = None
 
 from config.batch_pipeline_providers import provider_config
+from config.batch_pipeline_empty_asr import safety_net_enabled
 from diarizer.batch_pipeline import (
     PipelineWorker,
     SAMPLE_RATE,
@@ -90,7 +91,7 @@ class ParakeetWords:
         for hypothesis in hypotheses:
             entries = hypothesis.timestamp.get('word', [])
             words = [{'word': w['word'], 'timestamp': [float(w['start']), float(w['end'])]} for w in entries]
-            if hypothesis.text.strip() and not words:
+            if hypothesis.text.strip() and not words and not safety_net_enabled():
                 raise ValueError('Parakeet returned text without word clocks')
             result.append(words)
         return result
@@ -204,12 +205,29 @@ def stt_language(context, *, duration_seconds=None):
     if not isinstance(context, dict) or 'stt_language' not in context:
         return None
     value = context['stt_language']
-    from config.prerecorded_language import MIN_AUDIO_LID_CONFIDENCE, audio_lid_confidence_floor, language_class
+    from config.prerecorded_language import (
+        MIN_AUDIO_LID_CONFIDENCE,
+        audio_lid_confidence_floor,
+        language_class,
+        self_lid_confidence_floor,
+    )
 
     if language_class(value) == 'supported':
         # Older intake copied the app's primary language even in multilingual
         # mode. Such a hint is not proof that this audio is supported.
         evidence, confidence = context.get('stt_language_evidence'), context.get('stt_language_confidence')
+        if evidence == 'self_lid':
+            # Confidence is P(supported) over the Parakeet-25 set, not a top-1
+            # score; its floor needs the recorded probe length, never the unit's.
+            floor = self_lid_confidence_floor(context.get('stt_language_probe_seconds'))
+            if (
+                floor is None
+                or isinstance(confidence, bool)
+                or not isinstance(confidence, (int, float))
+                or not floor <= confidence <= 1
+            ):
+                return None
+            return value if isinstance(value, str) else None
         minimum = audio_lid_confidence_floor(duration_seconds) if evidence == 'audio_lid' else MIN_AUDIO_LID_CONFIDENCE
         if (
             evidence not in ('declared', 'audio_lid')

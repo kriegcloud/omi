@@ -3325,6 +3325,10 @@ export interface McpApiKeyCreated {
   scopes?: Array<string> | null;
 }
 
+export interface McpAuthorizeResponse {
+  auth_url: string;
+}
+
 export interface McpCreateActionItem {
   completed?: boolean;
   description: string;
@@ -4360,6 +4364,18 @@ export interface RecordLlmUsageBucketRequest {
   input_tokens?: number;
   output_tokens?: number;
   total_tokens?: number;
+}
+
+export interface RedeemCodeRequest {
+  code: string;
+}
+
+export interface RedeemCodeResponse {
+  amount_off?: number | null;
+  applies_at?: number | null;
+  currency?: string | null;
+  percent_off?: number | null;
+  status: string;
 }
 
 export interface ReferralClaimRequest {
@@ -6269,6 +6285,8 @@ export interface routers__memories__BatchMemoriesResponse {
 }
 
 export interface routers__payment__PricingOption {
+  billing_total?: string | null;
+  currency?: string;
   description?: string | null;
   eyebrow?: string | null;
   id: string;
@@ -6706,6 +6724,7 @@ export interface OmiApiSchemas {
   "McpApiKey": McpApiKey;
   "McpApiKeyCreate": McpApiKeyCreate;
   "McpApiKeyCreated": McpApiKeyCreated;
+  "McpAuthorizeResponse": McpAuthorizeResponse;
   "McpCreateActionItem": McpCreateActionItem;
   "McpOauthGrantsResponse": McpOauthGrantsResponse;
   "McpPersonMutationResponse": McpPersonMutationResponse;
@@ -6844,6 +6863,8 @@ export interface OmiApiSchemas {
   "Recommendation": Recommendation;
   "RecommendationSubjectKind": RecommendationSubjectKind;
   "RecordLlmUsageBucketRequest": RecordLlmUsageBucketRequest;
+  "RedeemCodeRequest": RedeemCodeRequest;
+  "RedeemCodeResponse": RedeemCodeResponse;
   "ReferralClaimRequest": ReferralClaimRequest;
   "ReferralClaimResponse": ReferralClaimResponse;
   "ReferralLinkResponse": ReferralLinkResponse;
@@ -7743,6 +7764,16 @@ export interface OmiApiPaths {
         "200": AppStatusMessageResponse;
         "401": void;
         "404": void;
+        "422": HTTPValidationError;
+      };
+    };
+  };
+  "/v1/apps/{app_id}/mcp/authorize": {
+    post: {
+      operationId: "authorize_mcp_server_v1_apps__app_id__mcp_authorize_post";
+      responses: {
+        "200": McpAuthorizeResponse;
+        "401": void;
         "422": HTTPValidationError;
       };
     };
@@ -10172,6 +10203,16 @@ export interface OmiApiPaths {
       responses: {
         "200": unknown;
         "401": void;
+      };
+    };
+  };
+  "/v1/payments/redeem-code": {
+    post: {
+      operationId: "redeem_code_endpoint_v1_payments_redeem_code_post";
+      responses: {
+        "200": RedeemCodeResponse;
+        "401": void;
+        "422": HTTPValidationError;
       };
     };
   };
@@ -13669,6 +13710,25 @@ export async function delete_api_key_v1_apps__app_id__keys__key_id__delete(path:
   const _search = "";
   const _res = await fetch(`${_base}${_path}${_search}`, {
     method: "DELETE",
+    headers: {
+      ...(init?.token ? { Authorization: `Bearer ${init.token}` } : {}),
+      ...init?.headers,
+      ...(header.authorization !== undefined ? { "authorization": String(header.authorization) } : {}),
+      ...(header.X_App_Platform !== undefined ? { "X-App-Platform": String(header.X_App_Platform) } : {}),
+      ...(header.X_Device_Id_Hash !== undefined ? { "X-Device-Id-Hash": String(header.X_Device_Id_Hash) } : {}),
+      ...(header.X_App_Version !== undefined ? { "X-App-Version": String(header.X_App_Version) } : {}),
+    },
+  });
+  if (!_res.ok) throw new OmiApiError(_res.status, _res);
+  return _res.status === 204 ? (undefined as any) : await _res.json();
+}
+
+export async function authorize_mcp_server_v1_apps__app_id__mcp_authorize_post(path: { app_id: string }, header: { authorization?: string, X_App_Platform?: string, X_Device_Id_Hash?: string, X_App_Version?: string }, init?: OmiApiClientInit): Promise<McpAuthorizeResponse> {
+  const _base = init?.baseURL ?? "";
+  const _path = `/v1/apps/${path.app_id}/mcp/authorize`;
+  const _search = "";
+  const _res = await fetch(`${_base}${_path}${_search}`, {
+    method: "POST",
     headers: {
       ...(init?.token ? { Authorization: `Bearer ${init.token}` } : {}),
       ...init?.headers,
@@ -18271,7 +18331,7 @@ export async function get_payment_method_status_v1_payment_methods_status_get(he
   return _res.status === 204 ? (undefined as any) : await _res.json();
 }
 
-export async function get_available_plans_endpoint_v1_payments_available_plans_get(header: { X_App_Platform?: string, X_App_Version?: string, authorization?: string, X_Device_Id_Hash?: string }, init?: OmiApiClientInit): Promise<AvailablePlansResponse> {
+export async function get_available_plans_endpoint_v1_payments_available_plans_get(header: { X_App_Platform?: string, X_App_Version?: string, X_Omi_Billing_Currency?: string | null, authorization?: string, X_Device_Id_Hash?: string }, init?: OmiApiClientInit): Promise<AvailablePlansResponse> {
   const _base = init?.baseURL ?? "";
   const _path = `/v1/payments/available-plans`;
   const _search = "";
@@ -18282,6 +18342,7 @@ export async function get_available_plans_endpoint_v1_payments_available_plans_g
       ...init?.headers,
       ...(header.X_App_Platform !== undefined ? { "X-App-Platform": String(header.X_App_Platform) } : {}),
       ...(header.X_App_Version !== undefined ? { "X-App-Version": String(header.X_App_Version) } : {}),
+      ...(header.X_Omi_Billing_Currency !== undefined ? { "X-Omi-Billing-Currency": String(header.X_Omi_Billing_Currency) } : {}),
       ...(header.authorization !== undefined ? { "authorization": String(header.authorization) } : {}),
       ...(header.X_Device_Id_Hash !== undefined ? { "X-Device-Id-Hash": String(header.X_Device_Id_Hash) } : {}),
     },
@@ -18344,6 +18405,27 @@ export async function get_overage_info_endpoint_v1_payments_overage_info_get(hea
       ...(header.X_Device_Id_Hash !== undefined ? { "X-Device-Id-Hash": String(header.X_Device_Id_Hash) } : {}),
       ...(header.X_App_Version !== undefined ? { "X-App-Version": String(header.X_App_Version) } : {}),
     },
+  });
+  if (!_res.ok) throw new OmiApiError(_res.status, _res);
+  return _res.status === 204 ? (undefined as any) : await _res.json();
+}
+
+export async function redeem_code_endpoint_v1_payments_redeem_code_post(header: { authorization?: string, X_App_Platform?: string, X_Device_Id_Hash?: string, X_App_Version?: string }, body: RedeemCodeRequest, init?: OmiApiClientInit): Promise<RedeemCodeResponse> {
+  const _base = init?.baseURL ?? "";
+  const _path = `/v1/payments/redeem-code`;
+  const _search = "";
+  const _res = await fetch(`${_base}${_path}${_search}`, {
+    method: "POST",
+    headers: {
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...(init?.token ? { Authorization: `Bearer ${init.token}` } : {}),
+      ...init?.headers,
+      ...(header.authorization !== undefined ? { "authorization": String(header.authorization) } : {}),
+      ...(header.X_App_Platform !== undefined ? { "X-App-Platform": String(header.X_App_Platform) } : {}),
+      ...(header.X_Device_Id_Hash !== undefined ? { "X-Device-Id-Hash": String(header.X_Device_Id_Hash) } : {}),
+      ...(header.X_App_Version !== undefined ? { "X-App-Version": String(header.X_App_Version) } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
   });
   if (!_res.ok) throw new OmiApiError(_res.status, _res);
   return _res.status === 204 ? (undefined as any) : await _res.json();
@@ -22872,4 +22954,4 @@ export async function get_speech_profile_v4_speech_profile_get(header: { authori
   return _res.status === 204 ? (undefined as any) : await _res.json();
 }
 
-// Total: 526 client methods generated.
+// Total: 528 client methods generated.

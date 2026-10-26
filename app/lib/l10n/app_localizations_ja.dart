@@ -12068,12 +12068,6 @@ class AppLocalizationsJa extends AppLocalizations {
   String get playbackAudioNetworkFailed => '接続を確認してください';
 
   @override
-  String get forYou => 'あなたへのおすすめ';
-
-  @override
-  String get stopThese => 'この種類を停止';
-
-  @override
   String get dismiss => '非表示';
 
   @override
@@ -14366,4 +14360,22 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get othersSpeakerLabel => 'その他';
+
+  @override
+  String get livePreviewLabel => 'Live preview';
+
+  @override
+  String get livePreviewExplanation => 'On-device preview. The final transcript replaces it shortly.';
+
+  @override
+  String get livePreviewListening => 'Listening… words appear here as you speak.';
+
+  @override
+  String get livePreviewStarting => 'Starting live preview…';
+
+  @override
+  String get livePreviewTranscribingTitle => 'Transcribing…';
+
+  @override
+  String get livePreviewTranscribingMessage => 'Your transcript appears in Conversations when processing finishes.';
 }

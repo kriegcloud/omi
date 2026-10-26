@@ -11203,8 +11203,6 @@
     "playbackAudioUnavailable": "ஆடியோ கிடைக்கவில்லை",
     "playbackAudioLoadFailed": "ஆடியோவை ஏற்ற முடியவில்லை",
     "playbackAudioNetworkFailed": "இணைப்பைச் சரிபார்க்கவும்",
-    "forYou": "உங்களுக்காக",
-    "stopThese": "இவற்றை நிறுத்து",
     "dismiss": "மறை",
     "syncCardDownloadPercent": "{percent}%",
     "syncCardDownloadPercentSpeed": "{percent}% · {speed} KB/s",
@@ -11855,5 +11853,11 @@
     "retentionOfferAccept": "{percent}% தள்ளுபடியுடன் தொடருங்கள்",
     "retentionOfferBody": "தொடருங்கள், மாதம் {price} செலுத்துங்கள், அடுத்த {months} மாதங்களுக்கு.",
     "retentionOfferApplied": "முடிந்தது. {percent}% தள்ளுபடி, அடுத்த {months} மாதங்களுக்கு.",
-    "othersSpeakerLabel": "மற்றவர்கள்"
+    "othersSpeakerLabel": "மற்றவர்கள்",
+    "livePreviewLabel": "Live preview",
+    "livePreviewExplanation": "On-device preview. The final transcript replaces it shortly.",
+    "livePreviewListening": "Listening… words appear here as you speak.",
+    "livePreviewStarting": "Starting live preview…",
+    "livePreviewTranscribingTitle": "Transcribing…",
+    "livePreviewTranscribingMessage": "Your transcript appears in Conversations when processing finishes."
 }

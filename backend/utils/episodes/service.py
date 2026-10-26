@@ -11,12 +11,20 @@ Entry points (all synchronous, fail-open, run on a worker thread by callers):
   live stream, or its conversation finalized). Decide the boundary, run the one
   cheap incremental update on the previous state plus this moment's new text,
   and store the result with a compare-and-swap.
+- ``attach_synced_intake``: a sync (WAL) conversation the moment intake
+  persisted it. It joins the live episode covering its span right away, so
+  Home folds it under the live row from its first appearance instead of only
+  after enrichment finishes. Same rules as the finalize-time join: no model
+  call, never opens or closes an episode on its own — but a clip whose covering
+  episode closed on silence (``gap``/``idle``) rejoins it, reopening the
+  episode when nothing newer exists.
 - ``on_conversation_finalized``: the conversation's normal processing has
   completed. Apply any trailing text the live stream did not deliver, then
   reconcile the provisional items heard in it against the tasks that
   processing saved (the shadow precision metric). A sync-finalized
   conversation that never attached (no realtime stream carried it) joins the
-  live episode covering its span here, as a parallel capture.
+  episode covering its span here, as a parallel capture — the safety net
+  for a row that landed before intake could attach it.
 - ``close_on_finalize``: a conversation just ended (a client finalize, or the
   server ending an occasion conversation). Its live episode closes at once, and
   the next words open a new one. The ended conversation never reopens it or
@@ -40,6 +48,7 @@ from uuid import uuid4
 
 from config.episodes import (
     CLOSE_GAP_SECONDS,
+    CONTINUE_GAP_SECONDS,
     LAST_CLOSED_CACHE_SECONDS,
     MOMENT_MIN_INTERVAL_SECONDS,
     MOMENT_MIN_WORDS,
@@ -825,35 +834,57 @@ def _close_for_finalize(
     return 'closed'
 
 
-def _attach_synced(uid: str, conversation_id: str, row: Mapping[str, Any], c: Collaborators) -> str:
-    """A sync-finalized conversation joins the live episode that covers it, and nothing else.
+def _sync_member_updates(
+    episode: Mapping[str, Any],
+    conversation_id: str,
+    source: Optional[str],
+    *,
+    finished: Optional[datetime],
+    started: datetime,
+    now: Optional[datetime] = None,
+) -> dict[str, Any]:
+    """Membership plus the clip's speech as activity: sync speech keeps the occasion's clock honest.
 
-    Offline-sync (WAL) conversations never attach at first words: no realtime
-    stream carries them. When one finalizes inside the live episode's span it
-    joins as a parallel capture — a member, so Home folds it under the live row,
-    whose text the live stream already fed, so no moment and no reconcile. A
-    sync conversation is never an occasion boundary: it cannot close the live
-    episode, cannot open one, and a closed covering episode stays closed.
+    ``commit_moment``/``update_episode`` merge ``last_activity_at`` as a max, so a
+    join racing a live moment can never move the clock backwards.
     """
-    started = policy.utc(row.get('started_at')) or policy.utc(row.get('created_at'))
-    if started is None:
-        return 'no_episode'
-    now = _now(c)
-    episode = _close_stale_current(
-        uid, episodes_db.get_current_episode(uid, firestore_client=c.firestore_client), c, now
-    )
-    if episode is None or conversation_id in (episode.get('conversation_ids') or []):
-        return 'no_episode' if episode is None else 'attached'
+    updates = _with_conversation(episode, conversation_id, source)
+    last = policy.utc(episode.get('last_activity_at'))
+    activity = finished or started
+    if now is not None and activity > now:
+        activity = now  # A pendant clock running ahead must never pin the episode open.
+    if last is None or activity > last:
+        updates['last_activity_at'] = activity
+    return updates
+
+
+def _join_live_synced(
+    uid: str,
+    episode: Mapping[str, Any],
+    conversation_id: str,
+    row: Mapping[str, Any],
+    started: datetime,
+    finished: Optional[datetime],
+    c: Collaborators,
+) -> str:
     episode_started = policy.utc(episode.get('started_at'))
     if episode_started is not None and started < episode_started:
-        # Older audio than this episode: it belongs to an occasion already over.
-        return 'no_episode'
+        # Older audio than this episode's first recorded words still belongs to the
+        # occasion in progress when its span reaches the episode (a parallel capture
+        # that caught the opening words) or it began within the continue gap (the
+        # pendant and the phone clock separately, and the episode's recorded start
+        # can sit slightly after the speech). A clip that ended earlier than that is
+        # an occasion already over.
+        reached = (finished or started) >= episode_started
+        began_within_gap = (episode_started - started).total_seconds() <= CONTINUE_GAP_SECONDS
+        if not (reached or began_within_gap):
+            return 'no_episode'
     source = str(row.get('source') or '') or None
     facts = policy.MomentFacts(
         conversation_id=conversation_id,
         source=source,
         started_at=started,
-        ended_at=policy.utc(row.get('finished_at')) or started,
+        ended_at=finished or started,
         calendar_identity=_calendar_identity(row),
         speakers=frozenset(),
     )
@@ -869,11 +900,157 @@ def _attach_synced(uid: str, conversation_id: str, row: Mapping[str, Any], c: Co
         uid,
         expected_episode_id=str(episode['id']),
         expected_version=episode.get('state_version'),
-        updates=_with_conversation(episode, conversation_id, source),
+        updates=_sync_member_updates(episode, conversation_id, source, finished=finished, started=started, now=_now(c)),
         link_conversation_ids=[conversation_id],
         firestore_client=c.firestore_client,
     )
     return 'joined'
+
+
+def _rejoin_closed_synced(
+    uid: str,
+    conversation_id: str,
+    row: Mapping[str, Any],
+    started: datetime,
+    finished: Optional[datetime],
+    c: Collaborators,
+    *,
+    allow_reopen: bool,
+) -> str:
+    """A late WAL clip lands on the silence-closed episode it belongs to, never a newer one.
+
+    Only ``gap``/``idle`` closes rejoin — silence, not a user's finalize or
+    wrap-up and not a hard boundary. When the closed episode is the most recent
+    one and no newer episode exists it reopens (the occasion's late captures
+    continue it); when a newer episode owns the now, the clip attaches as a
+    member of the closed one without reopening it. Sync still never opens a
+    brand-new episode.
+    """
+    closed = episodes_db.get_last_closed_episode(uid, firestore_client=c.firestore_client)
+    if closed is None or not policy.rejoinable_closed_episode(closed, started, finished):
+        return 'no_episode'
+    source = str(row.get('source') or '') or None
+    if allow_reopen and finished is not None and (_now(c) - finished).total_seconds() >= policy.CLOSE_GAP_SECONDS:
+        # Speech already older than the close gap (a backfill) would only make the
+        # episode live until the next read re-closes it: attach as a member instead.
+        allow_reopen = False
+    if allow_reopen:
+        reopened = episodes_db.reopen_episode(
+            uid,
+            str(closed['id']),
+            expected_version=int(closed.get('state_version') or 0),
+            updates=_sync_member_updates(
+                closed, conversation_id, source, finished=finished, started=started, now=_now(c)
+            ),
+            link_conversation_ids=[conversation_id],
+            firestore_client=c.firestore_client,
+        )
+        if reopened is not None:
+            metrics.record_boundary('sync_rejoin')
+            return 'rejoined'
+        # The reopen lost its race (a newer episode went live, or this episode
+        # already reopened): attach to the episode as it stands now.
+        closed = episodes_db.get_episode(uid, str(closed['id']), firestore_client=c.firestore_client)
+        if closed is None:
+            return 'no_episode'
+        if conversation_id in (closed.get('conversation_ids') or []):
+            return 'rejoined'
+    episodes_db.update_episode(
+        uid,
+        str(closed['id']),
+        expected_version=int(closed.get('state_version') or 0),
+        updates=_sync_member_updates(closed, conversation_id, source, finished=finished, started=started, now=_now(c)),
+        link_conversation_ids=[conversation_id],
+        firestore_client=c.firestore_client,
+    )
+    metrics.record_boundary('sync_rejoin_member')
+    return 'rejoined_member'
+
+
+def _attach_synced(uid: str, conversation_id: str, row: Mapping[str, Any], c: Collaborators) -> str:
+    """A sync-finalized conversation joins the episode covering it, live or silence-closed.
+
+    Offline-sync (WAL) conversations never attach at first words: no realtime
+    stream carries them. When one lands inside the live episode's span it joins
+    as a parallel capture — a member, so Home folds it under the live row, whose
+    text the live stream already fed, so no moment and no reconcile. Its speech
+    also extends the episode's last activity, so an idle close cannot fire while
+    sync speech keeps landing late. When the covering episode already closed on
+    silence (``gap``/``idle``) the clip rejoins it (``_rejoin_closed_synced``).
+    A sync conversation is never an occasion boundary: it cannot close the live
+    episode, cannot open one, and a user, wrap-up or hard-boundary close stays
+    closed.
+    """
+    started = policy.utc(row.get('started_at')) or policy.utc(row.get('created_at'))
+    if started is None:
+        return 'no_episode'
+    finished = policy.utc(row.get('finished_at'))
+    now = _now(c)
+    episode = _close_stale_current(
+        uid, episodes_db.get_current_episode(uid, firestore_client=c.firestore_client), c, now
+    )
+    if episode is not None:
+        if conversation_id in (episode.get('conversation_ids') or []):
+            return 'attached'
+        if _join_live_synced(uid, episode, conversation_id, row, started, finished, c) == 'joined':
+            return 'joined'
+        # The clip does not meet this live episode (older audio, an ambiguous
+        # gap): it may belong to the closed occasion before it.
+        return _rejoin_closed_synced(uid, conversation_id, row, started, finished, c, allow_reopen=False)
+    return _rejoin_closed_synced(uid, conversation_id, row, started, finished, c, allow_reopen=True)
+
+
+def attach_synced_intake(
+    uid: str,
+    conversation_id: str,
+    row: Mapping[str, Any],
+    *,
+    collaborators: Optional[Collaborators] = None,
+) -> str:
+    """A sync conversation at the moment intake persisted it: join the episode covering it now.
+
+    Without this, a landed WAL clip stays a standalone Home row until its
+    enrichment finalizes (``on_conversation_finalized``), which offline sync
+    can leave minutes behind. The join is the same one the finalize-time path
+    makes (``_attach_synced``): no model call, never opens an episode, joins
+    only the current live episode covering its span or rejoins the
+    silence-closed one it belongs to, and a conversation already owned by an
+    episode (live or closed) never moves.
+    Fail-open; returns a bounded outcome label; never raises.
+    """
+    c = collaborators or Collaborators()
+    if not episodes_enabled_for(uid) or not conversation_id:
+        return 'disabled'
+    try:
+        if not client_gate.client_seen_cached(uid):
+            return 'skipped_no_client'
+        if row.get('discarded') or row.get('deleted') or row.get('sync_merged_into'):
+            # A discarded fragment or a merge donor never joins (the finalize path's rule).
+            return 'skipped_discarded'
+        _repoint_sync_donors(uid, conversation_id, row, c)
+        owner = episodes_db.get_episode_for_conversation(uid, conversation_id, firestore_client=c.firestore_client)
+        if owner is not None:
+            return 'attached' if policy.is_live(owner) else 'no_episode'
+        return _attach_synced(uid, conversation_id, row, c)
+    except Exception as error:
+        logger.warning('event=episode_sync_intake_attach outcome=error exception_type=%s', type(error).__name__)
+        return 'error'
+
+
+def _repoint_sync_donors(uid: str, survivor_id: str, row: Mapping[str, Any], c: Collaborators) -> None:
+    """Sync intake merged earlier clips into this one: live-episode members follow the survivor.
+
+    Clips join at intake, so a donor can already be a member when a later
+    segment folds it into the canonical row (``sync_merged_from``). Same
+    repoint as a smart-merge donor, so Home never keeps a dead member.
+    """
+    donors = [str(d) for d in (row.get('sync_merged_from') or []) if d and str(d) != survivor_id]
+    for donor_id in donors:
+        episode = episodes_db.get_current_episode(uid, firestore_client=c.firestore_client)
+        if episode is None or not policy.is_live(episode):
+            return
+        if donor_id in (episode.get('conversation_ids') or []):
+            _repoint_absorbed(uid, episode, donor_id, survivor_id, c)
 
 
 def _on_finalized(

@@ -11203,8 +11203,6 @@
     "playbackAudioUnavailable": "ఆడియో అందుబాటులో లేదు",
     "playbackAudioLoadFailed": "ఆడియో లోడ్ చేయలేకపోయింది",
     "playbackAudioNetworkFailed": "కనెక్షన్‌ను తనిఖీ చేయండి",
-    "forYou": "మీ కోసం",
-    "stopThese": "వీటిని ఆపండి",
     "dismiss": "దాచు",
     "syncCardDownloadPercent": "{percent}%",
     "syncCardDownloadPercentSpeed": "{percent}% · {speed} KB/s",
@@ -11855,5 +11853,11 @@
     "retentionOfferAccept": "{percent}% తగ్గింపుతో కొనసాగండి",
     "retentionOfferBody": "కొనసాగండి, నెలకు {price} చెల్లించండి, తదుపరి {months} నెలలు.",
     "retentionOfferApplied": "పూర్తైంది. {percent}% తగ్గింపు, తదుపరి {months} నెలలు.",
-    "othersSpeakerLabel": "ఇతరులు"
+    "othersSpeakerLabel": "ఇతరులు",
+    "livePreviewLabel": "Live preview",
+    "livePreviewExplanation": "On-device preview. The final transcript replaces it shortly.",
+    "livePreviewListening": "Listening… words appear here as you speak.",
+    "livePreviewStarting": "Starting live preview…",
+    "livePreviewTranscribingTitle": "Transcribing…",
+    "livePreviewTranscribingMessage": "Your transcript appears in Conversations when processing finishes."
 }

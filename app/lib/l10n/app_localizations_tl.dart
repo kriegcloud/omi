@@ -12348,12 +12348,6 @@ class AppLocalizationsTl extends AppLocalizations {
   String get playbackAudioNetworkFailed => 'Suriin ang Koneksyon';
 
   @override
-  String get forYou => 'Para Sa Iyo';
-
-  @override
-  String get stopThese => 'Itigil Ang Mga Ito';
-
-  @override
   String get dismiss => 'Isara';
 
   @override
@@ -14686,4 +14680,22 @@ class AppLocalizationsTl extends AppLocalizations {
 
   @override
   String get othersSpeakerLabel => 'Iba pa';
+
+  @override
+  String get livePreviewLabel => 'Live preview';
+
+  @override
+  String get livePreviewExplanation => 'On-device preview. The final transcript replaces it shortly.';
+
+  @override
+  String get livePreviewListening => 'Listening… words appear here as you speak.';
+
+  @override
+  String get livePreviewStarting => 'Starting live preview…';
+
+  @override
+  String get livePreviewTranscribingTitle => 'Transcribing…';
+
+  @override
+  String get livePreviewTranscribingMessage => 'Your transcript appears in Conversations when processing finishes.';
 }

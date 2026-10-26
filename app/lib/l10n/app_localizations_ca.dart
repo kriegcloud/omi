@@ -12313,12 +12313,6 @@ class AppLocalizationsCa extends AppLocalizations {
   String get playbackAudioNetworkFailed => 'Comprova la connexió';
 
   @override
-  String get forYou => 'Per a tu';
-
-  @override
-  String get stopThese => 'Atura aquests';
-
-  @override
   String get dismiss => 'Descarta';
 
   @override
@@ -14646,4 +14640,22 @@ class AppLocalizationsCa extends AppLocalizations {
 
   @override
   String get othersSpeakerLabel => 'Altres';
+
+  @override
+  String get livePreviewLabel => 'Live preview';
+
+  @override
+  String get livePreviewExplanation => 'On-device preview. The final transcript replaces it shortly.';
+
+  @override
+  String get livePreviewListening => 'Listening… words appear here as you speak.';
+
+  @override
+  String get livePreviewStarting => 'Starting live preview…';
+
+  @override
+  String get livePreviewTranscribingTitle => 'Transcribing…';
+
+  @override
+  String get livePreviewTranscribingMessage => 'Your transcript appears in Conversations when processing finishes.';
 }

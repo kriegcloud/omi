@@ -12261,12 +12261,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get playbackAudioNetworkFailed => 'کنکشن چیک کریں';
 
   @override
-  String get forYou => 'آپ کے لیے';
-
-  @override
-  String get stopThese => 'یہ روکیں';
-
-  @override
   String get dismiss => 'چھپائیں';
 
   @override
@@ -14584,4 +14578,22 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get othersSpeakerLabel => 'دیگر';
+
+  @override
+  String get livePreviewLabel => 'Live preview';
+
+  @override
+  String get livePreviewExplanation => 'On-device preview. The final transcript replaces it shortly.';
+
+  @override
+  String get livePreviewListening => 'Listening… words appear here as you speak.';
+
+  @override
+  String get livePreviewStarting => 'Starting live preview…';
+
+  @override
+  String get livePreviewTranscribingTitle => 'Transcribing…';
+
+  @override
+  String get livePreviewTranscribingMessage => 'Your transcript appears in Conversations when processing finishes.';
 }

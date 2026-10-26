@@ -12279,12 +12279,6 @@ class AppLocalizationsBe extends AppLocalizations {
   String get playbackAudioNetworkFailed => 'Праверце злучэнне';
 
   @override
-  String get forYou => 'Для вас';
-
-  @override
-  String get stopThese => 'Спыніць гэта';
-
-  @override
   String get dismiss => 'Схаваць';
 
   @override
@@ -14606,4 +14600,22 @@ class AppLocalizationsBe extends AppLocalizations {
 
   @override
   String get othersSpeakerLabel => 'Іншыя';
+
+  @override
+  String get livePreviewLabel => 'Live preview';
+
+  @override
+  String get livePreviewExplanation => 'On-device preview. The final transcript replaces it shortly.';
+
+  @override
+  String get livePreviewListening => 'Listening… words appear here as you speak.';
+
+  @override
+  String get livePreviewStarting => 'Starting live preview…';
+
+  @override
+  String get livePreviewTranscribingTitle => 'Transcribing…';
+
+  @override
+  String get livePreviewTranscribingMessage => 'Your transcript appears in Conversations when processing finishes.';
 }

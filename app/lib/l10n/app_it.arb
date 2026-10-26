@@ -3780,8 +3780,6 @@
     "playbackAudioUnavailable": "Audio non disponibile",
     "playbackAudioLoadFailed": "Impossibile caricare l'audio",
     "playbackAudioNetworkFailed": "Controlla la connessione",
-    "forYou": "Per te",
-    "stopThese": "Interrompi questi",
     "dismiss": "Ignora",
     "syncCardDownloadPercent": "{percent}%",
     "syncCardDownloadPercentSpeed": "{percent}% · {speed} KB/s",
@@ -4429,5 +4427,11 @@
     "retentionOfferAccept": "Resta con il {percent}% di sconto",
     "retentionOfferBody": "Resta e paga {price} al mese per i prossimi {months} mesi.",
     "retentionOfferApplied": "Fatto. {percent}% di sconto per i prossimi {months} mesi.",
-    "othersSpeakerLabel": "Altri"
+    "othersSpeakerLabel": "Altri",
+    "livePreviewLabel": "Live preview",
+    "livePreviewExplanation": "On-device preview. The final transcript replaces it shortly.",
+    "livePreviewListening": "Listening… words appear here as you speak.",
+    "livePreviewStarting": "Starting live preview…",
+    "livePreviewTranscribingTitle": "Transcribing…",
+    "livePreviewTranscribingMessage": "Your transcript appears in Conversations when processing finishes."
 }

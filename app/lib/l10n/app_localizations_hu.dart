@@ -12295,12 +12295,6 @@ class AppLocalizationsHu extends AppLocalizations {
   String get playbackAudioNetworkFailed => 'Ellenőrizze a kapcsolatot';
 
   @override
-  String get forYou => 'Önnek';
-
-  @override
-  String get stopThese => 'Ezek leállítása';
-
-  @override
   String get dismiss => 'Elrejtés';
 
   @override
@@ -14629,4 +14623,22 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get othersSpeakerLabel => 'Mások';
+
+  @override
+  String get livePreviewLabel => 'Live preview';
+
+  @override
+  String get livePreviewExplanation => 'On-device preview. The final transcript replaces it shortly.';
+
+  @override
+  String get livePreviewListening => 'Listening… words appear here as you speak.';
+
+  @override
+  String get livePreviewStarting => 'Starting live preview…';
+
+  @override
+  String get livePreviewTranscribingTitle => 'Transcribing…';
+
+  @override
+  String get livePreviewTranscribingMessage => 'Your transcript appears in Conversations when processing finishes.';
 }

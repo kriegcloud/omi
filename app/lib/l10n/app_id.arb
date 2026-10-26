@@ -3815,8 +3815,6 @@
     "playbackAudioUnavailable": "Audio Tidak Tersedia",
     "playbackAudioLoadFailed": "Audio Tidak Dapat Dimuat",
     "playbackAudioNetworkFailed": "Periksa Koneksi",
-    "forYou": "Untuk Anda",
-    "stopThese": "Hentikan Ini",
     "dismiss": "Tutup",
     "syncCardDownloadPercent": "{percent}%",
     "syncCardDownloadPercentSpeed": "{percent}% · {speed} KB/s",
@@ -4464,5 +4462,11 @@
     "retentionOfferAccept": "Tetap dengan diskon {percent}%",
     "retentionOfferBody": "Tetap dan bayar {price} per bulan selama {months} bulan ke depan.",
     "retentionOfferApplied": "Selesai. Diskon {percent}% untuk {months} bulan ke depan.",
-    "othersSpeakerLabel": "Lainnya"
+    "othersSpeakerLabel": "Lainnya",
+    "livePreviewLabel": "Live preview",
+    "livePreviewExplanation": "On-device preview. The final transcript replaces it shortly.",
+    "livePreviewListening": "Listening… words appear here as you speak.",
+    "livePreviewStarting": "Starting live preview…",
+    "livePreviewTranscribingTitle": "Transcribing…",
+    "livePreviewTranscribingMessage": "Your transcript appears in Conversations when processing finishes."
 }
