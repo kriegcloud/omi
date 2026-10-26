@@ -1,5 +1,6 @@
 from database import sync_redrive
 from database.sync_snapshot_resolve_cache import sync_snapshot_resolve_job
+from database.legal_holds import DestructiveOperationInProgress
 from utils.sync import minimal_redrive, redrive_policy, playback_build
 from utils.capture.coverage_endpoint import router as coverage_router
 from utils.observability.sync_phases import sync_attempt, set_sync_metrics_lane
@@ -43,6 +44,7 @@ from database import sync_dead_letters
 from database import sync_backfill_sequencer
 from database import users as users_db
 from database.memories import historical_scan_memo_scope
+from database.firestore_transaction_retry import transaction_retry_deadline_scope
 from database.firestore_read_metrics import FirestoreReadSite
 from database.firestore_read_origin import read_origin
 from database.sync_jobs import (
@@ -127,9 +129,11 @@ from utils.fair_use import (
     trigger_classifier_if_needed,
 )
 from utils.observability.fallback import record_fallback
+from utils.observability.reasons import ReasonFamily, SyncDispatchFailureReason, reason_label
 from utils.multipart import MultipartMaxPartSizeRoute, SYNC_AUDIO_MAX_PART_SIZE, max_part_size
 from utils.metrics import (
     OMI_SYNC_DISPATCH_ATTEMPTS_TOTAL,
+    OMI_SYNC_DISPATCH_FAILURES_TOTAL,
     OMI_SYNC_JOB_POLL_REQUESTS_TOTAL,
     OMI_SYNC_JOB_POLL_THROTTLED_TOTAL,
     OMI_SYNC_LANE_JOBS_TOTAL,
@@ -222,6 +226,26 @@ from utils.sync.provenance import capture_matches_server_conversation as _captur
 from utils.sync import cap_hold_redrive
 
 logger = logging.getLogger(__name__)
+
+# Give short account-operation fences a chance to clear before asking the
+# client to pause. Persistent holds use a short, bounded in-request recheck.
+SYNC_DISPATCH_HOLD_RETRY_AFTER_SECONDS = 60
+SYNC_DISPATCH_HOLD_RECHECK_SECONDS = 2.0
+SYNC_DISPATCH_HOLD_RECHECK_INTERVAL_SECONDS = 0.1
+
+
+async def _stage_files_to_gcs_with_hold_recheck(paths: List[str]) -> None:
+    deadline = time.monotonic() + SYNC_DISPATCH_HOLD_RECHECK_SECONDS
+    while True:
+        try:
+            await run_blocking(sync_executor, _stage_files_to_gcs, paths)
+            return
+        except DestructiveOperationInProgress:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise
+            await asyncio.sleep(min(SYNC_DISPATCH_HOLD_RECHECK_INTERVAL_SECONDS, remaining))
+
 
 # Audio constants
 AUDIO_SAMPLE_RATE = 16000
@@ -1486,10 +1510,23 @@ async def sync_local_files_v2(
                 # sync_executor, NOT storage_executor — same reasoning as the
                 # file save above (#7372): a saturated storage pool would queue
                 # the staging upload and delay the 202.
-                await run_blocking(sync_executor, _stage_files_to_gcs, owned_paths)
+                await _stage_files_to_gcs_with_hold_recheck(owned_paths)
             except Exception as e:
-                logger.error(
-                    'event=sync_dispatch outcome=staging_failed lane=%s exception_type=%s',
+                dispatch_hold = isinstance(e, DestructiveOperationInProgress)
+                dispatch_reason = (
+                    SyncDispatchFailureReason.DISPATCH_HOLD
+                    if dispatch_hold
+                    else SyncDispatchFailureReason.STAGING_FAILED
+                )
+                failure_reason = dispatch_reason.value
+                OMI_SYNC_DISPATCH_FAILURES_TOTAL.labels(
+                    reason=reason_label(ReasonFamily.SYNC_DISPATCH, dispatch_reason, SyncDispatchFailureReason)
+                ).inc()
+                logger.log(
+                    logging.INFO if dispatch_hold else logging.ERROR,
+                    'event=sync_dispatch outcome=%s reason=%s lane=%s exception_type=%s',
+                    'held' if dispatch_hold else 'staging_failed',
+                    failure_reason,
                     lane_decision.lane.value,
                     type(e).__name__,
                 )
@@ -1502,7 +1539,7 @@ async def sync_local_files_v2(
                     job_id=job_id,
                     uid=uid,
                     content_id=content_id,
-                    error_code='sync_dispatch_staging_failed',
+                    error_code='dispatch_hold' if dispatch_hold else 'sync_dispatch_staging_failed',
                     outcome=TranscriptionOutcome.UPSTREAM_ERROR,
                     provider='unknown',
                     model='unknown',
@@ -1511,6 +1548,18 @@ async def sync_local_files_v2(
                 if backfill_slot_acquired:
                     await run_blocking(db_executor, release_backfill_slot, uid, job_id)
                     backfill_slot_acquired = False
+                if dispatch_hold:
+                    return JSONResponse(
+                        status_code=503,
+                        headers={
+                            'Retry-After': str(SYNC_DISPATCH_HOLD_RETRY_AFTER_SECONDS),
+                            'X-Omi-Rate-Limit-Reason': failure_reason,
+                        },
+                        content={
+                            'code': 'dispatch_hold',
+                            'detail': 'Sync dispatch is temporarily paused; local audio was not consumed',
+                        },
+                    )
                 return JSONResponse(
                     status_code=503,
                     headers={'Retry-After': '30'},
@@ -2429,6 +2478,13 @@ async def run_sync_job(request: Request, task_retry_count: int = Depends(verify_
 # this cap exists to prevent.
 SYNC_JOB_RESPONSE_MARGIN_SECONDS = 120.0
 SYNC_JOB_ROUTE_TIMEOUT_SECONDS = float(os.environ.get('HTTP_SYNC_JOBS_RUN_TIMEOUT') or 1500)
+# Kept below the handler budget for Firestore transaction retries (deadline-
+# aware contention budget in database/firestore_transaction_retry.py): retries
+# stop while the remaining budget cannot cover the next attempt's reserve, and
+# this margin absorbs the one in-flight attempt the helper cannot stop (a
+# started chain ends within Firestore's 270 s lifetime), leaving time for
+# finalization and the response.
+SYNC_TRANSACTION_RETRY_SAFETY_MARGIN_SECONDS = 120.0
 
 
 def _resolve_sync_job_handler_budget(
@@ -2990,9 +3046,20 @@ async def _run_sync_job_body(request: Request, task_retry_count: int, attempt_st
         else SYNC_JOB_HANDLER_BUDGET_SECONDS
     )
     budget = asyncio.timeout(remaining)
+    # Firestore transaction retries under this attempt stop with the request
+    # budget's remaining time minus a margin for post-transaction pipeline
+    # work (finalization, response): run_blocking copies the scoped deadline
+    # into every executor leaf, so the retry budget can never outlive the
+    # attempt wall even though a cancelled blocking leaf cannot be interrupted.
+    retry_deadline = (
+        anchored_deadline
+        if isinstance(anchored_deadline, float)
+        else time.monotonic() + SYNC_JOB_HANDLER_BUDGET_SECONDS
+    ) - SYNC_TRANSACTION_RETRY_SAFETY_MARGIN_SECONDS
     try:
-        async with budget:
-            return await _run_sync_job_attempt(request, task_retry_count, state)
+        with transaction_retry_deadline_scope(retry_deadline):
+            async with budget:
+                return await _run_sync_job_attempt(request, task_retry_count, state)
     except TimeoutError:
         if not budget.expired():
             raise
@@ -3786,7 +3853,7 @@ async def run_audio_merge_job(request: Request, task_retry_count: int = Depends(
         if playback_on_demand():
             PLAYBACK_BUILDS.labels('file', 'built').inc()
             record_playback_ready(payload, 'file')
-        logger.info(f'audio_merge: built artifact conv={conversation_id} file={audio_file_id} size={len(mp3_data)}')
+        logger.debug(f'audio_merge: built artifact conv={conversation_id} file={audio_file_id} size={len(mp3_data)}')
         return JSONResponse(status_code=200, content={'status': 'done'})
     finally:
         await run_blocking(db_executor, release_job_run_lock, lock_key, lock_token)
