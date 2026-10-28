@@ -39,9 +39,11 @@ Halt and resume change status only. Country-targeted mutations are explicitly un
 Play allows `countryTargeting` only on `inProgress` releases, and stripping it would change
 more than status. Use an approved Play Console procedure for those releases. A brake
 commit uses `ERROR_IF_IN_REVIEW` to refuse cancellation/resubmission of existing
-reviews and `changesNotSentForReview` (Play rejects this app's automated commits
-without it), so a brake edit lands held: send it from Play Console →
-Publishing overview → Send for review, like every other committed change.
+reviews; `changesNotSentForReview` is attached only while
+`promote.CHANGES_NOT_SENT_FOR_REVIEW` is True (held-changes mode, on since
+2026-10-28 after Codemagic's internal Play publishing failed with "Changes
+cannot be sent for review automatically"). The brake follows the shared
+constant so its commit joins the same Console review queue as other Play edits.
 Readback must match the complete expected production track, including its original fraction.
 Unused-edit cleanup failures emit a static warning without hiding a verified result.
 

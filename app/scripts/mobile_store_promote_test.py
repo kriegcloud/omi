@@ -23,6 +23,9 @@ BUILD_TAG = "v1.2.3+456-android-cm"
 
 
 class InputTests(unittest.TestCase):
+    def test_play_commits_are_held_for_console_review_by_default(self):
+        self.assertTrue(promote.CHANGES_NOT_SENT_FOR_REVIEW)
+
     def test_android_build_tag_must_bind_to_the_promoted_version(self):
         self.assertEqual(promote.require_build_tag(BUILD_TAG, "1.2.3"), BUILD_TAG)
         for invalid in (
@@ -333,6 +336,32 @@ class AndroidChecks(unittest.TestCase):
             packageName="com.friend.ios", editId="edit-id", changesNotSentForReview=True
         )
         client.edits().delete.assert_not_called()
+
+    def test_held_mode_still_holds_the_internal_to_alpha_commit(self):
+        # Pin the held path explicitly; the separate default test records the
+        # currently required operational setting.
+        client = Mock()
+        internal_release = {
+            "name": f"{BUILD_TAG} [{BUILD_ID}]",
+            "versionCodes": ["23"],
+            "status": "completed",
+        }
+        client.edits().tracks().update.return_value.execute.return_value = {
+            "track": "alpha",
+            "releases": [internal_release],
+        }
+        with patch.object(promote, "CHANGES_NOT_SENT_FOR_REVIEW", True), patch.object(
+            promote,
+            "play_track",
+            side_effect=[
+                {"track": "internal", "releases": [internal_release]},
+                {"track": "alpha", "releases": []},
+            ],
+        ):
+            promote.promote_internal_android_to_alpha(client, "edit-id", "1.2.3", "23", BUILD_TAG, BUILD_ID)
+        client.edits().commit.assert_called_once_with(
+            packageName="com.friend.ios", editId="edit-id", changesNotSentForReview=True
+        )
 
     def test_internal_to_alpha_refuses_wrong_build_without_update_or_commit(self):
         client = Mock()

@@ -808,9 +808,9 @@ class ReleaseNotesTests(unittest.TestCase):
 
 class AndroidTests(unittest.TestCase):
     def setUp(self):
-        # Ladder-mechanics tests run with held-changes mode off; the dedicated
-        # held-mode tests below patch promote.CHANGES_NOT_SENT_FOR_REVIEW back
-        # to the module default (True) explicitly.
+        # Ladder-mechanics tests pin held-changes mode off so they exercise
+        # automatic hop mechanics; the dedicated held-mode tests below patch
+        # promote.CHANGES_NOT_SENT_FOR_REVIEW to True explicitly.
         held_off = patch.object(promote, "CHANGES_NOT_SENT_FOR_REVIEW", False)
         held_off.start()
         self.addCleanup(held_off.stop)
