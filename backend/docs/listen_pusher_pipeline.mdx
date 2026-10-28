@@ -7427,7 +7427,28 @@ Explicit restore and its persisted user-kept marker reach classification before
 the media minimum, so later reprocessing cannot hide a restored card again.
 
 Notes do not bind a likely speaker suggestion to a name: likely and unknown
-voices remain anonymous, with statements attributed as "someone said".
+voices remain anonymous, with statements attributed as "someone said". A narrow
+notes-only exception supports the one remote voice on a desktop call when capture
+already identifies the owner, there are exactly two same-scope speaker clusters,
+and in-call screen rows contain exactly one credible human remote tile name and
+no agent tiles. The packet supplies `screen_speaker_bindings` with the speaker key,
+name and screen evidence for the notes participant citation. This does not change
+People records, stored speaker labels, or voice identity. Calendar invitees,
+profile pages and legacy screen listings alone cannot authorize this exception.
+Only stored screen-activity rows authorize `participant_sources.observed_call_tiles`:
+create/process and meeting-upload requests strip caller-supplied provenance. The
+resolver discards earlier tile evidence and recomputes it from the current screen
+read. Tile provenance stores names only; meeting GET endpoints omit that internal
+source. Without synced screen evidence, attribution stays anonymous.
+The gate abstains when the roster/calendar has multiple remote humans, including
+namesakes. Duplicate tile labels also abstain. Tile persistence uses the latest
+call window and five minutes of sightings; a name must still appear in the latest
+frame, and a new label cannot lose to an older label's vote count. The captured
+owner's key comes from its owner-marked cluster; conflicting display mappings
+abstain. Both agentic and one-shot packets carry the same explicit binding.
+Both screen extractors exclude all observed app/window titles and browser-tab OCR
+above a Meet address; owner filtering also runs after roster/email extraction.
+The shared call-tile vectors pin the 10-28 incident lists in Python and Swift.
 
 Shared prompt roles (`utils/conversations/owner_attribution.speaker_role_map`)
 now require positive owner/manual evidence and scope-qualified cluster IDs in
@@ -7470,6 +7491,53 @@ Memory/task entrypoints and daily/simple/comprehensive recaps use the same
 eligibility helper. Restoring a recording protects it, reclassification clears
 its exclusion, and successful reprocessing clears the terminal marker. Shadow
 preserves transcripts, labels and derived output; it never writes media edges.
+Required-memory normalization consults this same persisted media policy even
+when `SPEAKER_EVIDENCE_MODE` is off. Automatic sources read at most four
+conversation documents, reusing each document within the admission call;
+explicit user assertions retain their separate authority. The read bound counts
+distinct readable source documents, so repeated evidence for one source reads
+it once. Stored keep/restore and `has_photos` markers, inline photos and user
+titles outrank an older
+media label at every derived gate. Current manual owner anchors use P2's scoped
+roles and the existing owner-duration floor; ambiguous/unscoped manual owner
+anchors abstain from media exclusion without granting owner attribution. These
+read-time protections never rewrite the stored classification.
+The photo marker protects without fetching the photos subcollection; both the
+classification adapter and required-memory read path honor it.
+Media admission does
+not confer owner attribution: the independent speaker policy still consumes
+P2's shared `owner_attribution` role projection when serving. Outside serving,
+bounded media-only reads use the existing 5% uid shadow sample, return the
+legacy revision mapping and cannot defer normalization on a read error.
+All derived wrappers now reach the shared gate in shadow. Aggregate/text-free
+`media_classification`, `media_derived_admission` and `batch_media_admission`
+logs expose bounded reasons and serving status; they contain no transcript,
+account or speaker identifiers. Existing `omi_media_noise_shadow_total`
+consumer/classification counters remain the parity/error surface.
+
+Batch `projection.build_incoming` uses the same narrow transcript admission as
+legacy sync after grouping and stable ID/clock assignment. Off and shadow at
+zero serving preserve the complete incoming row. Serving filters only existing
+marker/credit/repetition rules; an all-filtered part takes the existing empty
+projection receipt, without an empty conversation, re-transcription or a new
+paid call. Original results keep the existing artifact retention policy and
+measured VAD accounting is retained.
+There is no language-profile rejection or music classifier. Missing/partial/
+stale speaker evidence remains unknown; plausible owner speech, attended calls
+and explicit keep/restore protections still precede media suppression.
+
+P3 ships observationally: `MEDIA_NOISE_MODE=shadow`,
+`MEDIA_NOISE_MODE_SERVE_PERCENT=0`, digest cohort empty (the existing defaults).
+Only the rollout lead may expand after protected synthetic/authorized fixture
+review and a full 24-hour shadow window where available by Oct 29 12:00Z.
+With consumer parity green, understood reason/error rates and no validated
+false suppression, target 5% by Oct 30 12:00Z, 25% after six clean hours, and
+100% by Oct 31 12:00Z. Insufficient evidence blocks expansion and requires a
+renewed dated promise. Any false owner promotion or lost good speech/task
+stops the ramp; rollback is percent 0 plus empty digests in shadow, or mode
+off to stop observations too. Arbitrary music hallucination and instrument-only
+or Android media without reliable evidence remain lead-owned follow-ups;
+this gate does not repair historical derived output.
 On clients with the existing Show discarded/restore capability (currently
 iOS/Android), both media and noise minima are hidden from the default feed.
 Bystander classification uses noise. Explicit keep/restore overrides automatic
@@ -7695,3 +7763,54 @@ log UID-scoped metadata only; parser failures happen before authentication and
 are classified by the client's registered `WAL Upload Refused` event. The mobile
 ledger retains audio and retries on a persisted daily schedule for seven days,
 then retains it as reported without requesting per-row user action.
+
+### P4: grounded task descriptions and valid conversation sources
+
+The existing notes extraction call asks for self-contained actions and outcomes,
+using cited context and P2's shared speaker-role projection. No second model pass
+or independent identity map is added; a name is not required for "Buy milk".
+The final narrow reference policy runs after `action_item_v2.select_items`.
+It considers extraction context and exact cited transcript rows; it preserves
+context-resolved references and abstains when the earlier desktop prefilter lacks
+the cited capture context. The conversation capture adapter repeats the final
+check with cited transcript context before proposing Candidates. Extraction and
+wake-word capture continue to consume P2's existing shared role-label context;
+the validity heuristic never infers a task's subject from the speaking voice.
+The downstream refresh reconciler receives canonical rows after extraction has
+passed this gate. With source provenance but no retained context/segment text,
+the guard abstains rather than rejecting a previously grounded task. Unrelated
+topic words cannot resolve a speaker-only target: that requires an explicit
+referent/callback relation in the supplied evidence, without guessing a name.
+
+`ACTION_ITEM_VALIDITY_MODE` defaults to `shadow` with zero serving percent and
+empty digest allowlist. Text-free aggregate `event=action_item_validity` receipts
+report unresolved-reference count and serving status. `off` disables the check;
+`shadow` can serve consistent uid cohorts via `_SERVE_PERCENT` and
+`_SERVE_UID_SHA256S` using `config.refactor_modes`; `serve` applies globally.
+This heuristic is conservative qualification evidence, not a population accuracy
+claim. It does not alter explicit manual app/tool descriptions.
+
+Lead owns qualification by **Oct 29 12Z**: protected synthetic/authorized fixtures,
+old/new kept-task comparison, and a full 24-hour shadow window where available.
+Include context-resolved pronouns, valid counterpart offers, accepted requests,
+multilingual visitors, code switching, music under real speech and unenrolled
+owners. No reviewed good-task suppression, green consumer parity and understood
+reason/error rates are required. Target **5% Oct 30 12Z**, **25% after six clean
+hours**, and **100% Oct 31 12Z**. Insufficient evidence blocks expansion and requires
+a renewed dated promise. A validated lost good task stops expansion and rolls the
+semantic mode back to `off`.
+
+Source-link correctness is independently on unless
+`ACTION_ITEM_SOURCE_LINKS_ENABLED=false`. The shared create service used by both
+tool implementations and app single/batch routes checks supplied conversation IDs
+and conversation provenance inside the authenticated account, with request-local
+read reuse. A missing, deleted or foreign link produces the same unavailable
+error; routes/tools own its HTTP/text representation. All batch links pass before
+the first write. No foreign-account row is read and no invalid link becomes null.
+Standalone source-less tasks remain valid; idempotency/export metadata pass through.
+
+Automatic extraction with no conversation ID raises before replacement or capture,
+regardless of V2 mode, preserving prior tasks and retryability. Conversion keeps
+existing valid cited IDs; staged provenance is not invented. No source-less history
+or old descriptions are rewritten. The reported null-row writer and staged source
+lineage remain evidence work under ANX step `fbreview-p4-task-integrity-1028`.

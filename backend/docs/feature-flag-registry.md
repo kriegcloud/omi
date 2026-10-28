@@ -1,4 +1,4 @@
-<!-- feature-flag-registry as-of: 2026-10-22 -->
+<!-- feature-flag-registry as-of: 2026-10-29 -->
 
 # Feature-flag authority registry
 
@@ -114,7 +114,65 @@ entries are exempt: they are queued for removal, not running.
 
 ## Overdue for a decision
 
-None as of 2026-10-22.
+These rollout/experiment entries passed `review_by`. The checker warns
+during the seven-day grace, then fails unless a dated `review_overdue`
+exception is recorded for David.
+
+- `ACTION_ITEMS_V2_MODE` — review_by 2026-10-26 (dazheng)
+- `ACTION_ITEMS_V2_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `ACTION_ITEMS_V2_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `BATCH_PIPELINE_ASR_LEFT_CONTEXT_SECONDS` — review_by 2026-10-26 (dazheng)
+- `BATCH_PIPELINE_FLIGHT_BATCHING_ENABLED` — review_by 2026-10-26 (dazheng)
+- `CALLS_RECAP_MODE` — review_by 2026-10-26 (dazheng)
+- `CALLS_RECAP_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `CALLS_RECAP_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `CAPTURE_COVERAGE_MODE` — review_by 2026-10-26 (dazheng)
+- `CAPTURE_COVERAGE_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `CAPTURE_COVERAGE_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `CAPTURE_COVERAGE_MODE_SHADOW_PERCENT` — review_by 2026-10-26 (dazheng)
+- `CLIENTS_FROM_SEGMENTS_CHUNKS_MODE` — review_by 2026-10-26 (dazheng)
+- `CLIENTS_FROM_SEGMENTS_CHUNKS_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `CLIENTS_FROM_SEGMENTS_CHUNKS_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `CONVERSATION_NOTES_AGENT_PERCENT` — review_by 2026-10-27 (dazheng)
+- `CONVERSATION_NOTES_AGENT_UID_ALLOWLIST` — review_by 2026-10-27 (dazheng)
+- `DREAM_REQUIRED_INTAKE_BACKLOG_COHORT` — review_by 2026-10-28 (dazheng)
+- `DREAM_REQUIRED_INTAKE_BACKLOG_ENABLED` — review_by 2026-10-28 (dazheng)
+- `EPISODE_BOUNDARIES_MODE` — review_by 2026-10-26 (dazheng)
+- `EPISODE_BOUNDARIES_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `EPISODE_BOUNDARIES_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `EPISODE_BOUNDARIES_MODE_SHADOW_PERCENT` — review_by 2026-10-26 (dazheng)
+- `LIFECYCLE_V2_MODE` — review_by 2026-10-26 (dazheng)
+- `LIFECYCLE_V2_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `LIFECYCLE_V2_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `MEDIA_NOISE_MODE` — review_by 2026-10-26 (dazheng)
+- `MEDIA_NOISE_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `MEDIA_NOISE_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `MEDIA_NOISE_MODE_SHADOW_PERCENT` — review_by 2026-10-26 (dazheng)
+- `NOTES_PACKET_V2_MODE` — review_by 2026-10-26 (dazheng)
+- `NOTES_PACKET_V2_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `NOTES_PACKET_V2_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `OMI_LIST_VERSION_EPOCH` — review_by 2026-10-24 (dazheng)
+- `SPEAKER_EVIDENCE_MODE` — review_by 2026-10-26 (dazheng)
+- `SPEAKER_EVIDENCE_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `SPEAKER_EVIDENCE_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `SPEAKER_EVIDENCE_MODE_SHADOW_PERCENT` — review_by 2026-10-26 (dazheng)
+- `STT_CAP_DISPATCH_COHORT` — review_by 2026-10-27 (dazheng)
+- `STT_CAP_DISPATCH_ENFORCEMENT` — review_by 2026-10-27 (dazheng)
+- `STT_CAP_DISPATCH_LANES` — review_by 2026-10-27 (dazheng)
+- `STT_CAP_RECOVERY_COHORT` — review_by 2026-10-23 (dazheng)
+- `STT_LANGUAGE_HINTS_MODE` — review_by 2026-10-26 (dazheng)
+- `STT_LANGUAGE_HINTS_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `STT_LANGUAGE_HINTS_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `STT_VOCAB_MODE` — review_by 2026-10-26 (dazheng)
+- `STT_VOCAB_MODE_SERVE_PERCENT` — review_by 2026-10-26 (dazheng)
+- `STT_VOCAB_MODE_SERVE_UID_SHA256S` — review_by 2026-10-26 (dazheng)
+- `STT_VOCAB_MODE_SHADOW_PERCENT` — review_by 2026-10-26 (dazheng)
+- `clients_boundary_evidence` — review_by 2026-10-26 (dazheng)
+- `clients_from_segments_chunks` — review_by 2026-10-26 (dazheng)
+- `clients_refactor` — review_by 2026-10-26 (dazheng)
+- `custody_capture_committed_release` — review_by 2026-10-26 (dazheng)
+- `screen_activity_lossless_sync` — review_by 2026-10-22 (dazheng)
+- `screen_activity_lossless_sync_kill` — review_by 2026-10-22 (dazheng)
 
 ## Flags
 
@@ -146,6 +204,7 @@ and an explicit empty literal renders as `''`.
 | `ACTION_ITEMS_V2_MODE_SERVE_UID_SHA256S` | Serve cohort digest selector; default empty | backend | env | closed | — | — | — | — | pending | undecided | 2026-10-26 | dazheng |
 | `ACTION_ITEM_IDENTITY_PRESERVE_ENABLED` | Keep a task's id and export marker when a conversation reprocess re-extracts the same task, so it is not sent to the user's cloud task app again; Apple Reminders excluded (default on) | backend | env | open | — | — | — | — | graduate | on | 2026-10-31 | dazheng |
 | `ACTION_ITEM_REFRESH_PRESERVE_ENABLED` | Preserve existing tasks and transfer smart-merge donor tasks on SMART_MERGE and SYNC_UPDATE; append exact-unmatched tasks (default on) | backend | env | open | true | true (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | true (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | — | graduate | on | 2026-11-01 | dazheng |
+| `ACTION_ITEM_VALIDITY_MODE` | Context-aware narrow task reference check after V2 selection; default shadow, serving zero percent | backend | env | closed | — | — | — | — | pending | undecided | 2026-10-31 | dazheng |
 | `AUDIO_ARCHIVE_COALESCE_ENABLED` | Default-off as-captured audio rollout setting AUDIO_ARCHIVE_COALESCE_ENABLED; David then <=5 percent for >=12h | backend | env | closed | true | true (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | true (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | — | pending | undecided | 2026-11-14 | dazheng |
 | `AUDIO_ARCHIVE_PERCENT` | Default-off as-captured audio rollout setting AUDIO_ARCHIVE_PERCENT; David then <=5 percent for >=12h | backend | env | closed | declared | 0 (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | 100 (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | — | pending | undecided | 2026-11-14 | dazheng |
 | `AUDIO_ARCHIVE_REGIONAL_CACHE_ENABLED` | Default-off as-captured audio rollout setting AUDIO_ARCHIVE_REGIONAL_CACHE_ENABLED; David then <=5 percent for >=12h | backend | env | closed | false | false (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | false (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | — | pending | undecided | 2026-11-14 | dazheng |
@@ -381,6 +440,7 @@ and an explicit empty literal renders as `''`.
 | key | summary | surfaces | kind | fail | _base | dev | prod | PostHog row | decision | terminal | review_by | owner |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ACTION_ITEMS_LIST_STALE_CLIENT_REFUSE` | Refuse stale action-items list clients | backend | env | open | — | — | 1 | — | keep | keep | — | unowned |
+| `ACTION_ITEM_SOURCE_LINKS_ENABLED` | Default on; shared app/tool create validates supplied conversation sources within the authenticated account | backend | env | open | — | — | — | — | keep | keep | — | dazheng |
 | `ADMIN_KEY_AUTH_ENABLED` | Allow administrator-key authentication | backend | env | open | — | — | — | — | keep | keep | — | unowned |
 | `AUDIO_ARCHIVE_LIVE_ENABLED` | Legacy raw admission only when AUDIO_DURABLE_OUTBOX_ENABLED=false; false stops legacy packs, not default-on custody. Existing packs remain readable | backend | env | open | true | true (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | true (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | — | keep | keep | — | dazheng |
 | `AUDIO_ARCHIVE_READ_ENABLED` | Default on; chunk readers prefer raw-live Opus packs (decoded to PCM16 on read) and fall back to the stored PCM chunks. False reads PCM chunks only | backend | env | open | true | true (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | true (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen, gke/pusher, pusher (chart)) | — | keep | keep | — | dazheng |
@@ -388,6 +448,7 @@ and an explicit empty literal renders as `''`.
 | `AUDIO_DURABLE_OUTBOX_ENABLED` | Default on; immutable media and frame-manifest receipts before PCM custody release | backend | env | open | — | — | — | — | keep | keep | — | dazheng |
 | `BATCH_ADMISSION_LANGUAGE_EXCLUSION_ENABLED` | Default on unless false; exclude new unsupported-language batch uploads and non-single-language users without a supported conversation language in every legacy mode | backend | env | open | — | — | — | — | keep | keep | — | dazheng |
 | `BATCH_CONVERSATION_SPEAKERS_ENABLED` | Default on within persisted authoritative batch records; link unit speaker groups acoustically and name conversation groups | backend | env | open | — | — | — | — | keep | keep | — | dazheng |
+| `BATCH_PIPELINE_CONTENTION_RETRY_ENABLED` | Default on; batch Firestore transactions retry explicit contention on fresh transaction IDs with bounded jitter; false restores legacy SDK transaction behavior | backend | env | open | — | — | — | — | keep | keep | — | dazheng |
 | `BATCH_PIPELINE_DIARIZE_SPEECH_ONLY_ENABLED` | Default on unless false; batch GPU worker diarizes only padded VAD and word evidence and maps turns back to capture clocks | backend | env | open | — | — | — | — | keep | keep | — | dazheng |
 | `BATCH_PIPELINE_EMPTY_ASR_SAFETY_NET_ENABLED` | Default on; one context-bearing Parakeet retry, independent fenced recovery and retained positive-VAD empty audio | backend | env | closed | {value: 'true', category: rollout} | {value: 'true', category: rollout} | {value: 'true', category: rollout} | — | keep | keep | — | dazheng |
 | `BATCH_PIPELINE_FRESH_GPU_PRIORITY_ENABLED` | Default on unless false; batch uploads in the 6 h fresh sync lane whose oldest capture is over 10 min old lease GPU at RECENT priority, after fresh uploads | backend | env | open | — | — | — | — | keep | keep | — | dazheng |
@@ -505,6 +566,7 @@ and an explicit empty literal renders as `''`.
 | `PARAKEET_WINDOW_REPLICA_RECOVERY_ENABLED` | Default on; internal live-window POSTs use ready GPU pods with per-pod 2-5 minute adaptive quarantine and one different-pod retry inside the original budget | backend | env | open | — | — | — | — | keep | keep | — | dazheng |
 | `PARAKEET_WINDOW_STRANDED_DRIFT_SETTLE_ENABLED` | Default on unless false; a stranded-flush window answer whose text fell beyond the posted fragment settles like an empty answer instead of holding replay until replay_ring_overflow | backend | env | open | — | — | — | — | keep | keep | — | dazheng |
 | `PINNED_SPEAKER_PRIOR_ENABLED` | Turn near-misses on pinned people into suggestions and record voice candidates for the suggestion card (never loosens auto-labels) | backend | env | open | — | — | — | — | keep | keep | — | dazheng |
+| `PLAYBACK_MANIFEST_RECOVERY_ENABLED` | Default on; next-access recovery for merge_failed playback markers after 15 minutes, deduped by marker generation | backend | env | closed | — | — | — | — | keep | keep | — | dazheng |
 | `PUBLIC_SHARED_CONVERSATION_CHAT_MODE` | Enable chat on public shared conversations | backend | env | closed | declared (gke/backend-listen); gateway (cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill) | gateway (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen) | gateway (cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill); off (backend-listen (chart), gke/backend-listen) | — | keep | keep | — | dazheng |
 | `RATE_LIMIT_SHADOW_MODE` | Shadow backend rate limits | backend | env | closed | — | — | — | — | keep | keep | — | unowned |
 | `SCREEN_ACTIVITY_KEYWORD_FALLBACK_ENABLED` | Fallback to keyword search for screen activity | backend | env | open | — | — | — | — | keep | keep | — | unowned |
@@ -544,6 +606,7 @@ and an explicit empty literal renders as `''`.
 | `free-tier-kill-switch-v1` | Remote free-tier stop | macos | posthog | inverted | — | — | — | expected (kill) | keep | keep | — | unowned |
 | `mobile-local-preview-disabled` | Stop the iOS and Android clients declaring local_preview=enabled on /v4/listen; false or absent keeps the on-device live preview request on for batch-lane sessions | mobile | posthog | inverted | — | — | — | expected (kill) | keep | keep | — | dazheng |
 | `mobile-speech-analyzer-disabled` | Force existing iOS freemium fallback to SFSpeech; false or absent selects SpeechAnalyzer on supported iOS 26 devices/locales | mobile | posthog | inverted | — | — | — | expected (kill) | keep | keep | — | dazheng |
+| `mobile-wal-delta-index-off` | True makes the iOS and Android clients save the WAL recording index through the pre-delta full-snapshot writer; false or absent keeps the delta index worker on | mobile | posthog | inverted | — | — | — | expected (kill) | keep | keep | — | dazheng |
 | `negative_feedback_remediation_kill` | Stop negative-feedback remediation on macOS | macos | posthog | inverted | — | — | — | expected (kill) | keep | keep | — | unowned |
 | `screen_task_jev_gate` | Default-on screen OCR text dedupe gate using Jev; explicit false is the kill switch; flag read failures keep it on | macos | posthog | open | — | — | — | expected (enable) | keep | keep | — | dazheng |
 | `watch_copy_dedupe_off` | True keeps and uploads Watch recovery copies; false deduplicates copies covered at least 95% by server-reachable live custody | mobile | posthog | closed | — | — | — | expected (kill) | keep | keep | — | dazheng |
@@ -553,6 +616,8 @@ and an explicit empty literal renders as `''`.
 | key | summary | surfaces | kind | fail | _base | dev | prod | PostHog row | decision | terminal | review_by | owner |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `ACCOUNT_DELETION_DISPATCH_MODE` | Select Cloud Tasks for account deletion | backend | env | closed | — | — | cloud_tasks (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen) | — | keep | keep | — | unowned |
+| `ACTION_ITEM_VALIDITY_MODE_SERVE_PERCENT` | Consistent uid serving percentage for task validity shadow mode; default zero | backend | env | closed | — | — | — | — | keep | keep | — | dazheng |
+| `ACTION_ITEM_VALIDITY_MODE_SERVE_UID_SHA256S` | Optional task validity serving uid digests; default empty | backend | env | closed | — | — | — | — | keep | keep | — | dazheng |
 | `AUDIO_CLEANUP_HOLD_WINDOWS` | Inclusive capture preservation windows, comma-separated timezone-qualified start..end pairs; defaults to 2026-10-22T13:36:30Z..2026-10-24T07:16:00Z. Empty/malformed configuration holds cleanup | backend | env | closed | — | — | — | — | keep | keep | — | dazheng |
 | `AUDIO_MERGE_DISPATCH_MODE` | Select audio-merge dispatch lane | backend | env | closed | — | — | — | — | keep | keep | — | unowned |
 | `BATCH_PIPELINE_API_URL` | Explicit HTTPS backend serving URL for fenced pre-compute spend admission; empty pauses required jobs without GPU inference | backend | env | closed | declared | '' (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen) | https://backend-sync-hhibjajaja-uc.a.run.app (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, gke/backend-listen) | — | keep | keep | — | dazheng |
@@ -591,7 +656,7 @@ and an explicit empty literal renders as `''`.
 | `EDGE_SHADOW_URL` | ws:// URL of listen-edge's /v1/shadow for the D2 mirror; empty disables mirroring regardless of EDGE_SHADOW_PERCENT | backend | env | closed | — | ws://dev-omi-listen-edge.dev-omi-backend.svc.cluster.local:8080/v1/shadow (backend-listen (chart)) | ws://prod-omi-listen-edge.prod-omi-backend.svc.cluster.local:8080/v1/shadow (backend-listen (chart)) | — | keep | keep | — | dazheng |
 | `EPISODES_UID_ALLOWLIST` | Comma-separated uids always admitted to episodes while EPISODES_ENABLED is on; empty admits nobody extra | backend | env | closed | — | — | — | — | keep | keep | — | dazheng |
 | `FIRESTORE_CACHE_ENABLED` | Enable Firestore response cache | backend | env | closed | — | — | — | — | keep | keep | — | unowned |
-| `FIRESTORE_READ_LEVERS` | Permanent default-off percentage gates for Firestore read reductions; all levers stay off unless explicitly assigned a cohort percentage | backend, web-admin | env | closed | {"action_items_page":100,"backfill_task_reads":0,"batch_privacy_memoize":0,"candidates_page":100,"canonical_statuses_dedupe":100,"deletion_marker_cache":100,"finjob_candidate_queries":0,"historical_scan_memo":0,"ledger_purge_coalesce":0,"mcp_conversation_cards_cache":100,"memory_list_index_window":0,"people_scan_dedupe":0,"queue_age_sample_budget":0,"request_read_dedupe":100,"serving_config_cache":100,"singleton_loops":0,"subscription_cache":100,"usage_month_cache":0,"usage_month_total":0} | {"action_items_page":100,"backfill_task_reads":0,"batch_privacy_memoize":0,"candidates_page":100,"canonical_statuses_dedupe":100,"deletion_marker_cache":100,"finjob_candidate_queries":0,"historical_scan_memo":0,"ledger_purge_coalesce":0,"mcp_conversation_cards_cache":100,"memory_list_index_window":0,"people_scan_dedupe":0,"queue_age_sample_budget":0,"request_read_dedupe":100,"serving_config_cache":100,"singleton_loops":0,"subscription_cache":100,"usage_month_cache":0,"usage_month_total":0} (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, desktop-backend, gke/backend-listen, gke/pusher, job/day3-reengagement-email-job, job/frame-request-retention-job, job/notifications-job, job/x-connector-sync-job, pusher (chart)) | {"action_items_page":100,"backfill_task_reads":0,"batch_privacy_memoize":0,"candidates_page":100,"canonical_statuses_dedupe":100,"deletion_marker_cache":100,"finjob_candidate_queries":0,"historical_scan_memo":0,"ledger_purge_coalesce":0,"mcp_conversation_cards_cache":100,"memory_list_index_window":0,"people_scan_dedupe":0,"queue_age_sample_budget":0,"request_read_dedupe":100,"serving_config_cache":100,"singleton_loops":0,"subscription_cache":100,"usage_month_cache":0,"usage_month_total":0} (backend-listen (chart), desktop-backend, gke/backend-listen, gke/pusher, job/day3-reengagement-email-job, job/frame-request-retention-job, job/notifications-job, job/x-connector-sync-job, pusher (chart)); {value: '{"action_items_page":100,"backfill_task_reads":0,"batch_privacy_memoize":0,"candidates_page":100,"canonical_statuses_dedupe":100,"deletion_marker_cache":100,"finjob_candidate_queries":0,"historical_scan_memo":0,"ledger_purge_coalesce":0,"mcp_conversation_cards_cache":100,"memory_list_index_window":0,"people_scan_dedupe":0,"queue_age_sample_budget":0,"request_read_dedupe":100,"serving_config_cache":100,"singleton_loops":0,"subscription_cache":100,"usage_month_cache":0,"usage_month_total":0}', category: rollout} (cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill) | — | keep | keep | — | dazheng |
+| `FIRESTORE_READ_LEVERS` | Permanent default-off percentage gates for Firestore read reductions; all levers stay off unless explicitly assigned a cohort percentage | backend, web-admin | env | closed | {"action_items_page":100,"backfill_task_reads":100,"batch_privacy_memoize":0,"candidates_page":100,"canonical_statuses_dedupe":100,"deletion_marker_cache":100,"finjob_candidate_queries":5,"historical_scan_memo":100,"ledger_purge_coalesce":100,"mcp_conversation_cards_cache":100,"memory_list_index_window":0,"people_scan_dedupe":100,"queue_age_sample_budget":100,"request_read_dedupe":100,"serving_config_cache":100,"singleton_loops":100,"subscription_cache":100,"usage_month_cache":100,"usage_month_total":0} | {"action_items_page":100,"backfill_task_reads":100,"batch_privacy_memoize":0,"candidates_page":100,"canonical_statuses_dedupe":100,"deletion_marker_cache":100,"finjob_candidate_queries":5,"historical_scan_memo":100,"ledger_purge_coalesce":100,"mcp_conversation_cards_cache":100,"memory_list_index_window":0,"people_scan_dedupe":100,"queue_age_sample_budget":100,"request_read_dedupe":100,"serving_config_cache":100,"singleton_loops":100,"subscription_cache":100,"usage_month_cache":100,"usage_month_total":0} (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, desktop-backend, gke/backend-listen, gke/pusher, job/day3-reengagement-email-job, job/frame-request-retention-job, job/notifications-job, job/x-connector-sync-job, pusher (chart)) | {"action_items_page":100,"backfill_task_reads":100,"batch_privacy_memoize":0,"candidates_page":100,"canonical_statuses_dedupe":100,"deletion_marker_cache":100,"finjob_candidate_queries":5,"historical_scan_memo":100,"ledger_purge_coalesce":100,"mcp_conversation_cards_cache":100,"memory_list_index_window":0,"people_scan_dedupe":100,"queue_age_sample_budget":100,"request_read_dedupe":100,"serving_config_cache":100,"singleton_loops":100,"subscription_cache":100,"usage_month_cache":100,"usage_month_total":0} (backend-listen (chart), desktop-backend, gke/backend-listen, gke/pusher, job/day3-reengagement-email-job, job/frame-request-retention-job, job/notifications-job, job/x-connector-sync-job, pusher (chart)); {value: '{"action_items_page":100,"backfill_task_reads":100,"batch_privacy_memoize":0,"candidates_page":100,"canonical_statuses_dedupe":100,"deletion_marker_cache":100,"finjob_candidate_queries":5,"historical_scan_memo":100,"ledger_purge_coalesce":100,"mcp_conversation_cards_cache":100,"memory_list_index_window":0,"people_scan_dedupe":100,"queue_age_sample_budget":100,"request_read_dedupe":100,"serving_config_cache":100,"singleton_loops":100,"subscription_cache":100,"usage_month_cache":100,"usage_month_total":100}', category: rollout} (cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill) | — | keep | keep | — | dazheng |
 | `FIRST_SUMMARY_DEADLINE_SECONDS` | First required summary dispatch budget; default 120 seconds, bounded 60 to 120 | backend | env | closed | — | — | — | — | keep | keep | — | dazheng |
 | `FSR_USAGE_MONTH_TOTAL_EPOCH` | Monthly total reconstruction epoch, default v1; invalid values retain hourly reads | backend | env | closed | v1 | v1 (backend-listen (chart), cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill, desktop-backend, gke/backend-listen, gke/pusher, job/day3-reengagement-email-job, job/frame-request-retention-job, job/notifications-job, job/x-connector-sync-job, pusher (chart)) | v1 (backend-listen (chart), desktop-backend, gke/backend-listen, gke/pusher, job/day3-reengagement-email-job, job/frame-request-retention-job, job/notifications-job, job/x-connector-sync-job, pusher (chart)); {value: c2fs_20261026_r1, category: rollout} (cloud_run/backend, cloud_run/backend-integration, cloud_run/backend-sync, cloud_run/backend-sync-backfill) | — | keep | keep | — | dazheng |
 | `LISTEN_FINALIZATION_DISPATCH_MODE` | Select conversation finalization dispatch lane | backend | env | closed | — | — | cloud_tasks | — | keep | keep | — | unowned |
@@ -664,6 +729,7 @@ and an explicit empty literal renders as `''`.
 | `ACTION_ITEMS_V2_MODE` | synthetic acceptance → 1% → 10% → 100% | omi_calls_refactor_shadow_total outcome=error stays zero; no false calls, premature scheduled recaps, missing provenance or STT config rejection; recap/STT latency and vendor spend stay within baseline | dazheng | 2026-10-26 |
 | `ACTION_ITEMS_V2_MODE_SERVE_PERCENT` | synthetic acceptance → 1% → 10% → 100% | omi_calls_refactor_shadow_total outcome=error stays zero; no false calls, premature scheduled recaps, missing provenance or STT config rejection; recap/STT latency and vendor spend stay within baseline | dazheng | 2026-10-26 |
 | `ACTION_ITEMS_V2_MODE_SERVE_UID_SHA256S` | synthetic acceptance → 1% → 10% → 100% | omi_calls_refactor_shadow_total outcome=error stays zero; no false calls, premature scheduled recaps, missing provenance or STT config rejection; recap/STT latency and vendor spend stay within baseline | dazheng | 2026-10-26 |
+| `ACTION_ITEM_VALIDITY_MODE` | synthetic and authorized fixture qualification by Oct 29 12Z; full 24h shadow where available → 5% Oct 30 12Z → 25% after six clean hours → 100% Oct 31 12Z | Protected tasks including context-resolved pronouns, manual text, multilingual speech, owner commitments, accepted requests and counterpart offers survive; no reviewed false suppression; consumer parity green; action_item_validity reason/error counts understood; insufficient samples block expansion | two-lane rollout lead | 2026-10-31 |
 | `AUDIO_ARCHIVE_LIVE_ENABLED` | all private-cloud-sync-consented sessions at deploy (David ruling 2026-10-22: store BLE Opus as captured) | omi_audio_archive_objects_total/bytes_total grow with live intake; omi_fallback_total{component=pusher,reason=upload_failed} stays near zero; PCM chunk writes unchanged | two-lane lead | 2026-10-23 |
 | `AUDIO_ARCHIVE_READ_ENABLED` | all conversations at deploy (packs exist only where LIVE wrote them) | batch STT success and WER parity on raw-decoded audio; playback/audio-merge build errors flat; omi_fallback_total{reason=decode_failed} near zero | two-lane lead | 2026-10-23 |
 | `AUDIO_ARCHIVE_REGIONAL_CACHE_PERCENT` | 0 until the derived bucket exists and IAM is verified → 5% for >=12h → 100% | derived-bucket object growth matches cohort share; dual-list calls stay flat for non-admitted owners; replication and Class A on omi-private-cloud-sync+syncing-local fall by cohort share | two-lane lead | 2026-11-22 |
@@ -768,6 +834,10 @@ their code default (`fail` tells you which way a missing value resolves).
 - `ACTION_ITEMS_V2_MODE_SERVE_PERCENT` — Serve cohort percentage; default zero (fail: closed)
 - `ACTION_ITEMS_V2_MODE_SERVE_UID_SHA256S` — Serve cohort digest selector; default empty (fail: closed)
 - `ACTION_ITEM_IDENTITY_PRESERVE_ENABLED` — Keep a task's id and export marker when a conversation reprocess re-extracts the same task, so it is not sent to the user's cloud task app again; Apple Reminders excluded (default on) (fail: open)
+- `ACTION_ITEM_SOURCE_LINKS_ENABLED` — Default on; shared app/tool create validates supplied conversation sources within the authenticated account (fail: open)
+- `ACTION_ITEM_VALIDITY_MODE` — Context-aware narrow task reference check after V2 selection; default shadow, serving zero percent (fail: closed)
+- `ACTION_ITEM_VALIDITY_MODE_SERVE_PERCENT` — Consistent uid serving percentage for task validity shadow mode; default zero (fail: closed)
+- `ACTION_ITEM_VALIDITY_MODE_SERVE_UID_SHA256S` — Optional task validity serving uid digests; default empty (fail: closed)
 - `ADMIN_KEY_AUTH_ENABLED` — Allow administrator-key authentication (fail: open)
 - `AUDIO_CANONICAL_PACKING_ENABLED` — Default off; new release-scoped canonical capture intake and owner-only verified tar packing; requires new regional bucket (fail: closed)
 - `AUDIO_CLEANUP_HOLD_ENABLED` — Default on: routine legacy staging and batch artifact cleanup preserve configured incident capture windows; only false disables the window hold. Durable success gates still apply; privacy erasure bypasses the hold (fail: closed)
@@ -779,6 +849,7 @@ their code default (`fail` tells you which way a missing value resolves).
 - `BATCH_JOBSTORE_MODE` — Default firestore; shadow mirrors committed batch job-store writes to the staging Postgres and counts read parity (Firestore stays the only authority) (fail: closed)
 - `BATCH_PIPELINE_ASR_LEFT_CONTEXT_SECONDS` — Default 0 (off); seconds of the same capture stream's contiguous predecessor speech run prefixed to a unit whose speech starts at sample 0, so Parakeet TDT does not start mid-utterance (fail: closed)
 - `BATCH_PIPELINE_ASR_LEFT_CONTEXT_UNITS` — Process-local predecessor tails kept for ASR left context (default 64, range [0, 1024]; each <=8 s int16, 10 min TTL, keyed by owner, privacy generation and capture stream: source, device and lock from the staged intake context, or the record conversation) (fail: closed)
+- `BATCH_PIPELINE_CONTENTION_RETRY_ENABLED` — Default on; batch Firestore transactions retry explicit contention on fresh transaction IDs with bounded jitter; false restores legacy SDK transaction behavior (fail: open)
 - `BATCH_PIPELINE_CONTEXT_SECONDS` — GPU chain internal ASR boundary context seconds; default 2; requires AMI qualification (fail: closed)
 - `BATCH_PIPELINE_DIARIZER` — GPU chain diarizer registry selection; default pyannote; unavailable candidates fail closed (fail: closed)
 - `BATCH_PIPELINE_DIARIZE_SPEECH_ONLY_ENABLED` — Default on unless false; batch GPU worker diarizes only padded VAD and word evidence and maps turns back to capture clocks (fail: open)
@@ -975,6 +1046,7 @@ their code default (`fail` tells you which way a missing value resolves).
 - `PARAKEET_WINDOW_REPLICA_RECOVERY_ENABLED` — Default on; internal live-window POSTs use ready GPU pods with per-pod 2-5 minute adaptive quarantine and one different-pod retry inside the original budget (fail: open)
 - `PARAKEET_WINDOW_STRANDED_DRIFT_SETTLE_ENABLED` — Default on unless false; a stranded-flush window answer whose text fell beyond the posted fragment settles like an empty answer instead of holding replay until replay_ring_overflow (fail: open)
 - `PINNED_SPEAKER_PRIOR_ENABLED` — Turn near-misses on pinned people into suggestions and record voice candidates for the suggestion card (never loosens auto-labels) (fail: open)
+- `PLAYBACK_MANIFEST_RECOVERY_ENABLED` — Default on; next-access recovery for merge_failed playback markers after 15 minutes, deduped by marker generation (fail: closed)
 - `RATE_LIMIT_SHADOW_MODE` — Shadow backend rate limits (fail: closed)
 - `RECORDING_SESSION_MODE` — Select recording session migration mode (fail: closed)
 - `SCREEN_ACTIVITY_KEYWORD_FALLBACK_ENABLED` — Fallback to keyword search for screen activity (fail: open)
