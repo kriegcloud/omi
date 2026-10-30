@@ -14,12 +14,15 @@ from database import episodes
 PAGE_LIMIT = 128
 FIELDS = (
     'started_at',
+    'recorded_end',
+    'closed_at',
     'last_activity_at',
     'status',
     'close_reason',
     'state_version',
     'recorded_merged_into',
     'recorded_members',
+    'discarded_conversation_ids',
 )
 
 
@@ -46,6 +49,30 @@ def recorded_candidates(
     return [row for row in rows if not row.get('recorded_merged_into')]
 
 
+def recorded_end(episode):
+    """Explicit closes own their recorded window; quiet padding is not speech."""
+    if episode.get('status') == 'closed' and episode.get('close_reason') not in {'gap', 'idle'}:
+        return episode.get('recorded_end') or episode.get('closed_at') or episode.get('last_activity_at')
+    return episode.get('last_activity_at')
+
+
+def check_window(transaction, client, uid, episode, *, rows=None):
+    """Serialize live writes with recorded attachment; reject overlapping windows."""
+    lo, hi = episode.get('started_at'), recorded_end(episode)
+    if not isinstance(lo, datetime) or not isinstance(hi, datetime):
+        return
+    fence = client.collection('users').document(uid).collection('episode_links').document('recorded_timeline')
+    fence_row = fence.get(transaction=transaction).to_dict() or {}
+    if rows is None:
+        rows = recorded_candidates(uid, lo, hi, firestore_client=client, transaction=transaction)
+    for row in rows:
+        a, b = row.get('started_at'), recorded_end(row)
+        if row['id'] != episode['id'] and isinstance(a, datetime) and isinstance(b, datetime):
+            if lo == a or (lo < b and a < hi) or (lo == hi and a <= lo < b):
+                raise episodes.EpisodeConflict('recorded_window_overlap')
+    return fence, int(fence_row.get('version') or 0) + 1
+
+
 def _attach_recorded_window(
     uid: str,
     conversation_id: str,
@@ -56,6 +83,7 @@ def _attach_recorded_window(
     choose: Callable,
     new_episode: dict[str, Any],
     firestore_client: Any = None,
+    expected_episode_id: str | None = None,
 ) -> dict[str, Any]:
     client = firestore_client if firestore_client is not None else get_firestore_client()
 
@@ -67,12 +95,12 @@ def _attach_recorded_window(
         fence_row = fence.get(transaction=transaction).to_dict() or {}
         member = links.document(conversation_id)
         member_row = member.get(transaction=transaction).to_dict() or {}
-        members = episodes.read_memberships(transaction, client, uid, [conversation_id])
+        members = episodes.read_memberships(
+            transaction, client, uid, [conversation_id], admit_conversation_id=conversation_id
+        )
         rows = recorded_candidates(uid, started, finished, firestore_client=client, transaction=transaction)
-        rows = [row for row in rows if not row.get('recorded_merged_into')]
-        selected = choose(rows, started, finished) or choose(rows, started, started)
-        # Membership stays stable inside a window. A continuing conversation
-        # can also appear in a successor after a recorded hard/user boundary.
+        selected = choose(rows, started, started)
+        # A conversation belongs to the episode it started in, even past a cap.
         owner_id = member_row.get('episode_id')
         existing = None
         if owner_id:
@@ -80,19 +108,28 @@ def _attach_recorded_window(
             existing = episodes.unseal(uid, snapshot.to_dict())
             if existing is None:
                 raise episodes.EpisodeConflict('recorded_owner_missing')
-            if choose([existing], started, started) is None:
-                existing = None
+            if expected_episode_id is not None and existing.get('id') != expected_episode_id:
+                raise episodes.EpisodeConflict('recorded_owner_changed')
+            if started >= existing['started_at'] + timedelta(seconds=MAX_EPISODE_SECONDS):
+                return {**existing, '_window_end': finished}
         if existing is None and selected:
             snapshot = root.collection('episodes').document(selected['id']).get(transaction=transaction)
             existing = episodes.unseal(uid, snapshot.to_dict())
+        if expected_episode_id is not None and (existing or {}).get('id') != expected_episode_id:
+            raise episodes.EpisodeConflict('recorded_owner_changed')
         lo = min(existing['started_at'], started) if existing else started
         window_end = min(finished, lo + timedelta(seconds=MAX_EPISODE_SECONDS))
         if existing and existing.get('status') != 'live' and existing.get('close_reason') not in {'gap', 'idle'}:
-            window_end = min(window_end, existing['last_activity_at'])
-        elif existing is None:
+            boundary_end = recorded_end(existing)
+            if not isinstance(boundary_end, datetime):
+                raise episodes.EpisodeConflict('recorded_owner_missing_end')
+            window_end = min(window_end, boundary_end)
+        if existing is None or existing.get('status') == 'live' or existing.get('close_reason') in {'gap', 'idle'}:
             # A late prefix that would overflow an existing capped occasion
             # ends at that occasion; it must not create an overlapping 4h row.
-            following = [row['started_at'] for row in rows if row['started_at'] > started]
+            following = [
+                row['started_at'] for row in rows if row['id'] != (existing or {}).get('id') and row['started_at'] > lo
+            ]
             if following:
                 window_end = min(window_end, min(following))
         if window_end < started or (window_end == started and finished > started):
@@ -106,14 +143,40 @@ def _attach_recorded_window(
                 dict.fromkeys([*(existing.get('recovered_conversation_ids') or []), conversation_id])
             )
             result['sources'] = list(dict.fromkeys([*(existing.get('sources') or []), *([source] if source else [])]))
+            if (
+                source
+                and existing.get('sources')
+                and source not in (existing.get('sources') or [])
+                and existing.get('conversation_ids')
+                and started < existing['last_activity_at']
+                and finished > existing['started_at']
+            ):
+                # Preserve the parallel-content decision before membership and
+                # sources make the finalizer look like a same-member continue.
+                result['parallel_content_spans'] = {
+                    **(existing.get('parallel_content_spans') or {}),
+                    conversation_id: {'start': existing['started_at'], 'end': existing['last_activity_at']},
+                }
             result['started_at'] = min(existing['started_at'], started)
             result['last_activity_at'] = max(existing['last_activity_at'], window_end)
+            result['member_activity'] = {**(existing.get('member_activity') or {}), conversation_id: window_end}
+            if existing.get('recorded_members') is not None:
+                facts = dict(existing['recorded_members'])
+                prior = facts.get(conversation_id) or {}
+                facts[conversation_id] = {
+                    'start': min(prior.get('start') or started, started),
+                    'end': max(prior.get('end') or finished, finished),
+                    'source': source or prior.get('source'),
+                }
+                result['recorded_members'] = facts
             if result.get('status') != 'live':
-                result['closed_at'] = result['last_activity_at']
+                if result.get('close_reason') in {'gap', 'idle'}:
+                    result['closed_at'] = result['last_activity_at']
                 if window_end < finished and result.get('close_reason') in {'gap', 'idle'}:
                     result['close_reason'] = (
                         'hard_cap' if window_end == lo + timedelta(seconds=MAX_EPISODE_SECONDS) else 'boundary'
                     )
+                result['recorded_end'] = result['last_activity_at']
             result['state_version'] = int(existing.get('state_version') or 0) + 1
         else:
             result = dict(new_episode)
@@ -130,8 +193,12 @@ def _attach_recorded_window(
                 last_activity_at=window_end,
                 state_version=1,
                 conversation_ids=[conversation_id],
+                member_activity={conversation_id: window_end},
                 recovered_conversation_ids=[conversation_id],
             )
+        if existing and episodes.retained_bounds_changed(existing, result):
+            result = episodes.retained_bounds(transaction, client, uid, existing, result)
+        check_window(transaction, client, uid, result, rows=rows)
         transaction.set(root.collection('episodes').document(result['id']), episodes.seal(uid, result))
         episodes.write_memberships(transaction, client, uid, result['id'], members, datetime.now(timezone.utc))
         transaction.set(fence, {'version': int(fence_row.get('version') or 0) + 1})
@@ -139,6 +206,27 @@ def _attach_recorded_window(
         return {**result, '_window_end': window_end}
 
     return run_transactional(client, attach, transient=True)
+
+
+def attach_existing_recorded(
+    uid, conversation_id, source, started, finished, *, episode_id, choose, firestore_client=None
+):
+    """Claim the occasion proved by relevance, or fail before any write.
+
+    No new episode, repartition, notes generation or live navigation change.
+    Membership and the conversation's reverse field share the timeline CAS.
+    """
+    return _attach_recorded_window(
+        uid,
+        conversation_id,
+        source,
+        started,
+        finished,
+        choose=choose,
+        new_episode={},
+        expected_episode_id=episode_id,
+        firestore_client=firestore_client,
+    )
 
 
 def attach_recorded(
@@ -152,11 +240,10 @@ def attach_recorded(
     new_episode: dict[str, Any],
     firestore_client: Any = None,
 ) -> dict[str, Any]:
-    """Place a complete capture, splitting only at existing or 4h boundaries.
+    """Place a capture once. Its owner never changes when the capture spans a cap.
 
-    The conversation may remain one storage row across capped episodes, like a
-    live hard-cap rotation. The ordinary membership link names its latest window.
-    Returned windows are transient recovery inputs, never stored on the episode.
+    The episode's recorded window stops at four hours or the next occasion;
+    the next episode starts only with a different conversation.
     """
     if finished < started or (finished - started).total_seconds() > MAX_EPISODE_SECONDS * PAGE_LIMIT:
         raise episodes.EpisodeConflict('recorded_capture_window_exhausted')
@@ -177,41 +264,24 @@ def attach_recorded(
     )
     if canonical is not None:
         return canonical
-    cursor, windows = started, []
-    while True:
-        result = _attach_recorded_window(
-            uid,
-            conversation_id,
-            source,
-            cursor,
-            finished,
-            choose=choose,
-            new_episode=new_episode,
-            firestore_client=firestore_client,
-        )
-        until = result.pop('_window_end')
-        windows.append(result)
-        if until >= finished:
-            return {**result, '_recorded_windows': windows}
-        cursor = until
+    result = _attach_recorded_window(
+        uid,
+        conversation_id,
+        source,
+        started,
+        finished,
+        choose=choose,
+        new_episode=new_episode,
+        firestore_client=firestore_client,
+    )
+    result.pop('_window_end')
+    return {**result, '_recorded_windows': [result]}
 
 
 def member_episodes(uid: str, conversation_id: str, *, firestore_client: Any = None) -> list[dict[str, Any]]:
-    """All capped windows for a member, including the legacy single-owner link."""
-    client = firestore_client if firestore_client is not None else get_firestore_client()
-    raw = (
-        client.collection('users').document(uid).collection('episode_links').document(conversation_id).get().to_dict()
-        or {}
-    )
-    ids = list(
-        dict.fromkeys(
-            value
-            for value in [*(raw.get('episode_ids') or []), *([raw['episode_id']] if raw.get('episode_id') else [])]
-            if isinstance(value, str) and value
-        )
-    )
-    resolved = [episode for eid in ids if (episode := episodes.get_episode(uid, eid, firestore_client=client))]
-    return list({episode['id']: episode for episode in resolved}.values())
+    """Only the canonical owner; a capture crossing a cap never gains another membership."""
+    owner = episodes.get_episode_for_conversation(uid, conversation_id, firestore_client=firestore_client)
+    return [owner] if owner else []
 
 
 def resume_recorded(uid, episode_id, at, *, expected_version, choose: Callable, firestore_client=None):

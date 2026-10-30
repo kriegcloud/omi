@@ -307,10 +307,10 @@ def test_recorded_component_larger_than_membership_batch_commits_all_reverse_lin
     read = episodes.read_memberships
     batches = []
 
-    def bounded_read(transaction, client, uid, ids):
+    def bounded_read(transaction, client, uid, ids, *, admit_conversation_id=None):
         ids = list(ids)
         batches.append(len(ids))
-        return read(transaction, client, uid, ids)
+        return read(transaction, client, uid, ids, admit_conversation_id=admit_conversation_id)
 
     monkeypatch.setattr(episodes, 'read_memberships', bounded_read)
     result = episode_timeline.attach_recorded(
@@ -384,3 +384,17 @@ def test_invalid_explicit_span_does_not_fall_back_to_legacy_wall(start, end):
         )
         is None
     )
+
+
+def test_cap_successor_uses_its_own_members_recorded_span():
+    from database.episode_recorded_components import partition
+
+    facts = {
+        'long': {'start': T0, 'end': T0 + timedelta(hours=5)},
+        'next': {'start': T0 + timedelta(hours=4, minutes=10), 'end': T0 + timedelta(hours=4, minutes=11)},
+    }
+    windows = partition('synthetic', facts)
+    assert [(r['started_at'], r['last_activity_at'], r['conversation_ids']) for r in windows] == [
+        (T0, T0 + timedelta(hours=4), ['long']),
+        (T0 + timedelta(hours=4, minutes=10), T0 + timedelta(hours=4, minutes=11), ['next']),
+    ]

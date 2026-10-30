@@ -20,6 +20,7 @@ from database import episodes
 def _automatic(row):
     return (
         row.get('recorded_members') is not None
+        and not row.get('discarded_conversation_ids')
         and row.get('status') == 'closed'
         and row.get('close_reason') in {'gap', 'idle', 'hard_cap'}
     )
@@ -42,40 +43,26 @@ def partition(uid, facts):
             groups[-1][1] = max(groups[-1][1], fact['end'])
             groups[-1][2].append(cid)
     windows = []
-    for start, end, ids in groups:
-        cursor = start
-        while True:
-            stop = min(end, cursor + timedelta(seconds=MAX_EPISODE_SECONDS))
-            members = [
-                cid
-                for cid in ids
-                if (facts[cid]['start'] < stop and facts[cid]['end'] > cursor)
-                or (
-                    facts[cid]['start'] == facts[cid]['end']
-                    and cursor <= facts[cid]['start']
-                    and (
-                        facts[cid]['start'] < stop
-                        or (
-                            facts[cid]['start'] == stop == end and (stop - cursor).total_seconds() < MAX_EPISODE_SECONDS
-                        )
-                    )
-                )
-            ]
+    for _, _, ids in groups:
+        remaining = list(ids)
+        while remaining:
+            # The crossing capture remains in its starting window. Its tail
+            # cannot open a successor or supply a successor member's clock.
+            cursor = min(facts[cid]['start'] for cid in remaining)
+            cap = cursor + timedelta(seconds=MAX_EPISODE_SECONDS)
+            members = [cid for cid in remaining if facts[cid]['start'] < cap]
+            remaining = [cid for cid in remaining if cid not in members]
+            member_end = max(facts[cid]['end'] for cid in members)
+            stop = min(member_end, cap)
             windows.append(
                 {
                     'id': str(uuid5(NAMESPACE_URL, f'recorded-window:{uid}:{cursor.isoformat()}')),
                     'started_at': cursor,
                     'last_activity_at': stop,
                     'conversation_ids': sorted(members),
-                    'close_reason': 'hard_cap' if stop < end else 'gap',
+                    'close_reason': 'hard_cap' if member_end > stop or remaining else 'gap',
                 }
             )
-            capped_point = (stop - cursor).total_seconds() == MAX_EPISODE_SECONDS and any(
-                facts[cid]['start'] == facts[cid]['end'] == stop for cid in ids
-            )
-            if stop >= end and not capped_point:
-                break
-            cursor = stop
     return windows
 
 
@@ -92,6 +79,10 @@ def _state(template, window, previous, facts):
         **window,
         'status': 'closed',
         'closed_at': window['last_activity_at'],
+        'recorded_end': window['last_activity_at'],
+        'member_activity': {
+            cid: min(facts[cid]['end'], window['last_activity_at']) for cid in window['conversation_ids']
+        },
         'state_version': int((exact or {}).get('state_version') or 0) + 1,
     }
     members = window['conversation_ids']
@@ -102,6 +93,12 @@ def _state(template, window, previous, facts):
     result['recovered_conversation_ids'] = sorted(
         {cid for row in overlapping for cid in row.get('recovered_conversation_ids') or [] if cid in members}
     )
+    result['parallel_content_spans'] = {
+        cid: at
+        for row in overlapping
+        for cid, at in (row.get('parallel_content_spans') or {}).items()
+        if cid in members
+    }
     for field in ('bullets', 'people', 'open_questions'):
         result[field] = list(dict.fromkeys(value for row in overlapping for value in row.get(field) or []))
     if not result.get('title'):
@@ -153,6 +150,11 @@ def attach(uid, cid, source, start, end, *, candidates, template, choose, firest
     @firestore.transactional
     def commit(transaction):
         fence_row = fence.get(transaction=transaction).to_dict() or {}
+        linked = root.collection('episode_links').document(cid).get(transaction=transaction).to_dict() or {}
+        if linked.get('episode_id'):
+            owner = collection.document(linked['episode_id']).get(transaction=transaction).to_dict() or {}
+            if not _automatic(owner):
+                return None
         facts = {cid: {'start': start, 'end': end, 'source': source}}
         previous = {}
         lo, hi = start, end
@@ -190,17 +192,31 @@ def attach(uid, cid, source, start, end, *, candidates, template, choose, firest
         windows = partition(uid, facts)
         if len(windows) > page_limit:
             raise episodes.EpisodeConflict('recorded_capture_window_exhausted')
-        targets = {
-            window['id']: collection.document(window['id']).get(transaction=transaction).to_dict() or {}
-            for window in windows
-        }
+        targets = {}
+        for window in windows:
+            # A discard can advance a fixed episode's start without changing
+            # its original deterministic ID. Never reuse that occupied ID (or
+            # a redirect) for a disconnected component at the former start.
+            for attempt in range(page_limit):
+                target = collection.document(window['id']).get(transaction=transaction).to_dict() or {}
+                if not target or window['id'] in previous:
+                    targets[window['id']] = target
+                    break
+                window['id'] = str(
+                    uuid5(
+                        NAMESPACE_URL,
+                        f"recorded-window-displaced:{uid}:{window['started_at'].isoformat()}:{attempt}",
+                    )
+                )
+            else:
+                raise episodes.EpisodeConflict('recorded_window_id_exhausted')
         members: dict[str, tuple[bool, dict[str, Any]]] = {}
         member_ids = sorted(facts)
         # A connected component may contain many short captures. Keep each
         # membership read bounded, with every chunk in the transaction's read phase.
         for index in range(0, len(member_ids), episodes.MEMBERSHIP_BATCH_LIMIT):
             chunk = member_ids[index : index + episodes.MEMBERSHIP_BATCH_LIMIT]
-            members.update(episodes.read_memberships(transaction, client, uid, chunk))
+            members.update(episodes.read_memberships(transaction, client, uid, chunk, admit_conversation_id=cid))
         result = [_state(template, window, list(previous.values()), facts) for window in windows]
         for row in result:
             row['state_version'] = max(row['state_version'], int(targets[row['id']].get('state_version') or 0) + 1)
