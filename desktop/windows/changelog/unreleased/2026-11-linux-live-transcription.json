@@ -1,0 +1,5 @@
+{
+  "changes": [
+    "Live transcription now works on Linux. The Linux app identified itself as Windows when it opened the transcription connection, and those sessions returned no transcript at all; it now reports its real platform."
+  ]
+}
