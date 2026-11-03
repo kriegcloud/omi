@@ -14,7 +14,11 @@ import {
 } from '../lib/capture/loopbackMusicFilter'
 import { acquireMicStream } from '../lib/audio'
 import { assistantGate, wrapFeed } from './assistantGate'
-import type { ListenSource } from '../../../shared/types'
+import {
+  LISTEN_CALL_CHANNEL,
+  type ListenCallChannel,
+  type ListenSource
+} from '../../../shared/types'
 
 // The capture window's continuous-audio engine. Serves audio-start / audio-stop
 // commands (from the capture window's own continuous-mic lane and from UI screen
@@ -35,6 +39,9 @@ type AudioSession = {
   // Loopback lane only: YAMNet speech/music filter between the VAD gate and the
   // WebSocket feed (a confident music verdict drops the audio).
   musicFilter: LoopbackMusicFilter | null
+  // 'call' sessions only: the system-audio lane's pipeline (the mic lane uses
+  // `pipeline`).
+  systemPipeline: PcmPipeline | null
   // Set if audio-stop lands while the source stream is still being acquired, so
   // the resolved stream is torn down instead of leaking.
   stopped: boolean
@@ -53,9 +60,14 @@ async function startAudioSession(
     pipeline: null,
     gate: null,
     musicFilter: null,
+    systemPipeline: null,
     stopped: false
   }
   sessions.set(sessionId, session)
+  if (source === 'call') {
+    await startCallAudio(sessionId, session, ownerId)
+    return
+  }
 
   let stream: MediaStream
   try {
@@ -140,6 +152,90 @@ async function startAudioSession(
   window.omi?.captureEmit({ type: 'audio-source-ready', sessionId }, ownerId)
 }
 
+/**
+ * 'call': the mic (channel 0x01, the user) and the system loopback (0x02, the
+ * other side of a call) feed ONE two-channel listen socket. Both lanes stream
+ * ungated (no VAD gate, no music filter): the backend pairs the channels' audio
+ * by length, so a lane that goes quiet must keep sending its silence. If system
+ * audio can't be opened the session still runs with the mic, and channel 0x02 is
+ * fed matching silence so the pairing stays aligned. The echo gate still applies
+ * to both lanes.
+ */
+async function startCallAudio(
+  sessionId: string,
+  session: AudioSession,
+  ownerId: number
+): Promise<void> {
+  const fail = (e: unknown): void => {
+    session.pipeline?.stop()
+    session.systemPipeline?.stop()
+    sessions.delete(sessionId)
+    const err = e instanceof Error ? e : new Error(String(e))
+    window.omi?.captureEmit(
+      { type: 'audio-source-error', sessionId, name: err.name, message: err.message },
+      ownerId
+    )
+  }
+
+  let mic: MediaStream
+  try {
+    mic = await acquireMicStream()
+  } catch (e) {
+    fail(e)
+    return
+  }
+  let system: MediaStream | null = null
+  try {
+    system = await getSystemAudioStream()
+  } catch (e) {
+    console.warn('[call-capture] system audio unavailable; mic only:', (e as Error).message)
+  }
+  if (session.stopped) {
+    mic.getTracks().forEach((t) => t.stop())
+    system?.getTracks().forEach((t) => t.stop())
+    sessions.delete(sessionId)
+    return
+  }
+
+  const feedOn =
+    (channel: ListenCallChannel) =>
+    (pcm: Int16Array): void =>
+      window.omi?.listenFeed(sessionId, pcm.buffer as ArrayBuffer, channel)
+  const micFeed = feedOn(LISTEN_CALL_CHANNEL.mic)
+  const systemFeed = feedOn(LISTEN_CALL_CHANNEL.system)
+  try {
+    session.pipeline = createPcmPipeline(
+      mic,
+      wrapFeed(
+        system
+          ? micFeed
+          : (pcm) => {
+              micFeed(pcm)
+              systemFeed(new Int16Array(pcm.length))
+            }
+      )
+    )
+    if (system) session.systemPipeline = createPcmPipeline(system, wrapFeed(systemFeed))
+  } catch (e) {
+    if (!session.pipeline) mic.getTracks().forEach((t) => t.stop())
+    if (!session.systemPipeline) system?.getTracks().forEach((t) => t.stop())
+    fail(e)
+    return
+  }
+
+  const setups = await Promise.all([
+    session.pipeline.ready,
+    session.systemPipeline?.ready ?? Promise.resolve({ ok: true as const })
+  ])
+  if (session.stopped) return
+  const failed = setups.find((r) => !r.ok)
+  if (failed && !failed.ok) {
+    fail(failed.error)
+    return
+  }
+  window.omi?.captureEmit({ type: 'audio-source-ready', sessionId }, ownerId)
+}
+
 /** Test-only (read via the OMI_E2E-gated capture hook): current music-gate
  *  verdict of each active loopback session. Empty when no loopback lane runs. */
 export function _loopbackVerdictsForTest(): Record<string, string> {
@@ -155,6 +251,7 @@ function stopAudioSession(sessionId: string): void {
   if (!s) return
   s.stopped = true
   s.pipeline?.stop() // tears down the graph and stops the stream tracks
+  s.systemPipeline?.stop()
   s.gate?.stop()
   s.musicFilter?.stop()
   sessions.delete(sessionId)

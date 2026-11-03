@@ -17,6 +17,7 @@ import type {
   ConversationSyncPatch,
   CaptureChoice,
   ListenStartArgs,
+  ListenCallChannel,
   ListenMessage,
   CaptureCommand,
   CaptureEvent,
@@ -121,8 +122,8 @@ const omi: OmiBridgeApi = {
   },
   listenStart: (args: ListenStartArgs) => ipcRenderer.invoke('omi-listen:start', args),
   listenStop: (sessionId: string) => ipcRenderer.invoke('omi-listen:stop', sessionId),
-  listenFeed: (sessionId: string, pcm: ArrayBuffer) => {
-    ipcRenderer.send('omi-listen:feed', sessionId, pcm)
+  listenFeed: (sessionId: string, pcm: ArrayBuffer, channel?: ListenCallChannel) => {
+    ipcRenderer.send('omi-listen:feed', sessionId, pcm, channel)
   },
   listenFinalize: (sessionId: string) => ipcRenderer.send('omi-listen:finalize', sessionId),
   onListenMessage: (cb: (msg: ListenMessage) => void) => {

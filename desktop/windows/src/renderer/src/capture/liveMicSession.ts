@@ -13,7 +13,8 @@ import {
   segmentsToTranscript,
   createSegmentRetainer
 } from './liveRescue'
-import type { LocalConversation } from '../../../shared/types'
+import type { ListenSource, LocalConversation } from '../../../shared/types'
+import { getPreferences, onPreferencesChange, type Preferences } from '../lib/preferences'
 
 // After this much silence (no new finalized speech) the current conversation is
 // finalized: the session ends so the backend stores it, then a fresh one starts.
@@ -21,6 +22,18 @@ const SILENCE_MS = 30000
 // Below this word count a transcript is a trivial blip not worth its own
 // conversation — used both by finalize and by the reconnect-exhausted rescue.
 const MIN_WORDS = 5
+
+/** The always-on session's audio: the mic alone, or the two-channel mic + system
+ *  'call' pair when call capture is on (Settings → Transcription). */
+export function liveSourceFor(prefs: Pick<Preferences, 'callCaptureEnabled'>): ListenSource {
+  return prefs.callCaptureEnabled === true ? 'call' : 'mic'
+}
+
+/** The backend's refusal to start STT for a two-channel socket (seen 2026-11-02:
+ *  every channels=2 /v4/listen closed 1011 transcription_service_unavailable). */
+export function isCallSourceRejection(message: string): boolean {
+  return /transcription_service_unavailable|\(1011\)/.test(message)
+}
 
 export type LiveMicController = {
   /** Stop the session and tear everything down (call from effect cleanup). */
@@ -145,6 +158,12 @@ export function startLiveMicSession(): LiveMicController {
   let clientConversationId = crypto.randomUUID()
   let conversationStartedAt = Date.now()
   let reconnectAttempt = 0
+  let connectGen = 0
+  let currentSource: ListenSource = 'mic'
+  // Set when the backend refuses a two-channel socket (1011
+  // transcription_service_unavailable at STT init). The session then stays on the
+  // mic so transcription continues; flipping the toggle again retries the pair.
+  let callRejected = false
   let retainer = createSegmentRetainer()
 
   const clearSilence = (): void => {
@@ -232,13 +251,18 @@ export function startLiveMicSession(): LiveMicController {
   // Open (or reconnect) the socket for the CURRENT conversation, re-sending the
   // same clientConversationId so a reconnect resumes it.
   const connect = (): void => {
+    // A newer connect (e.g. the call-capture toggle flipped mid-handshake)
+    // supersedes this one: its callbacks go quiet and its handle is stopped.
+    const gen = ++connectGen
+    const stale = (): boolean => cancelled || gen !== connectGen
+    currentSource = callRejected ? 'mic' : liveSourceFor(getPreferences())
     setControllerHealth(controllerId, 'connecting')
     captureLiveStore.setStatus('connecting')
     void startTranscription(
-      'mic',
+      currentSource,
       {
         onLine: (line) => {
-          if (cancelled) return
+          if (stale()) return
           reconnectAttempt = 0 // a delivered segment proves the socket is healthy
           setControllerHealth(controllerId, 'ready')
           captureLiveStore.setStatus('live')
@@ -248,16 +272,16 @@ export function startLiveMicSession(): LiveMicController {
         },
         onInterim: () => {},
         onBackend: () => {
-          if (cancelled) return
+          if (stale()) return
           reconnectAttempt = 0
           setControllerHealth(controllerId, 'ready')
           captureLiveStore.setStatus('live')
         },
         onSegments: (segs) => {
-          if (!cancelled) retainer.add(segs) // retained for the exhausted-reconnect rescue
+          if (!stale()) retainer.add(segs) // retained for the exhausted-reconnect rescue
         },
         onEvent: (ev) => {
-          if (cancelled) return
+          if (stale()) return
           if (isConversationBoundary(ev)) {
             // Backend finalized on its own (beat our silence timer). Skip trivial
             // blips; otherwise keep the transcript shown as saved, and reset the
@@ -270,13 +294,19 @@ export function startLiveMicSession(): LiveMicController {
           }
         },
         onError: (e) => {
-          if (cancelled) return
+          if (stale()) return
           try {
             handle?.stop()
           } catch {
             /* ignore */
           }
           handle = null
+          if (currentSource === 'call' && isCallSourceRejection((e as Error).message)) {
+            callRejected = true
+            console.warn(
+              '[live-mic] two-channel call capture refused by the backend; staying on mic'
+            )
+          }
           if (!isRetryableDropError((e as Error).message, (e as Error).name)) {
             // Quota/entitlement/sign-in error — reconnecting can't help. Surface it
             // now (no rescue: a quota-blocked account can't create conversations).
@@ -301,7 +331,7 @@ export function startLiveMicSession(): LiveMicController {
             timers.push(
               setTimeout(
                 () => {
-                  if (!cancelled) connect()
+                  if (!stale()) connect()
                 },
                 reconnectDelayJitteredMs(reconnectAttempt, { rateLimited })
               )
@@ -318,7 +348,7 @@ export function startLiveMicSession(): LiveMicController {
       clientConversationId
     )
       .then((h) => {
-        if (cancelled) {
+        if (stale()) {
           try {
             h.stop()
           } catch {
@@ -348,6 +378,25 @@ export function startLiveMicSession(): LiveMicController {
   // second "could not connect"); this controller's stop() clears it first.
   timers.push(setTimeout(startConversation, 0))
   const unsubFinalize = onFinalizeRequest(finalize)
+  // Call capture toggled in Settings: close the conversation so far (kept if it
+  // has real content) and reconnect on the new source as a fresh conversation,
+  // since a mono and a two-channel socket can't resume the same server session.
+  const unsubPrefs = onPreferencesChange((p) => {
+    if (cancelled) return
+    const wanted = liveSourceFor(p)
+    if (wanted === 'call') callRejected = false // an explicit re-enable retries the pair
+    if (wanted === currentSource) return
+    clearSilence()
+    try {
+      handle?.stop()
+    } catch {
+      /* ignore */
+    }
+    handle = null
+    if (hasSpeech && liveWordCount() >= MIN_WORDS) saveCurrent()
+    hasSpeech = false
+    startConversation()
+  })
 
   return {
     stop: (): void => {
@@ -357,6 +406,7 @@ export function startLiveMicSession(): LiveMicController {
       clearSilence()
       timers.forEach(clearTimeout)
       unsubFinalize()
+      unsubPrefs()
       try {
         handle?.stop()
       } catch {

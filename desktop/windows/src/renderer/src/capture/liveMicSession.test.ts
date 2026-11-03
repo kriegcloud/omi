@@ -221,3 +221,22 @@ describe('startLiveMicSession', () => {
     ctrl.stop()
   })
 })
+
+describe('liveSourceFor', () => {
+  it('uses the two-channel call source only when call capture is on', async () => {
+    const { liveSourceFor } = await import('./liveMicSession')
+    expect(liveSourceFor({})).toBe('mic')
+    expect(liveSourceFor({ callCaptureEnabled: false })).toBe('mic')
+    expect(liveSourceFor({ callCaptureEnabled: true })).toBe('call')
+  })
+})
+
+describe('isCallSourceRejection', () => {
+  it('recognizes the backend refusing a two-channel socket', async () => {
+    const { isCallSourceRejection } = await import('./liveMicSession')
+    expect(isCallSourceRejection('v4/listen closed (1011) transcription_service_unavailable')).toBe(
+      true
+    )
+    expect(isCallSourceRejection('v4/listen closed (1006)')).toBe(false)
+  })
+})

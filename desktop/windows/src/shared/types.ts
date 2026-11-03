@@ -211,7 +211,26 @@ export type LocalConversation = {
   folderId?: string | null
 }
 
-export type ListenSource = 'mic' | 'system'
+/**
+ * Audio a listen session carries:
+ *  - 'mic' / 'system': one mono lane.
+ *  - 'call': mic AND system audio on ONE 'conversation' socket opened with
+ *    channels=2. Each frame is prefixed with its channel id
+ *    (LISTEN_CALL_CHANNEL), and the backend (build_channel_config for
+ *    source=desktop) labels channel 0x01 as the user (SPEAKER_00, is_user) and
+ *    0x02 as system audio (SPEAKER_01). Both lanes stream ungated so the
+ *    backend's per-channel buffers stay aligned. Conversation mode only.
+ */
+export type ListenSource = 'mic' | 'system' | 'call'
+
+/** Channel-id prefix bytes for a 'call' session (backend utils/listen_audio.py). */
+export const LISTEN_CALL_CHANNEL = { mic: 0x01, system: 0x02 } as const
+export type ListenCallChannel = (typeof LISTEN_CALL_CHANNEL)[keyof typeof LISTEN_CALL_CHANNEL]
+
+/** Number of audio channels the listen socket is opened with for a source. */
+export function listenChannelCount(source: ListenSource): 1 | 2 {
+  return source === 'call' ? 2 : 1
+}
 
 /**
  * Which backend transcription pipeline a session uses:
@@ -269,7 +288,8 @@ export type ListenMessage =
 
 /** A command sent from a UI window (or main) to the capture window. */
 export type CaptureCommand =
-  // Continuous-conversation audio lane (mic or system). Always VAD-gated. sessionId
+  // Continuous-conversation audio lane (mic, system, or the two-channel 'call'
+  // pair). mic/system are VAD-gated; 'call' streams both lanes ungated. sessionId
   // is the same id the UI window opened its listen session under, so the capture
   // window's feed and the UI window's transcript stream share it.
   | { type: 'audio-start'; sessionId: string; source: ListenSource }
@@ -755,8 +775,9 @@ export type OmiBridgeApi = {
   // Omi v4/listen WebSocket sessions (main-process owned).
   listenStart: (args: ListenStartArgs) => Promise<void>
   listenStop: (sessionId: string) => Promise<void>
-  /** Push a PCM16 chunk for an active listen session. Fire-and-forget. */
-  listenFeed: (sessionId: string, pcm: ArrayBuffer) => void
+  /** Push a PCM16 chunk for an active listen session. Fire-and-forget. A 'call'
+   *  session requires `channel` (LISTEN_CALL_CHANNEL); main prefixes the byte. */
+  listenFeed: (sessionId: string, pcm: ArrayBuffer, channel?: ListenCallChannel) => void
   /** Ask a PTT session to finalize: flush buffered audio and trigger the backend's
    *  endpointing so the trailing transcript segment is emitted promptly. No-op for
    *  'conversation' sessions (v4/listen manages its own endpointing). */
