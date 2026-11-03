@@ -126,10 +126,28 @@ this: binary-search the entry containing `segment.start`, then
 `wall = wallStartMs + (start − offsetSec) × 1000`. Gated silence takes up no
 offset, which is exactly what the mapping needs.
 
-Open check (Phase 0): confirm the server's offset equals cumulative fed audio,
-including keepalive frames and resumed conversations (`client_conversation_id`
-across sockets). The test sends a known clip after a measured gap and compares the
-reported `start` against the client's offset.
+Phase 0 result (2026-11-02; espeak clips on parakeet, `client_conversation_id` set):
+
+| Clip | Received-audio model | Elapsed-time model | Server `start` |
+|---|---|---|---|
+| 1 (first audio, 1.5 s after open) | 1.50 s | 1.50 s | 1.28 s |
+| 2 (after 5 s with nothing sent) | 8.33 s | 13.48 s | 7.88 s |
+| 3 (after 1.0 s of keepalives spread over 5 s) | 16.53 s | 25.76 s | 16.13 s |
+| 4 (first audio on a reconnected socket, separate run) | 14.57 s | 34.99 s | 34.85 s |
+
+What this establishes:
+
+- Within one socket, the offset advances only with received audio, keepalive
+  frames included (10 ms each). Gated silence takes no time.
+- Each socket re-anchors at its first audio byte, to the elapsed time since the
+  conversation started. The anchor carries across a reconnect that resumes the
+  conversation.
+
+So the timeline holds one anchor per socket (`firstAudioWallMs − conversationStartWallMs`)
+plus fed samples, keepalives included. Parakeet's `start` ran 0.22–0.45 s early on
+these clips. A fixed lead correction (about +0.35 s, to be calibrated on real speech)
+brings them within ±0.12 s. `TimelineEntry` therefore also records keepalives and
+socket boundaries.
 
 ### 3. Evidence sources
 
@@ -228,7 +246,7 @@ listed in `tools/ci/src/desktop.rs`.
 
 | Phase | Deliverable | Done when |
 |---|---|---|
-| 0 | Time-base spike | A clip fed after a measured gap maps to its true wall time within 150 ms, including across one reconnect |
+| 0 | Time-base spike (done 2026-11-02, see AudioTimeline) | Model confirmed. Raw error was 0.22–0.45 s early, and about ±0.12 s with a lead correction. Calibrate on real speech in Phase 1 |
 | 1 | Mono-mix call source, lane recorder, AudioTimeline, mic-lane self attribution, display relabel, `is_user` assign | In a real Fluxer call the user's lines show as You and the rest as one other speaker, with no PipeWire workaround |
 | 2 | Fluxer bridge (fork) and Omi client, person resolution, `person_id` assign with training | Each friend's lines carry their Fluxer nickname, live and in the saved conversation |
 | 3 | Local diarization, voice library, naming UI, auto-enrollment from Fluxer | In a non-Fluxer recording, a friend enrolled through earlier Fluxer calls is named without the bridge |
@@ -242,6 +260,12 @@ listed in `tools/ci/src/desktop.rs`.
 - **Speech training needs server-side audio:** if the account doesn't store audio,
   assignments still label segments but Omi's own voice learning may not run. The
   local voice library doesn't depend on it.
+- **Segment granularity:** parakeet merged clips separated by 1.5 s of
+  in-stream silence into one segment, and split them at 4 s. Segments carry no word
+  timings, so a quick back-and-forth can put two speakers in one segment, which can
+  only take the dominant speaker. Mitigations, by cost: leave mixed segments
+  unassigned when no subject reaches 60%; for the local view, re-transcribe the
+  call lane locally with word timings (sherpa-onnx or Whisper) and split there.
 - **Live versus final segments:** live segments are rewritten (same id, longer text)
   and sometimes deleted (`segments_deleted`). Display relabels follow the id;
   server assignments wait for the conversation to end.
