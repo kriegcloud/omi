@@ -15,6 +15,8 @@ import {
 } from './liveRescue'
 import type { ListenSource, LocalConversation } from '../../../shared/types'
 import { getPreferences, onPreferencesChange, type Preferences } from '../lib/preferences'
+import { omiApi } from '../lib/apiClient'
+import { createSelfAssignmentTracker, type SelfAssignmentBatch } from './selfAssignment'
 
 // After this much silence (no new finalized speech) the current conversation is
 // finalized: the session ends so the backend stores it, then a fresh one starts.
@@ -33,6 +35,24 @@ export function liveSourceFor(prefs: Pick<Preferences, 'callCaptureEnabled'>): L
  *  every channels=2 /v4/listen closed 1011 transcription_service_unavailable). */
 export function isCallSourceRejection(message: string): boolean {
   return /transcription_service_unavailable|\(1011\)/.test(message)
+}
+
+/** Save a finished conversation's user segments as is_user (the backend also
+ *  learns the user's voice from it). Best-effort: a failure only loses labels. */
+function saveSelfAssignment(batch: SelfAssignmentBatch | null): void {
+  if (!batch || batch.segmentIds.length === 0) return
+  void omiApi
+    .patch(`/v1/conversations/${encodeURIComponent(batch.conversationId)}/segments/assign-bulk`, {
+      segment_ids: batch.segmentIds,
+      assign_type: 'is_user',
+      value: 'true'
+    })
+    .then(() =>
+      console.log(
+        `[live-mic] saved ${batch.segmentIds.length} segment(s) as the user in ${batch.conversationId}`
+      )
+    )
+    .catch((e) => console.warn('[live-mic] is_user assignment failed:', (e as Error).message))
 }
 
 export type LiveMicController = {
@@ -164,6 +184,8 @@ export function startLiveMicSession(): LiveMicController {
   // transcription_service_unavailable at STT init). The session then stays on the
   // mic so transcription continues; flipping the toggle again retries the pair.
   let callRejected = false
+  // Call sessions: the user's segments per server conversation, saved when it ends.
+  const selfAssignments = createSelfAssignmentTracker()
   let retainer = createSegmentRetainer()
 
   const clearSilence = (): void => {
@@ -278,10 +300,19 @@ export function startLiveMicSession(): LiveMicController {
           captureLiveStore.setStatus('live')
         },
         onSegments: (segs) => {
-          if (!stale()) retainer.add(segs) // retained for the exhausted-reconnect rescue
+          if (stale()) return
+          retainer.add(segs) // retained for the exhausted-reconnect rescue
+          selfAssignments.noteSegments(segs)
         },
         onEvent: (ev) => {
           if (stale()) return
+          if (ev.type === 'conversation_session' && typeof ev.raw.conversation_id === 'string') {
+            saveSelfAssignment(selfAssignments.noteConversation(ev.raw.conversation_id))
+          } else if (ev.type === 'segments_deleted' && Array.isArray(ev.raw.segment_ids)) {
+            selfAssignments.noteDeleted(
+              ev.raw.segment_ids.filter((x): x is string => typeof x === 'string')
+            )
+          }
           if (isConversationBoundary(ev)) {
             // Backend finalized on its own (beat our silence timer). Skip trivial
             // blips; otherwise keep the transcript shown as saved, and reset the
@@ -407,6 +438,7 @@ export function startLiveMicSession(): LiveMicController {
       timers.forEach(clearTimeout)
       unsubFinalize()
       unsubPrefs()
+      saveSelfAssignment(selfAssignments.drain())
       try {
         handle?.stop()
       } catch {
