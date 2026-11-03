@@ -8,6 +8,8 @@ import {
   type ListenMode,
   type ListenStartArgs
 } from '../../shared/types'
+import { LISTEN_CALL_CHANNEL, listenChannelCount } from '../../shared/types'
+import type { ListenCallChannel, ListenSource } from '../../shared/types'
 import { translateToGlosses, defaultSignOpts } from '../integrations/signLanguage'
 import { isSignLanguageEnabled } from './integrations'
 import { ByokKeyStore } from '../agentKernel/byokStore'
@@ -69,7 +71,8 @@ function byokSttHeaders(base: Record<string, string>): Record<string, string> {
 export function buildListenEndpoint(
   mode: ListenMode,
   language: string,
-  clientConversationId?: string
+  clientConversationId?: string,
+  channels: 1 | 2 = 1
 ): string {
   const lang = encodeURIComponent(language || 'en')
   if (mode === 'ptt' || mode === 'transcribe') {
@@ -86,7 +89,7 @@ export function buildListenEndpoint(
     `?language=${lang}` +
     '&sample_rate=16000' +
     '&codec=pcm16' +
-    '&channels=1' +
+    `&channels=${channels}` +
     '&include_speech_profile=true' +
     '&source=desktop' +
     '&speaker_auto_assign=enabled' +
@@ -117,6 +120,26 @@ const WATCHDOG_STALE_MS = 60_000
 // contract names. Kept as a fresh Buffer per session send is unnecessary (ws copies
 // on send); a shared frozen frame is fine.
 const KEEPALIVE_FRAME = Buffer.alloc(320)
+// Two-channel ('call') sockets parse byte 0 of every frame as the channel id; an
+// unprefixed keepalive would land on unknown channel 0x00 and be dropped as
+// noise. Prefix it as mic-channel silence.
+const CALL_KEEPALIVE_FRAME = Buffer.concat([
+  Buffer.from([LISTEN_CALL_CHANNEL.mic]),
+  KEEPALIVE_FRAME
+])
+
+/** Wire payload for one fed chunk: mono sockets send the PCM as-is; a two-channel
+ *  socket needs a valid channel id and gets it as a 1-byte prefix (backend
+ *  receiver: `channel_id_to_index[data[0]]`, audio = data[1:]). null = drop. */
+export function frameListenAudio(
+  channels: 1 | 2,
+  pcm: ArrayBuffer,
+  channel?: number
+): ArrayBuffer | Buffer | null {
+  if (channels === 1) return pcm
+  if (channel !== LISTEN_CALL_CHANNEL.mic && channel !== LISTEN_CALL_CHANNEL.system) return null
+  return Buffer.concat([Buffer.from([channel]), Buffer.from(pcm)])
+}
 
 /** Pure decision: should this session emit a silence keepalive now? Only the
  *  long-lived conversation socket starves on silence (PTT/transcribe are short and
@@ -148,7 +171,9 @@ export function isSocketStale(
 type Session = {
   ws: WebSocket
   ownerId: number
-  source: 'mic' | 'system'
+  source: ListenSource
+  // 2 only for a 'call' conversation socket: frames carry a channel-id prefix.
+  channels: 1 | 2
   mode: ListenMode
   closed: boolean
   // Sign-language translation throttle: rolling buffer so re-translation
@@ -219,7 +244,7 @@ export function buildListenHeaders(
 // Never reset within a process.
 const listenStats = new Map<string, { bytes: number; chunks: number }>()
 
-function recordFed(mode: ListenMode, source: 'mic' | 'system', bytes: number): void {
+function recordFed(mode: ListenMode, source: ListenSource, bytes: number): void {
   const key = `${mode}:${source}`
   const cur = listenStats.get(key) ?? { bytes: 0, chunks: 0 }
   cur.bytes += bytes
@@ -230,7 +255,7 @@ function recordFed(mode: ListenMode, source: 'mic' | 'system', bytes: number): v
 /** OMI_E2E only: register a socketless counting session so the VAD-playback
  * harness can assert post-gate byte flow with zero auth/network. feedSession
  * counts via recordFed then drops the bytes (stub is never OPEN/CONNECTING). */
-export function startTestListenSession(sessionId: string, source: 'mic' | 'system'): boolean {
+export function startTestListenSession(sessionId: string, source: ListenSource): boolean {
   if (process.env.OMI_E2E !== '1') return false
   const stub = {
     readyState: 3, // CLOSED — feedSession counts, then neither sends nor buffers
@@ -245,6 +270,7 @@ export function startTestListenSession(sessionId: string, source: 'mic' | 'syste
     ws: stub,
     ownerId: -1,
     source,
+    channels: listenChannelCount(source),
     mode: 'conversation',
     closed: false,
     transcriptBuffer: '',
@@ -341,7 +367,20 @@ function startSession(args: ListenStartArgs, owner: WebContents): void {
     }
   }
 
-  const base = buildListenEndpoint(mode, args.language, args.clientConversationId)
+  // A 'call' pair rides only the conversation socket (backend multi-channel lives
+  // in /v4/listen); the transcribe-stream endpoints are mono.
+  if (args.source === 'call' && mode !== 'conversation') {
+    console.warn(`[omi-listen] rejected source=call for mode=${mode}`)
+    emit(owner.id, {
+      sessionId: args.sessionId,
+      kind: 'error',
+      message: 'Call capture requires the conversation pipeline.',
+      fatal: true
+    })
+    return
+  }
+  const channels = mode === 'conversation' ? listenChannelCount(args.source) : 1
+  const base = buildListenEndpoint(mode, args.language, args.clientConversationId, channels)
   let url = base
   if (mode === 'conversation') {
     // Decode (not verify) the JWT to derive the uid for the query param; the
@@ -363,6 +402,7 @@ function startSession(args: ListenStartArgs, owner: WebContents): void {
     ws,
     ownerId: owner.id,
     source: args.source,
+    channels,
     mode,
     closed: false,
     transcriptBuffer: '',
@@ -526,25 +566,27 @@ function serviceConversationSocket(s: Session): void {
   }
   if (!shouldSendKeepalive(s.mode, s.ws.readyState, Date.now() - s.lastFeedAt)) return
   try {
-    s.ws.send(KEEPALIVE_FRAME)
+    s.ws.send(s.channels === 2 ? CALL_KEEPALIVE_FRAME : KEEPALIVE_FRAME)
   } catch {
     /* ignore — a failing send means the socket is already dying; close will fire */
   }
 }
 
-function feedSession(sessionId: string, pcm: ArrayBuffer): void {
+function feedSession(sessionId: string, pcm: ArrayBuffer, channel?: ListenCallChannel): void {
   const s = sessions.get(sessionId)
   if (!s) return
+  const payload = frameListenAudio(s.channels, pcm, channel)
+  if (payload === null) return // two-channel socket fed without a valid channel id
   recordFed(s.mode, s.source, pcm.byteLength)
   s.lastFeedAt = Date.now()
   if (s.ws.readyState === WebSocket.OPEN) {
-    s.ws.send(pcm)
+    s.ws.send(payload)
     return
   }
   // Still connecting (or closing): buffer so pre-OPEN speech isn't dropped. Once
   // OPEN the 'open' handler flushes these. Bounded — drop oldest past the cap.
   if (s.ws.readyState === WebSocket.CONNECTING) {
-    const chunk = Buffer.from(pcm)
+    const chunk = Buffer.isBuffer(payload) ? payload : Buffer.from(payload)
     s.pending.push(chunk)
     s.pendingBytes += chunk.byteLength
     while (s.pendingBytes > PCM_PENDING_MAX_BYTES && s.pending.length > 1) {
@@ -617,10 +659,13 @@ export function registerOmiListenHandlers(canStartSession: (ownerId: number) => 
     stopSession(sessionId, e.sender.id)
   })
   // `on` (not `handle`) — feed is fire-and-forget to keep audio throughput cheap.
-  ipcMain.on('omi-listen:feed', (e, sessionId: string, pcm: ArrayBuffer) => {
-    if (!isListenSessionOwnedBy(sessionId, e.sender.id)) return
-    feedSession(sessionId, pcm)
-  })
+  ipcMain.on(
+    'omi-listen:feed',
+    (e, sessionId: string, pcm: ArrayBuffer, channel?: ListenCallChannel) => {
+      if (!isListenSessionOwnedBy(sessionId, e.sender.id)) return
+      feedSession(sessionId, pcm, channel)
+    }
+  )
   ipcMain.on('omi-listen:finalize', (e, sessionId: string) => {
     if (!isListenSessionOwnedBy(sessionId, e.sender.id)) return
     finalizeSession(sessionId)
