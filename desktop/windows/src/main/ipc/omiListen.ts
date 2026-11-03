@@ -182,13 +182,32 @@ const sessions = new Map<string, Session>()
 const sessionOwners = new Map<string, number>()
 const ownersWithDestroyHook = new Set<number>()
 
+/** X-App-Platform for the listen sockets: the OS this build is actually running
+ *  on. The Linux build used to claim 'windows', and /v4/listen then routed its
+ *  source=desktop sessions to a live-STT lane that returned no segments at all
+ *  while the same audio sent as 'linux' was transcribed live (probed 2026-11-02). */
+export function listenAppPlatform(platform: NodeJS.Platform = process.platform): string {
+  switch (platform) {
+    case 'linux':
+      return 'linux'
+    case 'darwin':
+      return 'macos'
+    default:
+      return 'windows'
+  }
+}
+
 // Base headers every v4/listen WS carries: auth plus the platform/device
 // identity the backend's platform normalization reads (X-App-Platform,
 // X-Device-Id-Hash). BYOK STT headers are layered on top at the call site.
-export function buildListenHeaders(token: string, deviceIdHash: string): Record<string, string> {
+export function buildListenHeaders(
+  token: string,
+  deviceIdHash: string,
+  platform: NodeJS.Platform = process.platform
+): Record<string, string> {
   return {
     Authorization: `Bearer ${token}`,
-    'X-App-Platform': 'windows',
+    'X-App-Platform': listenAppPlatform(platform),
     'X-Device-Id-Hash': deviceIdHash
   }
 }
