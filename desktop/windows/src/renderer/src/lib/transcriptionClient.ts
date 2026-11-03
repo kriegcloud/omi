@@ -14,6 +14,10 @@ export type TranscriptionMode = Extract<ListenMode, 'conversation' | 'transcribe
 // quickly. (Push-to-talk does NOT ride this client — see lib/ptt/, whose stream
 // lane is opportunistic and needs no connect timeout at all.)
 const CONNECT_TIMEOUT_MS = 3000
+// A 'call' session also opens the system loopback (a display-media request plus a
+// second capture pipeline) before its audio source reports ready; on Linux that
+// took longer than 3 s and every attempt timed out (2026-11-03).
+const CALL_CONNECT_TIMEOUT_MS = 10000
 
 export type TranscriptionCallbacks = {
   /** Fires every time a new finalized line is ready (a v4/listen segment). */
@@ -151,11 +155,14 @@ async function startWithOmi(
       return
     }
     signal?.addEventListener('abort', onAbort, { once: true })
-    timeout = setTimeout(() => {
-      const error = new Error('Omi transcription unavailable (connection or audio timed out)')
-      error.name = 'TimeoutError'
-      fail(error)
-    }, CONNECT_TIMEOUT_MS)
+    timeout = setTimeout(
+      () => {
+        const error = new Error('Omi transcription unavailable (connection or audio timed out)')
+        error.name = 'TimeoutError'
+        fail(error)
+      },
+      source === 'call' ? CALL_CONNECT_TIMEOUT_MS : CONNECT_TIMEOUT_MS
+    )
 
     startOmiListen(
       source,

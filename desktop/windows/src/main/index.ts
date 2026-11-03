@@ -751,7 +751,13 @@ app.whenReady().then(async () => {
   // here only take effect after a FULL restart of the main process.
   session.defaultSession.setDisplayMediaRequestHandler(async (_request, callback) => {
     try {
-      const sources = await desktopCapturer.getSources({ types: ['screen'] })
+      // Only the source id is needed (the renderer drops the video track), so skip
+      // thumbnail rendering, which made the request slow enough to time out a
+      // call session's connect window.
+      const sources = await desktopCapturer.getSources({
+        types: ['screen'],
+        thumbnailSize: { width: 0, height: 0 }
+      })
       if (sources.length === 0) throw new Error('no screen sources available')
       console.log('[main] display-media request → granting loopback audio')
       callback({ video: sources[0], audio: 'loopback' })
@@ -1252,7 +1258,7 @@ app.whenReady().then(async () => {
         // peer — it's a time-triggered job (no screen frames). Registers the manual
         // Suggest IPC and starts the periodic scheduler; both no-op until a session is
         // relayed and the goalAutoGenerationEnabled toggle is on (default OFF).
-        { name: 'goalGeneration', run: () => registerGoalGeneration() },
+        { name: 'goalGeneration', run: () => registerGoalGeneration() }
       ],
       undefined,
       undefined,
