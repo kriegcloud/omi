@@ -9,7 +9,8 @@ import {
   type ListenStartArgs
 } from '../../shared/types'
 import { LISTEN_CALL_CHANNEL, listenChannelCount } from '../../shared/types'
-import type { ListenCallChannel, ListenSource } from '../../shared/types'
+import type { ListenCallChannel, ListenLaneActivity, ListenSource } from '../../shared/types'
+import { SpeakerTimeline, attributeCoverage } from './speakerTimeline'
 import { translateToGlosses, defaultSignOpts } from '../integrations/signLanguage'
 import { isSignLanguageEnabled } from './integrations'
 import { ByokKeyStore } from '../agentKernel/byokStore'
@@ -198,9 +199,29 @@ type Session = {
   lastMessageAt: number
   // Conversation mode only: periodic idleness check (keepalive + watchdog).
   keepaliveTimer: ReturnType<typeof setInterval> | null
+  // 'call' sessions only: maps segments onto the mic lane's own speech so the
+  // user's lines get is_user (docs/speaker-identity.md).
+  timeline: SpeakerTimeline | null
+  // Last conversation_id the server announced on this socket.
+  conversationId: string | null
 }
 
 const sessions = new Map<string, Session>()
+
+// Wall time each client conversation's FIRST socket opened: the server anchors a
+// resumed conversation's offsets there (Phase 0). Bounded; oldest dropped.
+const conversationStarts = new Map<string, number>()
+function conversationStartFor(clientConversationId: string | undefined, nowMs: number): number {
+  if (!clientConversationId) return nowMs
+  const known = conversationStarts.get(clientConversationId)
+  if (known !== undefined) return known
+  conversationStarts.set(clientConversationId, nowMs)
+  if (conversationStarts.size > 64) {
+    const oldest = conversationStarts.keys().next().value
+    if (oldest !== undefined) conversationStarts.delete(oldest)
+  }
+  return nowMs
+}
 // Ownership outlives the WebSocket itself. A socket can close before the
 // renderer sends audio-stop; retaining this record lets the same renderer tear
 // down its local capture pipeline without opening control to other windows.
@@ -280,7 +301,9 @@ export function startTestListenSession(sessionId: string, source: ListenSource):
     pendingBytes: 0,
     lastFeedAt: Date.now(),
     lastMessageAt: Date.now(),
-    keepaliveTimer: null
+    keepaliveTimer: null,
+    timeline: null,
+    conversationId: null
   })
   return true
 }
@@ -412,7 +435,12 @@ function startSession(args: ListenStartArgs, owner: WebContents): void {
     pendingBytes: 0,
     lastFeedAt: Date.now(),
     lastMessageAt: Date.now(),
-    keepaliveTimer: null
+    keepaliveTimer: null,
+    timeline:
+      args.source === 'call' && channels === 1
+        ? new SpeakerTimeline(conversationStartFor(args.clientConversationId, Date.now()))
+        : null,
+    conversationId: null
   }
   sessions.set(args.sessionId, session)
   const t0 = Date.now()
@@ -429,6 +457,7 @@ function startSession(args: ListenStartArgs, owner: WebContents): void {
       for (const chunk of session.pending) {
         try {
           ws.send(chunk)
+          session.timeline?.noteFed(chunk.byteLength / 2, Date.now())
         } catch {
           /* ignore */
         }
@@ -465,6 +494,7 @@ function startSession(args: ListenStartArgs, owner: WebContents): void {
     }
     if (Array.isArray(json)) {
       const segments = json as BackendSegment[]
+      if (session.timeline) attributeSegments(session.timeline, segments)
       console.log(`[omi-listen] segments ${args.sessionId} mode=${mode} count=${segments.length}`)
       emit(session.ownerId, {
         sessionId: args.sessionId,
@@ -510,6 +540,12 @@ function startSession(args: ListenStartArgs, owner: WebContents): void {
     }
     if (json && typeof json === 'object' && 'type' in (json as object)) {
       const obj = json as Record<string, unknown>
+      if (obj.type === 'conversation_session' && typeof obj.conversation_id === 'string') {
+        if (session.conversationId !== null && session.conversationId !== obj.conversation_id) {
+          session.timeline?.noteConversationChanged()
+        }
+        session.conversationId = obj.conversation_id
+      }
       const event: ListenEvent = { type: String(obj.type), raw: obj }
       emit(session.ownerId, { sessionId: args.sessionId, kind: 'event', event })
     }
@@ -572,6 +608,23 @@ function serviceConversationSocket(s: Session): void {
   }
 }
 
+/** Mark segments the user's own mic carried (is_user) and tag the verdict. Never
+ *  clears an is_user the backend set itself. */
+function attributeSegments(timeline: SpeakerTimeline, segments: BackendSegment[]): void {
+  for (const seg of segments) {
+    const verdict = attributeCoverage(timeline.selfCoverage(seg.start, seg.end))
+    if (verdict === null) continue
+    seg.client_attribution = verdict
+    if (verdict === 'self') seg.is_user = true
+  }
+}
+
+function noteLaneActivity(sessionId: string, activity: ListenLaneActivity): void {
+  const s = sessions.get(sessionId)
+  if (!s?.timeline || activity?.lane !== 'mic' || !Number.isFinite(activity.atSample)) return
+  s.timeline.noteActivity(activity.speaking === true, activity.atSample)
+}
+
 function feedSession(sessionId: string, pcm: ArrayBuffer, channel?: ListenCallChannel): void {
   const s = sessions.get(sessionId)
   if (!s) return
@@ -581,6 +634,7 @@ function feedSession(sessionId: string, pcm: ArrayBuffer, channel?: ListenCallCh
   s.lastFeedAt = Date.now()
   if (s.ws.readyState === WebSocket.OPEN) {
     s.ws.send(payload)
+    s.timeline?.noteFed(pcm.byteLength / 2, Date.now())
     return
   }
   // Still connecting (or closing): buffer so pre-OPEN speech isn't dropped. Once
@@ -666,6 +720,10 @@ export function registerOmiListenHandlers(canStartSession: (ownerId: number) => 
       feedSession(sessionId, pcm, channel)
     }
   )
+  ipcMain.on('omi-listen:activity', (e, sessionId: string, activity: ListenLaneActivity) => {
+    if (!isListenSessionOwnedBy(sessionId, e.sender.id)) return
+    noteLaneActivity(sessionId, activity)
+  })
   ipcMain.on('omi-listen:finalize', (e, sessionId: string) => {
     if (!isListenSessionOwnedBy(sessionId, e.sender.id)) return
     finalizeSession(sessionId)

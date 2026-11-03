@@ -15,10 +15,13 @@ import {
 import { acquireMicStream } from '../lib/audio'
 import { assistantGate, wrapFeed } from './assistantGate'
 import {
+  CALL_UPSTREAM_CHANNELS,
   LISTEN_CALL_CHANNEL,
   type ListenCallChannel,
   type ListenSource
 } from '../../../shared/types'
+import { CallLaneMixer, type MixedBlock } from '../lib/capture/callMixer'
+import { createSelfSpeechTracker, type SelfSpeechTracker } from './selfSpeech'
 
 // The capture window's continuous-audio engine. Serves audio-start / audio-stop
 // commands (from the capture window's own continuous-mic lane and from UI screen
@@ -42,6 +45,8 @@ type AudioSession = {
   // 'call' sessions only: the system-audio lane's pipeline (the mic lane uses
   // `pipeline`).
   systemPipeline: PcmPipeline | null
+  // 'call' sessions on a mono upstream: reports the mic lane's own speech.
+  selfSpeech: SelfSpeechTracker | null
   // Set if audio-stop lands while the source stream is still being acquired, so
   // the resolved stream is torn down instead of leaking.
   stopped: boolean
@@ -61,6 +66,7 @@ async function startAudioSession(
     gate: null,
     musicFilter: null,
     systemPipeline: null,
+    selfSpeech: null,
     stopped: false
   }
   sessions.set(sessionId, session)
@@ -153,13 +159,16 @@ async function startAudioSession(
 }
 
 /**
- * 'call': the mic (channel 0x01, the user) and the system loopback (0x02, the
- * other side of a call) feed ONE two-channel listen socket. Both lanes stream
- * ungated (no VAD gate, no music filter): the backend pairs the channels' audio
- * by length, so a lane that goes quiet must keep sending its silence. If system
- * audio can't be opened the session still runs with the mic, and channel 0x02 is
- * fed matching silence so the pairing stays aligned. The echo gate still applies
- * to both lanes.
+ * 'call': the mic and the system loopback (the other side of a call) feed ONE
+ * listen socket, ungated so the backend's offsets track wall time.
+ *  - Mono upstream (CALL_UPSTREAM_CHANNELS = 1): CallLaneMixer sums the lanes in
+ *    aligned blocks; the mic samples of each block go to a self-speech tracker
+ *    that reports the user's own speech as fed-stream sample positions
+ *    (listenActivity), so main can mark the user's segments.
+ *  - Two-channel upstream: each lane feeds its own channel id instead.
+ * If system audio can't be opened the session still runs on the mic. While Omi's
+ * own voice plays (echo gate) the mono feed carries silence rather than dropping
+ * frames, so sample positions stay aligned with what the backend receives.
  */
 async function startCallAudio(
   sessionId: string,
@@ -169,6 +178,7 @@ async function startCallAudio(
   const fail = (e: unknown): void => {
     session.pipeline?.stop()
     session.systemPipeline?.stop()
+    session.selfSpeech?.stop()
     sessions.delete(sessionId)
     const err = e instanceof Error ? e : new Error(String(e))
     window.omi?.captureEmit(
@@ -197,25 +207,45 @@ async function startCallAudio(
     return
   }
 
-  const feedOn =
-    (channel: ListenCallChannel) =>
-    (pcm: Int16Array): void =>
-      window.omi?.listenFeed(sessionId, pcm.buffer as ArrayBuffer, channel)
-  const micFeed = feedOn(LISTEN_CALL_CHANNEL.mic)
-  const systemFeed = feedOn(LISTEN_CALL_CHANNEL.system)
-  try {
-    session.pipeline = createPcmPipeline(
-      mic,
-      wrapFeed(
-        system
-          ? micFeed
-          : (pcm) => {
-              micFeed(pcm)
-              systemFeed(new Int16Array(pcm.length))
-            }
-      )
+  let micInput: (pcm: Int16Array) => void
+  let systemInput: (pcm: Int16Array) => void
+  if (CALL_UPSTREAM_CHANNELS === 1) {
+    const selfSpeech = createSelfSpeechTracker((speaking, atSample) =>
+      window.omi?.listenActivity?.(sessionId, { lane: 'mic', speaking, atSample })
     )
-    if (system) session.systemPipeline = createPcmPipeline(system, wrapFeed(systemFeed))
+    session.selfSpeech = selfSpeech
+    const mixer = new CallLaneMixer({
+      blockSamples: 1600, // 100 ms
+      maxLagSamples: 8000, // 0.5 s before a stalled lane is filled with silence
+      hasSystem: system !== null
+    })
+    const emit = (blocks: MixedBlock[]): void => {
+      for (const b of blocks) {
+        const out = assistantGate.isPaused() ? new Int16Array(b.mix.length) : b.mix
+        window.omi?.listenFeed(sessionId, out.buffer as ArrayBuffer)
+        selfSpeech.push(b.mic)
+      }
+    }
+    micInput = (pcm) => emit(mixer.push('mic', pcm))
+    systemInput = (pcm) => emit(mixer.push('system', pcm))
+  } else {
+    const feedOn =
+      (channel: ListenCallChannel) =>
+      (pcm: Int16Array): void =>
+        window.omi?.listenFeed(sessionId, pcm.buffer as ArrayBuffer, channel)
+    const micFeed = wrapFeed(feedOn(LISTEN_CALL_CHANNEL.mic))
+    const systemFeed = wrapFeed(feedOn(LISTEN_CALL_CHANNEL.system))
+    micInput = system
+      ? micFeed
+      : (pcm) => {
+          micFeed(pcm)
+          systemFeed(new Int16Array(pcm.length))
+        }
+    systemInput = systemFeed
+  }
+  try {
+    session.pipeline = createPcmPipeline(mic, micInput)
+    if (system) session.systemPipeline = createPcmPipeline(system, systemInput)
   } catch (e) {
     if (!session.pipeline) mic.getTracks().forEach((t) => t.stop())
     if (!session.systemPipeline) system?.getTracks().forEach((t) => t.stop())
@@ -252,6 +282,7 @@ function stopAudioSession(sessionId: string): void {
   s.stopped = true
   s.pipeline?.stop() // tears down the graph and stops the stream tracks
   s.systemPipeline?.stop()
+  s.selfSpeech?.stop()
   s.gate?.stop()
   s.musicFilter?.stop()
   sessions.delete(sessionId)

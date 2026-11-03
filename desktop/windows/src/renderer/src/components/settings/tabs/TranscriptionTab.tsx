@@ -118,7 +118,7 @@ export function TranscriptionTab(): React.JSX.Element {
         icon={Headphones}
         dot={callCapture ? 'on' : 'off'}
         title="Capture call audio"
-        subtitle="Also transcribe what plays through your speakers or headphones (voice calls, videos) on a separate channel, so your voice is labelled apart from everyone you hear. Streams continuously while on."
+        subtitle="Also transcribe what plays through your speakers or headphones (voice calls, videos). Your own lines are labelled You, told apart by your microphone. Streams continuously while on."
         keywords="call meeting system audio loopback discord voice chat speaker separate channel"
         control={
           <Toggle on={callCapture} onChange={changeCallCapture} label="Capture call audio" />
