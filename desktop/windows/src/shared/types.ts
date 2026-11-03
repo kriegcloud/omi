@@ -59,6 +59,10 @@ export type BackendSegment = {
   person_id?: string
   start: number
   end: number
+  /** Client-side speaker verdict for a 'call' session (main/ipc/speakerTimeline):
+   *  'self' = the user's mic carried the speech (is_user is set to true), 'other' =
+   *  the call side did. Absent when undecided or not a call session. */
+  client_attribution?: 'self' | 'other'
 }
 
 /** Non-segment messages the v4/listen socket may send (e.g. memory_creating,
@@ -211,7 +215,37 @@ export type LocalConversation = {
   folderId?: string | null
 }
 
-export type ListenSource = 'mic' | 'system'
+/**
+ * Audio a listen session carries:
+ *  - 'mic' / 'system': one mono lane.
+ *  - 'call': mic AND system audio on ONE 'conversation' socket, streamed
+ *    ungated. Upstream it is a mono mix (CALL_UPSTREAM_CHANNELS); the mic lane's
+ *    own speech activity is reported separately (listenActivity) so main can mark
+ *    the user's segments. With channels=2 each frame would instead carry its
+ *    channel id (LISTEN_CALL_CHANNEL: backend labels 0x01 user, 0x02 system).
+ *    Conversation mode only.
+ */
+export type ListenSource = 'mic' | 'system' | 'call'
+
+/** Upstream channel count for a 'call' session. The backend refused every
+ *  channels=2 session on 2026-11-02 (1011 transcription_service_unavailable), so
+ *  the capture window mixes the lanes to mono and attribution happens client-side
+ *  (docs/speaker-identity.md). Flip to 2 once the backend's two-channel lane works;
+ *  the framing below is kept for that. */
+export const CALL_UPSTREAM_CHANNELS: 1 | 2 = 1
+
+/** Speech activity of one capture lane at a sample position of the fed stream
+ *  (the stream main receives, counted from the session's first fed sample). */
+export type ListenLaneActivity = { lane: 'mic'; speaking: boolean; atSample: number }
+
+/** Channel-id prefix bytes for a 'call' session (backend utils/listen_audio.py). */
+export const LISTEN_CALL_CHANNEL = { mic: 0x01, system: 0x02 } as const
+export type ListenCallChannel = (typeof LISTEN_CALL_CHANNEL)[keyof typeof LISTEN_CALL_CHANNEL]
+
+/** Number of audio channels the listen socket is opened with for a source. */
+export function listenChannelCount(source: ListenSource): 1 | 2 {
+  return source === 'call' ? CALL_UPSTREAM_CHANNELS : 1
+}
 
 /**
  * Which backend transcription pipeline a session uses:
@@ -269,7 +303,8 @@ export type ListenMessage =
 
 /** A command sent from a UI window (or main) to the capture window. */
 export type CaptureCommand =
-  // Continuous-conversation audio lane (mic or system). Always VAD-gated. sessionId
+  // Continuous-conversation audio lane (mic, system, or the two-channel 'call'
+  // pair). mic/system are VAD-gated; 'call' streams both lanes ungated. sessionId
   // is the same id the UI window opened its listen session under, so the capture
   // window's feed and the UI window's transcript stream share it.
   | { type: 'audio-start'; sessionId: string; source: ListenSource }
@@ -755,8 +790,11 @@ export type OmiBridgeApi = {
   // Omi v4/listen WebSocket sessions (main-process owned).
   listenStart: (args: ListenStartArgs) => Promise<void>
   listenStop: (sessionId: string) => Promise<void>
-  /** Push a PCM16 chunk for an active listen session. Fire-and-forget. */
-  listenFeed: (sessionId: string, pcm: ArrayBuffer) => void
+  /** Push a PCM16 chunk for an active listen session. Fire-and-forget. A 'call'
+   *  session requires `channel` (LISTEN_CALL_CHANNEL); main prefixes the byte. */
+  listenFeed: (sessionId: string, pcm: ArrayBuffer, channel?: ListenCallChannel) => void
+  /** Report a capture lane's speech transition for a 'call' session. Fire-and-forget. */
+  listenActivity: (sessionId: string, activity: ListenLaneActivity) => void
   /** Ask a PTT session to finalize: flush buffered audio and trigger the backend's
    *  endpointing so the trailing transcript segment is emitted promptly. No-op for
    *  'conversation' sessions (v4/listen manages its own endpointing). */

@@ -96,6 +96,11 @@ export type Preferences = {
   // AudioSessionHost); PTT is passthrough regardless. Undefined = enabled
   // (gated), the macOS-faithful default. Set false to send all audio ungated.
   vadGateEnabled?: boolean
+  // Call capture: the always-on session also captures system audio (the other
+  // side of a voice call), mixed with the mic and streamed ungated. The mic lane's
+  // own speech marks the user's segments as is_user (docs/speaker-identity.md).
+  // Undefined = off. Toggling restarts the live session.
+  callCaptureEnabled?: boolean
   // Fall back to the original Home screen instead of the Hub. Undefined = off, so
   // the Hub is what a user sees by default; Settings → Appearance can switch back.
   useLegacyHomeDesign?: boolean

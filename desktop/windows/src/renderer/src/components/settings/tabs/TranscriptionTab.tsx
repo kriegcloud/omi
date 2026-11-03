@@ -20,7 +20,7 @@
 //  - A separate voice-assistant languages multi-select (Windows uses the single
 //    `language` for PTT too; there is no per-turn LID / voiceLanguages backend).
 import { useState } from 'react'
-import { Languages, Waves } from 'lucide-react'
+import { Headphones, Languages, Waves } from 'lucide-react'
 import { LANGUAGES, DEFAULT_LANGUAGE } from '../../../lib/languages'
 import { getPreferences, setPreferences } from '../../../lib/preferences'
 import { syncLanguage } from '../../../lib/userProfile'
@@ -56,6 +56,13 @@ export function TranscriptionTab(): React.JSX.Element {
   const changeVadGate = (next: boolean): void => {
     setVadGate(next) // optimistic
     setPreferences({ vadGateEnabled: next })
+  }
+
+  // Default OFF; the capture window restarts the live session when this flips.
+  const [callCapture, setCallCapture] = useState(() => getPreferences().callCaptureEnabled === true)
+  const changeCallCapture = (next: boolean): void => {
+    setCallCapture(next)
+    setPreferences({ callCaptureEnabled: next })
   }
 
   return (
@@ -106,6 +113,16 @@ export function TranscriptionTab(): React.JSX.Element {
         subtitle="On-device voice-activity detection skips silence before it reaches transcription, reducing usage and cost. Turn off to send all captured audio."
         keywords="vad voice activity detection silence gate deepgram cost usage"
         control={<Toggle on={vadGate} onChange={changeVadGate} label="Local VAD gate" />}
+      />
+      <SettingRow
+        icon={Headphones}
+        dot={callCapture ? 'on' : 'off'}
+        title="Capture call audio"
+        subtitle="Also transcribe what plays through your speakers or headphones (voice calls, videos). Your own lines are labelled You, told apart by your microphone. Streams continuously while on."
+        keywords="call meeting system audio loopback discord voice chat speaker separate channel"
+        control={
+          <Toggle on={callCapture} onChange={changeCallCapture} label="Capture call audio" />
+        }
       />
     </>
   )
