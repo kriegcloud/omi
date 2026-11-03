@@ -250,13 +250,74 @@ def test_reserved_record_drains_after_rollback_and_cannot_rebind_to_wal(monkeypa
     assert len([v for (t, _), v in store.rows.items() if t == 'jobs']) == 1
 
 
-def test_projection_replaces_provisional_instead_of_appending_and_keeps_id():
-    result, survivors = replace_record(recording(), incoming(), {'start': 100, 'end': 102})
+@pytest.mark.parametrize('visible_restore', [False, True])
+def test_projection_replaces_provisional_instead_of_appending_and_keeps_id(visible_restore):
+    provisional = recording()
+    if visible_restore:
+        provisional['external_data'] = {'server_batch_only': True}
+        provisional['transcript_segments'][0].update(text='Synthetic Modulate preview.', stt_provider='modulate')
+    result, survivors = replace_record(provisional, incoming(), {'start': 100, 'end': 102})
     assert result['id'] == 'record'
     assert len(result['transcript_segments']) == 1
     assert result['transcript_segments'][0]['id'] == 'new'
     assert result['sync_content_revision'] == result['record_projection_revision'] == 1
     assert survivors[0]['speaker_id_scope'] == 'final:batch:unit'
+    assert result['record_lane_owner'] == 'batch_live_v1'
+    if visible_restore:
+        assert result['external_data']['server_batch_only'] is True
+        assert result['transcript_segments'][0]['text'] == 'Synthetic speech.'
+
+
+def test_final_batch_projection_fences_a_delayed_modulate_preview_flush():
+    from database import conversations
+    from tests.unit.fixtures.strict_firestore_transaction import StrictFirestore
+
+    provisional = recording(external_data={'server_batch_only': True})
+    final, _ = replace_record(provisional, incoming(), {'start': 100, 'end': 102})
+    key = ('users', 'synthetic', 'conversations', 'record')
+    db = StrictFirestore({key: final})
+    assert (
+        conversations.update_conversation_segments(
+            'synthetic',
+            'record',
+            provisional['transcript_segments'],
+            live_segments=provisional['transcript_segments'],
+            firestore_client=db,
+        )
+        is False
+    )
+    assert db.rows[key] == final
+
+
+RULE_DISCARD = {'verdict': 'discard', 'decided_by': 'rule', 'reason': 'empty_transcript', 'trigger': 'sync_update'}
+
+
+def test_projection_text_supersedes_an_automatic_discard():
+    original = recording(transcript_segments=[], discarded=True, relevance_decision=dict(RULE_DISCARD))
+    result, _ = replace_record(original, incoming(), {'start': 100, 'end': 102})
+    assert result['discarded'] is False and result['relevance_decision'] is None
+    assert [s['id'] for s in result['transcript_segments']] == ['new']
+    assert original['discarded'] is True
+
+
+def test_projection_without_new_text_keeps_the_automatic_discard():
+    original = recording(discarded=True, relevance_decision=dict(RULE_DISCARD))
+    result, new = replace_record(original, incoming(), {'start': 100, 'end': 102, 'preserve_existing': True})
+    assert not new
+    assert result['discarded'] is True and result['relevance_decision'] == RULE_DISCARD
+
+
+@pytest.mark.parametrize(
+    'changes',
+    [
+        {'discarded': True},
+        {'discarded': True, 'relevance_decision': dict(RULE_DISCARD), 'sync_relevance_user_kept': False},
+        {'discarded': True, 'relevance_decision': {**RULE_DISCARD, 'verdict': 'keep'}},
+    ],
+)
+def test_projection_never_overrides_a_user_discard(changes):
+    with pytest.raises(SyncAssignmentConflict, match='discarded'):
+        replace_record(recording(**changes), incoming(), {'start': 100, 'end': 102})
 
 
 def test_projection_waits_for_finalize_without_mutating_provisional():
@@ -328,7 +389,10 @@ def test_reference_scope_and_generation_are_fail_closed(change):
 
 @pytest.mark.parametrize('server_only', [False, True])
 @pytest.mark.parametrize('barrier_change', [None, 'pending', 'failed', 'resealed', 'protocol_closed'])
-async def test_native_admission_stages_references_and_drains_after_rollback(monkeypatch, server_only, barrier_change):
+@pytest.mark.parametrize('language', ['en', 'multi'])
+async def test_native_admission_stages_references_and_drains_after_rollback(
+    monkeypatch, server_only, barrier_change, language
+):
     from types import SimpleNamespace
     from utils.batch_pipeline import live
     from database.batch_pipeline_staging import artifact_id
@@ -336,6 +400,22 @@ async def test_native_admission_stages_references_and_drains_after_rollback(monk
     store = MemoryStore()
     store.namespace = 'batch_pipeline_test_live'
     current = recording(record_audio_closed=True, finished_at=datetime.fromtimestamp(101, timezone.utc))
+    current['language'] = language
+    proofs = []
+
+    async def prove(store, artifacts, item, manifest):
+        proofs.append(manifest)
+        return {
+            **manifest,
+            'context': {
+                **manifest['context'],
+                'stt_language': 'en',
+                'stt_language_evidence': 'audio_lid',
+                'stt_language_confidence': 0.99,
+            },
+        }
+
+    monkeypatch.setattr(live, 'prove_manifest', prove)
     if server_only:
         current['external_data'] = {**(current.get('external_data') or {}), 'server_batch_only': True}
         current.update(
@@ -424,6 +504,8 @@ async def test_native_admission_stages_references_and_drains_after_rollback(monk
     assert result == {'outcome': 'batch', 'job_id': 'bp_' + content}
     assert store.rows['jobs', segment]['state'] == 'ready'
     assert manifests[0]['references'][0]['generation'] == 1
+    assert bool(proofs) is server_only
+    assert manifests[0]['context']['stt_language'] == ('en' if server_only else language)
     assert store.rows['jobs', segment]['projection_binding']['native_record']
     assert (store.rows['intakes', 'bp_' + content].get('server_batch_only') is True) is server_only
     # A slow raw-archive listing must raise and retry, never admit a short capture.

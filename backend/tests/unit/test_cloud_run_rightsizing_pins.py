@@ -7,9 +7,9 @@ deploy-action flags, the ops-train values and the staging shape -- to the
 costcut values, so the next train can no longer silently revert them.
 
 Live reference (ro-prod, 2026-10-24 22:50Z): backend 8Gi/cpu 2/concurrency 20/
-min 3/max 100; backend-sync 6Gi/cpu 2/min 5/max 30 (11-01 G1 source cap; was 40); backend-sync-backfill
-4Gi/cpu 2/concurrency 6/min 0 (cap redis_guard-bounded, live 16);
-backend-integration 2Gi/cpu 2/concurrency 40/min 3/max 50.
+min 3/max 100; backend-sync 6Gi/cpu 2/min 5/max 40 (syncwall source cap); backend-sync-backfill
+3Gi/cpu 2/concurrency 6/min 0 (cap redis_guard-bounded, live 16; 11-02 memcut: was 4Gi, 1-min per-instance
+max 1.52 GiB over 2026-10-19..11-02); backend-integration 2Gi/cpu 2/concurrency 40/min 3/max 50.
 """
 
 from __future__ import annotations
@@ -36,6 +36,13 @@ def test_workflow_backend_sync_memory_fallback_is_the_costcut_value():
     )
 
 
+def test_deploy_action_accepts_the_5gi_sync_trial_value():
+    # 5Gi is a trial value (vars.BACKEND_SYNC_MEMORY), not the fallback: the 10-25 fleet peak was
+    # 4.74 GiB and the runbook's 4.9 GiB sample predates it, so 6Gi stays until a trial qualifies 5Gi.
+    text = (REPO_ROOT / '.github' / 'actions' / 'deploy-backend-stack' / 'action.yml').read_text(encoding='utf-8')
+    assert 'case "$SYNC_MEMORY" in 4Gi|5Gi|6Gi|8Gi) ;;' in text
+
+
 def test_prod_deploy_flags_match_the_live_right_sizing():
     model = dc.source_model('prod')
 
@@ -51,7 +58,7 @@ def test_prod_deploy_flags_match_the_live_right_sizing():
 
     backfill = model['backend-sync-backfill'].scale
     assert (backfill['memory'], backfill['cpu'], backfill['concurrency'], backfill['revision_min']) == (
-        '4Gi',
+        '3Gi',
         '2',
         6,
         0,
@@ -67,7 +74,7 @@ def test_ops_train_values_match_the_live_right_sizing():
     model = dc.source_model('prod')
 
     sync = model['backend-sync'].ops_scale
-    assert (sync['service_min'], sync['service_max']) == (5, 30)
+    assert (sync['service_min'], sync['service_max']) == (5, 40)
 
     # redis_guard owns the backfill cap between its bounds (live 16).
     backfill = model['backend-sync-backfill'].ops_scale
