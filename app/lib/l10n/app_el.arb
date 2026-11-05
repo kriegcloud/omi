@@ -4107,6 +4107,9 @@
     "paywallTrialSaveAmount": "Εξοικονομήστε {amount}",
     "paywallTrialCta": "Ξεκινήστε για {price}",
     "paywallTrialCancelNote": "Ακύρωση ανά πάσα στιγμή. Χωρίς χρεώσεις, χωρίς ποινές.",
+    "paywallMonthlyFallbackTitle": "Όχι ακόμα για ολόκληρο χρόνο;",
+    "paywallMonthlyFallbackTrialBody": "Ξεκίνα με το μηνιαίο. Ίδιες {days} ημέρες δωρεάν, μετά {price} τον μήνα. Ακύρωση ανά πάσα στιγμή.",
+    "paywallMonthlyFallbackTrialCta": "Δοκίμασε το μηνιαίο δωρεάν",
     "paywallTrialStarted": "Η δωρεάν δοκιμή {days} ημερών του Omi Pro έχει ξεκινήσει.",
     "paywallCancelAnytime": "Ακύρωση ανά πάσα στιγμή.",
     "connectAnAgent": "Σύνδεση πράκτορα",
@@ -4629,5 +4632,7 @@
     "referralRewardFirstDetail": "Όταν 2 φίλοι αγοράσουν Omi",
     "referralRewardSecondTitle": "3 ακόμη μήνες",
     "referralRewardSecondDetail": "Όταν αγοράσουν 3 ακόμη φίλοι",
-    "referralClaimShort": "Λήψη"
+    "referralClaimShort": "Λήψη",
+    "paymentDeclinedTitle": "Η κάρτα σας απορρίφθηκε",
+    "paymentDeclinedMessage": "Ενημερώστε την κάρτα για να αποκτήσετε ξανά το {plan}"
 }

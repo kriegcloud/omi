@@ -325,6 +325,12 @@ environments:
           BATCH_PIPELINE_ASYNC_PROJECTION_ENABLED: {value: 'false', category: rollout}
           BATCH_PIPELINE_RECOVERY_MODE: {value: 'off', category: rollout}
           BATCH_PIPELINE_RECOVERY_UID_ALLOWLIST: {value: '', category: rollout}
+          HOME_TRANSCRIPTION_PRESENTATION_GATE:
+            value: 'true'
+            category: ops_kill
+          HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+            value: '7200'
+            category: config
           BATCH_PIPELINE_UID_ALLOWLIST:
             value: ''
           HOSTED_TRANSLATION_API_URL:
@@ -439,6 +445,12 @@ environments:
           CONVERSATION_RELEVANCE_JEV_PERCENT:
             category: ops_kill
             value: '0'
+          HOME_TRANSCRIPTION_PRESENTATION_GATE:
+            value: 'true'
+            category: ops_kill
+          HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+            value: '7200'
+            category: config
           OMI_SHAPED_AGENT_MODE: {value: 'on', category: rollout}
           TRANSCRIPTION_SHADOW_ENABLED: {value: 'true', category: rollout}
           TRANSCRIPTION_SHADOW_KILL_SWITCH: {value: 'false', category: rollout}
@@ -993,6 +1005,12 @@ environments:
             BATCH_PIPELINE_PROJECTION_PAGINATION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_ASYNC_PROJECTION_ENABLED: {value: 'false', category: rollout}
             BATCH_PIPELINE_RECOVERY_MODE: {value: 'off', category: rollout}
+            HOME_TRANSCRIPTION_PRESENTATION_GATE:
+              value: 'true'
+              category: ops_kill
+            HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+              value: '7200'
+              category: config
             OMI_SHAPED_AGENT_MODE: {value: 'on', category: rollout}
             OMI_CUSTOMER_DATA_PROJECT:
               value: based-hardware
@@ -1284,6 +1302,12 @@ environments:
             BATCH_PIPELINE_PROJECTION_PAGINATION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_ASYNC_PROJECTION_ENABLED: {value: 'false', category: rollout}
             BATCH_PIPELINE_RECOVERY_MODE: {value: 'off', category: rollout}
+            HOME_TRANSCRIPTION_PRESENTATION_GATE:
+              value: 'true'
+              category: ops_kill
+            HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+              value: '7200'
+              category: config
             OMI_SHAPED_AGENT_MODE: {value: 'on', category: rollout}
             TRANSCRIPTION_SHADOW_ENABLED: {value: 'false', category: rollout}
             TRANSCRIPTION_SHADOW_KILL_SWITCH: {value: 'false', category: rollout}
@@ -1570,6 +1594,12 @@ environments:
             BATCH_PIPELINE_PROJECTION_PAGINATION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_ASYNC_PROJECTION_ENABLED: {value: 'false', category: rollout}
             BATCH_PIPELINE_RECOVERY_MODE: {value: 'off', category: rollout}
+            HOME_TRANSCRIPTION_PRESENTATION_GATE:
+              value: 'true'
+              category: ops_kill
+            HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+              value: '7200'
+              category: config
             OMI_SHAPED_AGENT_MODE: {value: 'on', category: rollout}
             OMI_CUSTOMER_DATA_PROJECT:
               value: based-hardware
@@ -1807,6 +1837,12 @@ environments:
             BATCH_PIPELINE_PROJECTION_PAGINATION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_ASYNC_PROJECTION_ENABLED: {value: 'false', category: rollout}
             BATCH_PIPELINE_RECOVERY_MODE: {value: 'off', category: rollout}
+            HOME_TRANSCRIPTION_PRESENTATION_GATE:
+              value: 'true'
+              category: ops_kill
+            HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+              value: '7200'
+              category: config
             BATCH_PIPELINE_INDEPENDENT_LANGUAGE_RECOVERY_ENABLED:
               value: 'false'
               category: ops_kill
@@ -2443,6 +2479,17 @@ environments:
           BATCH_PIPELINE_ASYNC_PROJECTION_ENABLED: {value: 'true', category: rollout}
           BATCH_PIPELINE_RECOVERY_MODE: {value: 'off', category: rollout}
           BATCH_PIPELINE_RECOVERY_UID_ALLOWLIST: {value: '', category: rollout}
+          HOME_TRANSCRIPTION_PRESENTATION_GATE:
+            value: 'true'
+            category: ops_kill
+          HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+            value: '7200'
+            category: config
+          BATCH_FINAL_PASS_ENABLED:
+            config_map:
+              name: prod-omi-backend-config
+              key: BATCH_FINAL_PASS_ENABLED
+            category: ops_kill
           STT_GPU_FLEET_OFF:
             value: 'true'
             category: ops_kill
@@ -2660,6 +2707,22 @@ environments:
           CONVERSATION_RELEVANCE_JEV_PERCENT:
             category: ops_kill
             value: '100'
+          HOME_TRANSCRIPTION_PRESENTATION_GATE:
+            value: 'true'
+            category: ops_kill
+          HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+            value: '7200'
+            category: config
+          BATCH_FINAL_PASS_ENABLED:
+            config_map:
+              name: prod-omi-backend-config
+              key: BATCH_FINAL_PASS_ENABLED
+            category: ops_kill
+          PUSHER_MAX_CLOSED_RECORD_DRAINS: {value: '64', category: rollout}
+          PUSHER_ABANDON_EVICTED_TOKENS:
+            value: 'on'
+            category: ops_kill
+          PUSHER_MAX_ABANDON_RECORD_DRAINS: {value: '4', category: rollout}
           STT_GPU_FLEET_OFF:
             value: 'true'
             category: ops_kill
@@ -2793,6 +2856,9 @@ environments:
             source: environment
           X_OAUTH_REDIRECT_URI:
             source: environment
+          BATCH_FINAL_PASS_ENABLED:
+            source: literal
+            value: 'true'
           ACCOUNT_DELETION_HANDLER_URL:
             source: environment
           MCP_OAUTH_CLAUDE_CLIENT_ID:
@@ -3225,6 +3291,15 @@ environments:
             BATCH_PIPELINE_PROJECTION_PAGINATION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_ASYNC_PROJECTION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_RECOVERY_MODE: {value: 'off', category: rollout}
+            HOME_TRANSCRIPTION_PRESENTATION_GATE:
+              value: 'true'
+              category: ops_kill
+            HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+              value: '7200'
+              category: config
+            BATCH_FINAL_PASS_ENABLED:
+              value: 'true'
+              category: ops_kill
             STT_GPU_FLEET_OFF:
               value: 'true'
               category: ops_kill
@@ -3244,6 +3319,8 @@ environments:
             ENRICHMENT_TASKS_OIDC_AUDIENCE:
               value: https://backend-integration-hhibjajaja-uc.a.run.app/v2/enrichment/run
               category: service_auth
+            OMI_REFERRAL_CAMPAIGN_PREVIEW_UIDS: {value: 'viUv7GtdoHXbK1UBCDlPuTDuPgJ2,kiTPO8XwMlOpFpb4x1diyMg213j2,UZXlf0K6KlNbPmkNwPH73krNwhj1',
+              category: rollout}
             OMI_FLAGS_FIRESTORE_PROJECT:
               value: based-hardware
               category: service_discovery
@@ -3642,6 +3719,15 @@ environments:
             BATCH_PIPELINE_PROJECTION_PAGINATION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_ASYNC_PROJECTION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_RECOVERY_MODE: {value: 'off', category: rollout}
+            HOME_TRANSCRIPTION_PRESENTATION_GATE:
+              value: 'true'
+              category: ops_kill
+            HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+              value: '7200'
+              category: config
+            BATCH_FINAL_PASS_ENABLED:
+              value: 'true'
+              category: ops_kill
             BATCH_VENDOR_ROUTE_TABLE: {value: '{"schema_version":1,"table_version":"en-overflow-1104b","selection":"ordered","gpu_floor_percent":0.0,"routes":{"gpu":{"price_usd_per_audio_hour":null,"daily_audio_hours_cap":null,"monthly_budget_usd":null,"failover_only":false,"speaker_turns":"discard"},"modulate":{"price_usd_per_audio_hour":0.06,"daily_audio_hours_cap":3000.0,"monthly_budget_usd":null,"failover_only":false,"speaker_turns":"discard"},"soniox":{"price_usd_per_audio_hour":null,"daily_audio_hours_cap":1000.0,"monthly_budget_usd":null,"failover_only":true,"speaker_turns":"discard"}},"rows":[{"language_class":"en","options":[{"route":"gpu","quality_tier":"accepted","quality_source":"legacy_parity"},{"route":"modulate","quality_tier":"accepted","quality_source":"legacy_parity"},{"route":"soniox","quality_tier":"accepted","quality_source":"staging_drill"}]},{"language_class":"gpu_supported","options":[{"route":"gpu","quality_tier":"accepted","quality_source":"legacy_parity"}]},{"language_class":"gpu_unsupported","options":[{"route":"modulate","quality_tier":"accepted","quality_source":"legacy_parity"},{"route":"soniox","quality_tier":"accepted","quality_source":"staging_drill"}]},{"language_class":"*","options":[{"route":"gpu","quality_tier":"accepted","quality_source":"legacy_parity"}]}]}',
               category: rollout}
             BATCH_ALLOWANCE_HOLD_RETRY_SECONDS:
@@ -4058,6 +4144,15 @@ environments:
             BATCH_PIPELINE_PROJECTION_PAGINATION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_ASYNC_PROJECTION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_RECOVERY_MODE: {value: 'off', category: rollout}
+            HOME_TRANSCRIPTION_PRESENTATION_GATE:
+              value: 'true'
+              category: ops_kill
+            HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+              value: '7200'
+              category: config
+            BATCH_FINAL_PASS_ENABLED:
+              value: 'true'
+              category: ops_kill
             BATCH_VENDOR_ROUTE_TABLE: {value: '{"schema_version":1,"table_version":"en-overflow-1104b","selection":"ordered","gpu_floor_percent":0.0,"routes":{"gpu":{"price_usd_per_audio_hour":null,"daily_audio_hours_cap":null,"monthly_budget_usd":null,"failover_only":false,"speaker_turns":"discard"},"modulate":{"price_usd_per_audio_hour":0.06,"daily_audio_hours_cap":3000.0,"monthly_budget_usd":null,"failover_only":false,"speaker_turns":"discard"},"soniox":{"price_usd_per_audio_hour":null,"daily_audio_hours_cap":1000.0,"monthly_budget_usd":null,"failover_only":true,"speaker_turns":"discard"}},"rows":[{"language_class":"en","options":[{"route":"gpu","quality_tier":"accepted","quality_source":"legacy_parity"},{"route":"modulate","quality_tier":"accepted","quality_source":"legacy_parity"},{"route":"soniox","quality_tier":"accepted","quality_source":"staging_drill"}]},{"language_class":"gpu_supported","options":[{"route":"gpu","quality_tier":"accepted","quality_source":"legacy_parity"}]},{"language_class":"gpu_unsupported","options":[{"route":"modulate","quality_tier":"accepted","quality_source":"legacy_parity"},{"route":"soniox","quality_tier":"accepted","quality_source":"staging_drill"}]},{"language_class":"*","options":[{"route":"gpu","quality_tier":"accepted","quality_source":"legacy_parity"}]}]}',
               category: rollout}
             BATCH_ALLOWANCE_HOLD_RETRY_SECONDS:
@@ -4405,6 +4500,15 @@ environments:
             BATCH_PIPELINE_PROJECTION_PAGINATION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_ASYNC_PROJECTION_ENABLED: {value: 'true', category: rollout}
             BATCH_PIPELINE_RECOVERY_MODE: {value: 'on', category: rollout}
+            HOME_TRANSCRIPTION_PRESENTATION_GATE:
+              value: 'true'
+              category: ops_kill
+            HOME_TRANSCRIPTION_DEADLINE_SECONDS:
+              value: '7200'
+              category: config
+            BATCH_FINAL_PASS_ENABLED:
+              value: 'true'
+              category: ops_kill
             BATCH_VENDOR_ROUTE_TABLE: {value: '{"schema_version":1,"table_version":"en-overflow-1104b","selection":"ordered","gpu_floor_percent":0.0,"routes":{"gpu":{"price_usd_per_audio_hour":null,"daily_audio_hours_cap":null,"monthly_budget_usd":null,"failover_only":false,"speaker_turns":"discard"},"modulate":{"price_usd_per_audio_hour":0.06,"daily_audio_hours_cap":3000.0,"monthly_budget_usd":null,"failover_only":false,"speaker_turns":"discard"},"soniox":{"price_usd_per_audio_hour":null,"daily_audio_hours_cap":1000.0,"monthly_budget_usd":null,"failover_only":true,"speaker_turns":"discard"}},"rows":[{"language_class":"en","options":[{"route":"gpu","quality_tier":"accepted","quality_source":"legacy_parity"},{"route":"modulate","quality_tier":"accepted","quality_source":"legacy_parity"},{"route":"soniox","quality_tier":"accepted","quality_source":"staging_drill"}]},{"language_class":"gpu_supported","options":[{"route":"gpu","quality_tier":"accepted","quality_source":"legacy_parity"}]},{"language_class":"gpu_unsupported","options":[{"route":"modulate","quality_tier":"accepted","quality_source":"legacy_parity"},{"route":"soniox","quality_tier":"accepted","quality_source":"staging_drill"}]},{"language_class":"*","options":[{"route":"gpu","quality_tier":"accepted","quality_source":"legacy_parity"}]}]}',
               category: rollout}
             BATCH_ALLOWANCE_HOLD_RETRY_SECONDS:

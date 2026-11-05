@@ -13180,6 +13180,17 @@ class AppLocalizationsZh extends AppLocalizations {
   String get paywallTrialCancelNote => '随时取消。无费用，无罚款。';
 
   @override
+  String get paywallMonthlyFallbackTitle => '还没准备好订一整年？';
+
+  @override
+  String paywallMonthlyFallbackTrialBody(int days, String price) {
+    return '不如先从月付开始。同样免费$days天，之后每月$price。随时取消。';
+  }
+
+  @override
+  String get paywallMonthlyFallbackTrialCta => '免费试用月付';
+
+  @override
   String paywallTrialStarted(int days) {
     return '您的 Omi Pro $days 天免费试用已开始。';
   }
@@ -15097,4 +15108,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get referralClaimShort => '领取';
+
+  @override
+  String get paymentDeclinedTitle => '您的银行卡被拒绝';
+
+  @override
+  String paymentDeclinedMessage(Object plan) {
+    return '更新银行卡以恢复使用 $plan';
+  }
 }

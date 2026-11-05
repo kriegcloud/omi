@@ -13386,6 +13386,17 @@ class AppLocalizationsVi extends AppLocalizations {
   String get paywallTrialCancelNote => 'Hủy bất cứ lúc nào. Không phí, không phạt.';
 
   @override
+  String get paywallMonthlyFallbackTitle => 'Chưa sẵn sàng cho cả năm?';
+
+  @override
+  String paywallMonthlyFallbackTrialBody(int days, String price) {
+    return 'Hãy bắt đầu với gói tháng. Vẫn miễn phí $days ngày, sau đó $price mỗi tháng. Hủy bất cứ lúc nào.';
+  }
+
+  @override
+  String get paywallMonthlyFallbackTrialCta => 'Dùng thử gói tháng miễn phí';
+
+  @override
   String paywallTrialStarted(int days) {
     return 'Bản dùng thử miễn phí $days ngày của Omi Pro của bạn đã bắt đầu.';
   }
@@ -15349,4 +15360,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get referralClaimShort => 'Nhận';
+
+  @override
+  String get paymentDeclinedTitle => 'Thẻ của bạn đã bị từ chối';
+
+  @override
+  String paymentDeclinedMessage(Object plan) {
+    return 'Cập nhật thẻ để dùng lại $plan';
+  }
 }

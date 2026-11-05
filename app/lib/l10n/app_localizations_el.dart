@@ -13472,6 +13472,17 @@ class AppLocalizationsEl extends AppLocalizations {
   String get paywallTrialCancelNote => 'Ακύρωση ανά πάσα στιγμή. Χωρίς χρεώσεις, χωρίς ποινές.';
 
   @override
+  String get paywallMonthlyFallbackTitle => 'Όχι ακόμα για ολόκληρο χρόνο;';
+
+  @override
+  String paywallMonthlyFallbackTrialBody(int days, String price) {
+    return 'Ξεκίνα με το μηνιαίο. Ίδιες $days ημέρες δωρεάν, μετά $price τον μήνα. Ακύρωση ανά πάσα στιγμή.';
+  }
+
+  @override
+  String get paywallMonthlyFallbackTrialCta => 'Δοκίμασε το μηνιαίο δωρεάν';
+
+  @override
   String paywallTrialStarted(int days) {
     return 'Η δωρεάν δοκιμή $days ημερών του Omi Pro έχει ξεκινήσει.';
   }
@@ -15448,4 +15459,12 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get referralClaimShort => 'Λήψη';
+
+  @override
+  String get paymentDeclinedTitle => 'Η κάρτα σας απορρίφθηκε';
+
+  @override
+  String paymentDeclinedMessage(Object plan) {
+    return 'Ενημερώστε την κάρτα για να αποκτήσετε ξανά το $plan';
+  }
 }

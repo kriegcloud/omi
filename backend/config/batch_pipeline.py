@@ -3,8 +3,12 @@
 from config.refactor_switches import default_off as rollout_default_off, default_on as rollout_default_on
 
 from enum import IntEnum
+import hashlib
+import logging
 import math
 import os
+import secrets
+import threading
 
 from config.rollout_cohorts import rollout_cohort_members
 from typing import Callable, TypeVar
@@ -25,6 +29,14 @@ class Priority(IntEnum):
 
 # David's fresh bar (2026-10-20): capture lag at most 10 min at upload.
 FRESH_CAPTURE_LAG_SECONDS = 600.0
+
+
+def projection_source_deleted_enabled() -> bool:
+    """Ship-on no-text settlement for a deleted source without a tombstone or redirect."""
+    return rollout_default_on(
+        'BATCH_PIPELINE_PROJECTION_SOURCE_DELETED_ENABLED',
+        os.getenv('BATCH_PIPELINE_PROJECTION_SOURCE_DELETED_ENABLED', 'true').strip().lower() != 'false',
+    )
 
 
 def projection_hold_recovery_enabled() -> bool:
@@ -201,6 +213,15 @@ SCHEDULER_SHARDS = 64
 
 def shard_spread_enabled() -> bool:
     return os.getenv('BATCH_SHARD_SPREAD_ENABLED', 'true').strip().lower() != 'false'
+
+
+def skip_unchanged_control_write_enabled() -> bool:
+    """Admission skips rewriting its scheduler control shard when the append left it unchanged.
+
+    Every admission and every pull wrote the same 64 shared shards; an identical rewrite only
+    turned concurrent admissions and pulls into commit conflicts. False restores the write.
+    """
+    return os.getenv('BATCH_SKIP_UNCHANGED_CONTROL_WRITE_ENABLED', 'true').strip().lower() != 'false'
 
 
 def pull_multi_lease_enabled() -> bool:
@@ -498,6 +519,38 @@ def projection_pagination_enabled() -> bool:
     return kill_switch('BATCH_PIPELINE_PROJECTION_PAGINATION_ENABLED')
 
 
+def projection_striping_enabled() -> bool:
+    from config.policy import kill_switch
+
+    return kill_switch('BATCH_PIPELINE_PROJECTION_STRIPING_ENABLED')
+
+
+PROJECTION_DISCOVERY_STRIPES = 4096
+_projection_discovery_stripe_value: int | None = None
+_PROJECTION_DISCOVERY_LOCK = threading.Lock()
+
+
+def projection_discovery_stripe() -> int:
+    """Choose and log one process-local random phase, without network I/O.
+
+    Replicas may share hostname/PID. Fresh entropy separates them; 4096 buckets
+    reduce collisions at 30-50 instances. Restarts may choose a different phase.
+    """
+    global _projection_discovery_stripe_value
+    with _PROJECTION_DISCOVERY_LOCK:
+        if _projection_discovery_stripe_value is None:
+            identity = f'{os.getenv("K_REVISION", "")}:{secrets.randbits(128)}'
+            _projection_discovery_stripe_value = (
+                int.from_bytes(hashlib.sha256(identity.encode()).digest()[:8], 'big') % PROJECTION_DISCOVERY_STRIPES
+            )
+            logging.getLogger(__name__).info(
+                'event=batch_projection_discovery action=start stripe=%d stripes=%d',
+                _projection_discovery_stripe_value,
+                PROJECTION_DISCOVERY_STRIPES,
+            )
+        return _projection_discovery_stripe_value
+
+
 def owner_chain_projection_enabled() -> bool:
     from config.policy import kill_switch
 
@@ -556,6 +609,46 @@ def owner_drain_enabled() -> bool:
     return kill_switch('BATCH_PIPELINE_OWNER_DRAIN_ENABLED')
 
 
+def serving_projection_sweep_enabled() -> bool:
+    """Only ``off`` disables serving-instance discovery; owner wakes still run."""
+    from config.policy import kill_switch
+
+    return kill_switch('BATCH_PIPELINE_SERVING_PROJECTION_SWEEP')
+
+
+def _pump_bound(raw: str, default: int, maximum: int, minimum: int = 1) -> int:
+    try:
+        return max(minimum, min(int(raw), maximum))
+    except ValueError:
+        return default
+
+
+def projection_pump_enabled() -> bool:
+    """Process-role opt-in: only ``true`` starts the otherwise inert pump."""
+    from config.policy import kill_switch
+
+    return kill_switch('BATCH_PIPELINE_PROJECTION_PUMP_ENABLED')
+
+
+def projection_pump_tick_seconds() -> int:
+    return _pump_bound(os.getenv('BATCH_PIPELINE_PUMP_TICK_SECONDS', '20'), 20, 60, 2)
+
+
+def projection_pump_sweep_pages() -> int:
+    return _pump_bound(os.getenv('BATCH_PIPELINE_PUMP_SWEEP_PAGES', '1'), 1, 4)
+
+
+def max_owner_drains() -> int:
+    return _pump_bound(os.getenv('BATCH_PIPELINE_MAX_OWNER_DRAINS', '8'), 8, 16)
+
+
+def projection_drain_claim_aware_enabled() -> bool:
+    """Default on; only off disables claim-aware owner-drain admission and backoff."""
+    from config.policy import kill_switch
+
+    return kill_switch('PROJECTION_DRAIN_CLAIM_AWARE')
+
+
 def projection_index_deferred_enabled() -> bool:
     """Kill switch: walks converge search/people-stats after the chain, once per conversation."""
     from config.policy import kill_switch
@@ -599,6 +692,42 @@ def projection_prefetch_depth() -> int:
     except ValueError:
         return PROJECTION_PREFETCH_DEFAULT
     return value if 0 <= value <= PROJECTION_PREFETCH_MAX else PROJECTION_PREFETCH_DEFAULT
+
+
+PROJECTION_FOLLOWUP_SLOTS_DEFAULT = 4
+PROJECTION_FOLLOWUP_SLOTS_MAX = 16
+
+
+def projection_followup_slots(default: int = PROJECTION_FOLLOWUP_SLOTS_DEFAULT) -> int:
+    """Concurrent async follow-ups per serving process; unset, malformed or out-of-range keeps ``default``."""
+    raw = os.getenv('BATCH_PIPELINE_PROJECTION_FOLLOWUP_SLOTS', '').strip()
+    try:
+        value = int(raw) if raw else default
+    except ValueError:
+        return default
+    return value if 1 <= value <= PROJECTION_FOLLOWUP_SLOTS_MAX else default
+
+
+PROJECTION_FOLLOWUP_BACKOFF_DEFAULT = 900.0
+PROJECTION_FOLLOWUP_BACKOFF_MAX = 3600.0
+
+
+def projection_followup_backoff_seconds() -> float:
+    """Ship-on follow-up desync: per-process discovery offset plus bounded backoff; ``0`` is the kill switch.
+
+    The value is the longest one process skips an unchanged blocked/failed row
+    in its own discovery. ``0`` restores head-first discovery with no backoff.
+    Malformed or out-of-range values keep the default.
+    """
+    try:
+        value = float(
+            os.getenv('BATCH_PIPELINE_PROJECTION_FOLLOWUP_BACKOFF_SECONDS', str(PROJECTION_FOLLOWUP_BACKOFF_DEFAULT))
+        )
+    except ValueError:
+        return PROJECTION_FOLLOWUP_BACKOFF_DEFAULT
+    if not math.isfinite(value) or not 0 <= value <= PROJECTION_FOLLOWUP_BACKOFF_MAX:
+        return PROJECTION_FOLLOWUP_BACKOFF_DEFAULT
+    return value
 
 
 WORKER_PIPELINE_DEPTH_DEFAULT = 2

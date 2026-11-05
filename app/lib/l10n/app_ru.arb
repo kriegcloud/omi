@@ -4142,6 +4142,9 @@
     "paywallTrialSaveAmount": "Экономия {amount}",
     "paywallTrialCta": "Начать за {price}",
     "paywallTrialCancelNote": "Отменить в любое время. Без комиссий и штрафов.",
+    "paywallMonthlyFallbackTitle": "Пока не готовы на целый год?",
+    "paywallMonthlyFallbackTrialBody": "Начните с месячного плана. Те же {days} дней бесплатно, затем {price} в месяц. Отменить можно в любой момент.",
+    "paywallMonthlyFallbackTrialCta": "Попробовать месячный бесплатно",
     "paywallTrialStarted": "Ваша {days}-дневная бесплатная пробная версия Omi Pro началась.",
     "paywallCancelAnytime": "Отмена в любой момент.",
     "connectAnAgent": "Подключить агента",
@@ -4664,5 +4667,7 @@
     "referralRewardFirstDetail": "Когда 2 друга купят Omi",
     "referralRewardSecondTitle": "Ещё 3 месяца",
     "referralRewardSecondDetail": "Когда ещё 3 друга купят",
-    "referralClaimShort": "Получить"
+    "referralClaimShort": "Получить",
+    "paymentDeclinedTitle": "Ваша карта отклонена",
+    "paymentDeclinedMessage": "Обновите карту, чтобы вернуть {plan}"
 }

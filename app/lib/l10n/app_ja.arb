@@ -4107,6 +4107,9 @@
     "paywallTrialSaveAmount": "{amount}お得",
     "paywallTrialCta": "{price}で始める",
     "paywallTrialCancelNote": "いつでもキャンセル可能。手数料や違約金なし。",
+    "paywallMonthlyFallbackTitle": "1年はまだ早いですか？",
+    "paywallMonthlyFallbackTrialBody": "代わりに月額プランで始めましょう。同じく{days}日間無料、その後は月額{price}。いつでもキャンセルできます。",
+    "paywallMonthlyFallbackTrialCta": "月額プランを無料で試す",
     "paywallTrialStarted": "Omi Proの{days}日間無料トライアルが開始されました。",
     "paywallCancelAnytime": "いつでもキャンセルできます。",
     "connectAnAgent": "エージェントを接続",
@@ -4629,5 +4632,7 @@
     "referralRewardFirstDetail": "友達2人がOmiを購入したら",
     "referralRewardSecondTitle": "さらに3か月",
     "referralRewardSecondDetail": "さらに友達3人が購入したら",
-    "referralClaimShort": "受け取る"
+    "referralClaimShort": "受け取る",
+    "paymentDeclinedTitle": "カードが拒否されました",
+    "paymentDeclinedMessage": "{plan}を再開するにはカードを更新してください"
 }

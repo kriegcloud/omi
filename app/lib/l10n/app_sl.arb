@@ -11527,6 +11527,9 @@
     "paywallTrialSaveAmount": "Prihranite {amount}",
     "paywallTrialCta": "Začnite za {price}",
     "paywallTrialCancelNote": "Prekličite kadar koli. Brez stroškov, brez kazni.",
+    "paywallMonthlyFallbackTitle": "Celo leto je za zdaj preveč?",
+    "paywallMonthlyFallbackTrialBody": "Začnite z mesečnim paketom. Enakih {days} dni brezplačno, nato {price} na mesec. Prekličite kadar koli.",
+    "paywallMonthlyFallbackTrialCta": "Preizkusite mesečni brezplačno",
     "paywallTrialStarted": "Vaša {days}-dnevna brezplačna preizkusna različica Omi Pro se je začela.",
     "paywallCancelAnytime": "Prekličite kadar koli.",
     "connectAnAgent": "Poveži agenta",
@@ -12186,5 +12189,7 @@
     "referralRewardFirstDetail": "Ko 2 prijatelja kupita Omi",
     "referralRewardSecondTitle": "Še 3 mesece",
     "referralRewardSecondDetail": "Ko kupijo še 3 prijatelji",
-    "referralClaimShort": "Prevzemi"
+    "referralClaimShort": "Prevzemi",
+    "paymentDeclinedTitle": "Vaša kartica je bila zavrnjena",
+    "paymentDeclinedMessage": "Posodobite kartico, da znova dobite {plan}"
 }

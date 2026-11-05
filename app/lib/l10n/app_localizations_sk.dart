@@ -13383,6 +13383,17 @@ class AppLocalizationsSk extends AppLocalizations {
   String get paywallTrialCancelNote => 'Zrušiť kedykoľvek. Žiadne poplatky, žiadne pokuty.';
 
   @override
+  String get paywallMonthlyFallbackTitle => 'Celý rok je zatiaľ priveľa?';
+
+  @override
+  String paywallMonthlyFallbackTrialBody(int days, String price) {
+    return 'Začnite mesačným plánom. Rovnakých $days dní zadarmo, potom $price mesačne. Zrušte kedykoľvek.';
+  }
+
+  @override
+  String get paywallMonthlyFallbackTrialCta => 'Vyskúšať mesačný zadarmo';
+
+  @override
   String paywallTrialStarted(int days) {
     return 'Vaša $days-dňová bezplatná skúška Omi Pro sa začala.';
   }
@@ -15340,4 +15351,12 @@ class AppLocalizationsSk extends AppLocalizations {
 
   @override
   String get referralClaimShort => 'Získať';
+
+  @override
+  String get paymentDeclinedTitle => 'Vaša karta bola zamietnutá';
+
+  @override
+  String paymentDeclinedMessage(Object plan) {
+    return 'Aktualizujte kartu a obnovte $plan';
+  }
 }

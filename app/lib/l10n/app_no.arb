@@ -4107,6 +4107,9 @@
     "paywallTrialSaveAmount": "Spar {amount}",
     "paywallTrialCta": "Start for {price}",
     "paywallTrialCancelNote": "Avbryt når som helst. Ingen gebyrer, ingen straff.",
+    "paywallMonthlyFallbackTitle": "Ikke klar for et helt år?",
+    "paywallMonthlyFallbackTrialBody": "Start med månedlig i stedet. De samme {days} dagene gratis, deretter {price} i måneden. Avbryt når som helst.",
+    "paywallMonthlyFallbackTrialCta": "Prøv månedlig gratis",
     "paywallTrialStarted": "Din {days}-dagers gratis prøveperiode av Omi Pro har startet.",
     "paywallCancelAnytime": "Avbryt når som helst.",
     "connectAnAgent": "Koble til en agent",
@@ -4629,5 +4632,7 @@
     "referralRewardFirstDetail": "Når 2 venner kjøper Omi",
     "referralRewardSecondTitle": "3 måneder til",
     "referralRewardSecondDetail": "Når 3 venner til kjøper",
-    "referralClaimShort": "Løs inn"
+    "referralClaimShort": "Løs inn",
+    "paymentDeclinedTitle": "Kortet ditt ble avvist",
+    "paymentDeclinedMessage": "Oppdater kortet for å få {plan} tilbake"
 }

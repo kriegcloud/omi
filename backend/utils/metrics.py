@@ -684,7 +684,7 @@ LISTEN_FINALIZATION_OLDEST_NONTERMINAL_AGE_SECONDS = Gauge(
 
 LISTEN_FINALIZATION_OLDEST_BLOCKED_BYOK_AGE_SECONDS = Gauge(
     'listen_finalization_oldest_blocked_byok_age_seconds',
-    'Global age since created_at of the oldest BYOK-blocked job; no blocked-status entry timestamp is recorded; '
+    'Legacy global age since created_at; recent state-entry dwell is exported by omi_finalization_byok; '
     'replicated per process, aggregate with max() not sum()',
     registry=None,
 )
@@ -1355,6 +1355,11 @@ OMI_ACTION_ITEM_IDENTITY_TOTAL = Counter(
     ['outcome'],
 )
 
+OMI_ENRICHMENT_EARLY_ABORT_TOTAL = Counter(
+    'omi_enrichment_early_abort_total',
+    'Enrichment revision checkpoints: stage=pre_notes|pre_persist, outcome=superseded|check_failed',
+    ['stage', 'outcome'],
+)
 OMI_ACTION_ITEM_REFRESH_TOTAL = Counter(
     'omi_action_item_refresh_total',
     'Automatic refresh task preservation: kept_existing|added_new|transferred_from_donor|skipped_duplicate|disabled',

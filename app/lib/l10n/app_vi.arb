@@ -4107,6 +4107,9 @@
     "paywallTrialSaveAmount": "Tiết kiệm {amount}",
     "paywallTrialCta": "Bắt đầu với {price}",
     "paywallTrialCancelNote": "Hủy bất cứ lúc nào. Không phí, không phạt.",
+    "paywallMonthlyFallbackTitle": "Chưa sẵn sàng cho cả năm?",
+    "paywallMonthlyFallbackTrialBody": "Hãy bắt đầu với gói tháng. Vẫn miễn phí {days} ngày, sau đó {price} mỗi tháng. Hủy bất cứ lúc nào.",
+    "paywallMonthlyFallbackTrialCta": "Dùng thử gói tháng miễn phí",
     "paywallTrialStarted": "Bản dùng thử miễn phí {days} ngày của Omi Pro của bạn đã bắt đầu.",
     "paywallCancelAnytime": "Hủy bất cứ lúc nào.",
     "connectAnAgent": "Kết nối tác nhân",
@@ -4629,5 +4632,7 @@
     "referralRewardFirstDetail": "Khi 2 bạn bè mua Omi",
     "referralRewardSecondTitle": "Thêm 3 tháng",
     "referralRewardSecondDetail": "Khi thêm 3 bạn bè mua",
-    "referralClaimShort": "Nhận"
+    "referralClaimShort": "Nhận",
+    "paymentDeclinedTitle": "Thẻ của bạn đã bị từ chối",
+    "paymentDeclinedMessage": "Cập nhật thẻ để dùng lại {plan}"
 }

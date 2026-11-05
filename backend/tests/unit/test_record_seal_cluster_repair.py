@@ -163,7 +163,10 @@ def test_native_and_dependency_diagnostics_never_reach_cli_output(tmp_path):
         'raise SystemExit(entry["main"]())\n'
     )
     result = subprocess.run(
-        [sys.executable, str(script)], capture_output=True, text=True, env={**os.environ, 'OMI_LOG_FORMAT': 'json'}
+        [sys.executable, str(script)],
+        capture_output=True,
+        text=True,
+        env={**os.environ, 'OMI_LOG_FORMAT': 'json', 'PUSHER_PROJECTION_DEBT_DURABLE_ENABLED': 'off'},
     )
     assert result.returncode == 0 and not result.stderr
     assert private not in result.stdout
@@ -508,6 +511,7 @@ def test_closed_row_scan_cap_also_advances_without_skipping_the_tail():
 
 @pytest.mark.parametrize('mode,writes', [('apply', 1), ('plan', 0)])
 def test_frontier_advances_before_work_and_plan_never_writes(source, proof, monkeypatch, mode, writes):
+    monkeypatch.setattr(config, 'jobs_enabled', lambda: False)
     from database import _client
     from utils.batch_pipeline import record_seal_sweeper
 
@@ -527,6 +531,7 @@ def test_frontier_advances_before_work_and_plan_never_writes(source, proof, monk
 
 
 def test_run_budget_deferral_cannot_reset_the_unattempted_tail(source, proof, monkeypatch):
+    monkeypatch.setattr(config, 'jobs_enabled', lambda: False)
     from database import _client
     from utils.batch_pipeline import record_seal_sweeper
 
@@ -580,6 +585,7 @@ def test_admitted_registration_succeeds_at_zero_and_full_ramp_but_policy_changes
 
 
 def test_last_attempt_checkpoint_skips_refused_prefix_and_wrap_revisits_oldest(source, proof, monkeypatch):
+    monkeypatch.setattr(config, 'jobs_enabled', lambda: False)
     from database import _client
     from utils.batch_pipeline import record_seal_sweeper
 
@@ -686,7 +692,7 @@ def test_row_refusal_reason_survives_canonical_planner(source, proof):
         )
         == 'proof_refused'
     )
-    assert reason == {'proof_reason': 'finish_missing'}
+    assert reason == {'proof_reason': 'finish_missing', 'blocker': 'seal_eligible'}
 
 
 @pytest.mark.parametrize('pending_job', [False, True])
@@ -714,7 +720,7 @@ def test_row_tail_gap_survives_both_canonical_planners(source, proof, pending_jo
         )
         == 'proof_refused'
     )
-    assert reason == {'proof_reason': 'tail_lagging', 'tail_gap_bucket': '30_to_120s'}
+    assert reason == {'proof_reason': 'tail_lagging', 'tail_gap_bucket': '30_to_120s', 'blocker': 'seal_eligible'}
     assert not source[1].rows[PATH].get('record_audio_closed')
 
 
@@ -775,7 +781,7 @@ def test_upload_failed_skips_proof_cost_and_gap(source, proof, monkeypatch):
         )
         == 'upload_failed'
     )
-    assert reason == {}
+    assert reason == {'blocker': 'upload_failed'}
     read.assert_not_called()
     assert source[1].rows[PATH]['record_upload_failed'] is True
 
@@ -880,6 +886,7 @@ def _partial_mark(revision, finish):
         'reason': sorted(cluster.partial_config.REASONS)[0],
         'upload_revision': revision,
         'finished_at': finish,
+        'finished_partial_at': datetime.now(timezone.utc),
     }
 
 
@@ -924,3 +931,19 @@ def test_discovery_skips_rows_repair_can_only_refuse(extra, selected):
         SimpleNamespace(collection_group=lambda _: Query(), document=lambda path: path), budget=SweepBudget(60)
     )
     assert bool(rows) is selected
+
+
+@pytest.mark.parametrize('workers', ['1', '16', '48', '64'])
+def test_repair_workers_accept_io_bound_range(monkeypatch, workers):
+    monkeypatch.setenv('RECORD_SEAL_REPAIR_WORKERS', workers)
+    monkeypatch.setenv('RECORD_SEAL_REPAIR_ROW_SECONDS', '270')
+    monkeypatch.setenv('RECORD_SEAL_REPAIR_RUN_SECONDS', '1500')
+    monkeypatch.setenv('RECORD_SEAL_REPAIR_MODE', 'apply')
+    assert config.settings() == (int(workers), 270, 1500, 'apply')
+
+
+@pytest.mark.parametrize('workers', ['0', '65', '128'])
+def test_repair_workers_outside_range_refuse(monkeypatch, workers):
+    monkeypatch.setenv('RECORD_SEAL_REPAIR_WORKERS', workers)
+    with pytest.raises(ValueError, match='invalid repair limits'):
+        config.settings()

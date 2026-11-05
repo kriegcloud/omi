@@ -13435,6 +13435,17 @@ class AppLocalizationsBg extends AppLocalizations {
   String get paywallTrialCancelNote => 'Анулирайте по всяко време. Без такси, без неустойки.';
 
   @override
+  String get paywallMonthlyFallbackTitle => 'Още не сте готови за цяла година?';
+
+  @override
+  String paywallMonthlyFallbackTrialBody(int days, String price) {
+    return 'Започнете с месечен план. Същите $days дни безплатно, след това $price на месец. Анулирайте по всяко време.';
+  }
+
+  @override
+  String get paywallMonthlyFallbackTrialCta => 'Пробвайте месечния безплатно';
+
+  @override
   String paywallTrialStarted(int days) {
     return 'Вашият $days-дневен безплатен пробен период на Omi Pro започна.';
   }
@@ -15398,4 +15409,12 @@ class AppLocalizationsBg extends AppLocalizations {
 
   @override
   String get referralClaimShort => 'Вземи';
+
+  @override
+  String get paymentDeclinedTitle => 'Картата ви беше отхвърлена';
+
+  @override
+  String paymentDeclinedMessage(Object plan) {
+    return 'Обновете картата, за да възстановите $plan';
+  }
 }

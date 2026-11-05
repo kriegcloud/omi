@@ -13418,6 +13418,17 @@ class AppLocalizationsMs extends AppLocalizations {
   String get paywallTrialCancelNote => 'Batal bila-bila masa. Tiada yuran, tiada penalti.';
 
   @override
+  String get paywallMonthlyFallbackTitle => 'Belum bersedia untuk setahun penuh?';
+
+  @override
+  String paywallMonthlyFallbackTrialBody(int days, String price) {
+    return 'Mulakan dengan pelan bulanan. $days hari percuma yang sama, kemudian $price sebulan. Batal bila-bila masa.';
+  }
+
+  @override
+  String get paywallMonthlyFallbackTrialCta => 'Cuba bulanan secara percuma';
+
+  @override
   String paywallTrialStarted(int days) {
     return 'Percubaan percuma $days hari anda untuk Omi Pro telah bermula.';
   }
@@ -15384,4 +15395,12 @@ class AppLocalizationsMs extends AppLocalizations {
 
   @override
   String get referralClaimShort => 'Tuntut';
+
+  @override
+  String get paymentDeclinedTitle => 'Kad anda ditolak';
+
+  @override
+  String paymentDeclinedMessage(Object plan) {
+    return 'Kemas kini kad untuk mendapatkan semula $plan';
+  }
 }

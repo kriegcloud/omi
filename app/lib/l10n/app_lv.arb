@@ -4107,6 +4107,9 @@
     "paywallTrialSaveAmount": "Ietaupiet {amount}",
     "paywallTrialCta": "Sākt par {price}",
     "paywallTrialCancelNote": "Atcelt jebkurā laikā. Bez maksas, bez soda sankcijām.",
+    "paywallMonthlyFallbackTitle": "Vesels gads pagaidām par daudz?",
+    "paywallMonthlyFallbackTrialBody": "Sāciet ar mēneša plānu. Tās pašas {days} dienas bez maksas, pēc tam {price} mēnesī. Atceliet jebkurā brīdī.",
+    "paywallMonthlyFallbackTrialCta": "Izmēģināt mēneša plānu bez maksas",
     "paywallTrialStarted": "Jūsu {days} dienu bezmaksas Omi Pro izmēģinājuma periods ir sācies.",
     "paywallCancelAnytime": "Atcelt jebkurā laikā.",
     "connectAnAgent": "Pievienot aģentu",
@@ -4629,5 +4632,7 @@
     "referralRewardFirstDetail": "Kad 2 draugi nopērk Omi",
     "referralRewardSecondTitle": "Vēl 3 mēneši",
     "referralRewardSecondDetail": "Kad vēl 3 draugi nopērk",
-    "referralClaimShort": "Saņemt"
+    "referralClaimShort": "Saņemt",
+    "paymentDeclinedTitle": "Jūsu karte tika noraidīta",
+    "paymentDeclinedMessage": "Atjauniniet karti, lai atgūtu {plan}"
 }

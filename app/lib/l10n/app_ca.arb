@@ -4107,6 +4107,9 @@
     "paywallTrialSaveAmount": "Estalvia {amount}",
     "paywallTrialCta": "Comença per {price}",
     "paywallTrialCancelNote": "Cancel·la en qualsevol moment. Sense comissions ni penalitzacions.",
+    "paywallMonthlyFallbackTitle": "Encara no vols un any sencer?",
+    "paywallMonthlyFallbackTrialBody": "Comença amb el pla mensual. Els mateixos {days} dies gratis, després {price} al mes. Cancel·la quan vulguis.",
+    "paywallMonthlyFallbackTrialCta": "Prova el mensual gratis",
     "paywallTrialStarted": "La teva prova gratuïta de {days} dies d'Omi Pro ha començat.",
     "paywallCancelAnytime": "Cancel·la quan vulguis.",
     "connectAnAgent": "Connecta un agent",
@@ -4629,5 +4632,7 @@
     "referralRewardFirstDetail": "Quan 2 amics comprin Omi",
     "referralRewardSecondTitle": "3 mesos més",
     "referralRewardSecondDetail": "Quan 3 amics més comprin",
-    "referralClaimShort": "Reclama"
+    "referralClaimShort": "Reclama",
+    "paymentDeclinedTitle": "La teva targeta ha estat rebutjada",
+    "paymentDeclinedMessage": "Actualitza-la per recuperar {plan}"
 }

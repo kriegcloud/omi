@@ -4203,6 +4203,9 @@
     "paywallTrialSaveAmount": "Spórolj {amount}-t",
     "paywallTrialCta": "Kezdd el {price}-ért",
     "paywallTrialCancelNote": "Bármikor lemondható. Nincsenek díjak, nincsenek büntetések.",
+    "paywallMonthlyFallbackTitle": "Még nem állsz készen egy egész évre?",
+    "paywallMonthlyFallbackTrialBody": "Kezdd inkább havi csomaggal. Ugyanúgy {days} nap ingyen, utána havi {price}. Bármikor lemondható.",
+    "paywallMonthlyFallbackTrialCta": "Havi csomag kipróbálása ingyen",
     "paywallTrialStarted": "Elindult az Omi Pro {days} napos ingyenes próbaverziója.",
     "paywallCancelAnytime": "Bármikor lemondható.",
     "connectAnAgent": "Ügynök csatlakoztatása",
@@ -4725,5 +4728,7 @@
     "referralRewardFirstDetail": "Ha 2 barátod megveszi az Omit",
     "referralRewardSecondTitle": "Még 3 hónap",
     "referralRewardSecondDetail": "Ha még 3 barátod vásárol",
-    "referralClaimShort": "Beváltás"
+    "referralClaimShort": "Beváltás",
+    "paymentDeclinedTitle": "A kártyáját elutasították",
+    "paymentDeclinedMessage": "Frissítse a kártyát a(z) {plan} visszaállításához"
 }

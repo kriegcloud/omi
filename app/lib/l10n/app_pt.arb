@@ -4142,6 +4142,9 @@
     "paywallTrialSaveAmount": "Economize {amount}",
     "paywallTrialCta": "Começar por {price}",
     "paywallTrialCancelNote": "Cancele a qualquer momento. Sem taxas, sem multas.",
+    "paywallMonthlyFallbackTitle": "Um ano inteiro ainda é muito?",
+    "paywallMonthlyFallbackTrialBody": "Comece pelo plano mensal. Os mesmos {days} dias grátis, depois {price} por mês. Cancele quando quiser.",
+    "paywallMonthlyFallbackTrialCta": "Experimentar o mensal grátis",
     "paywallTrialStarted": "Seu teste gratuito de {days} dias do Omi Pro começou.",
     "paywallCancelAnytime": "Cancele quando quiser.",
     "connectAnAgent": "Conectar um agente",
@@ -4664,5 +4667,7 @@
     "referralRewardFirstDetail": "Quando 2 amigos comprarem o Omi",
     "referralRewardSecondTitle": "Mais 3 meses",
     "referralRewardSecondDetail": "Quando mais 3 amigos comprarem",
-    "referralClaimShort": "Resgatar"
+    "referralClaimShort": "Resgatar",
+    "paymentDeclinedTitle": "Seu cartão foi recusado",
+    "paymentDeclinedMessage": "Atualize o cartão para recuperar {plan}"
 }

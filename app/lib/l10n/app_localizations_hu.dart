@@ -13439,6 +13439,17 @@ class AppLocalizationsHu extends AppLocalizations {
   String get paywallTrialCancelNote => 'Bármikor lemondható. Nincsenek díjak, nincsenek büntetések.';
 
   @override
+  String get paywallMonthlyFallbackTitle => 'Még nem állsz készen egy egész évre?';
+
+  @override
+  String paywallMonthlyFallbackTrialBody(int days, String price) {
+    return 'Kezdd inkább havi csomaggal. Ugyanúgy $days nap ingyen, utána havi $price. Bármikor lemondható.';
+  }
+
+  @override
+  String get paywallMonthlyFallbackTrialCta => 'Havi csomag kipróbálása ingyen';
+
+  @override
   String paywallTrialStarted(int days) {
     return 'Elindult az Omi Pro $days napos ingyenes próbaverziója.';
   }
@@ -15405,4 +15416,12 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get referralClaimShort => 'Beváltás';
+
+  @override
+  String get paymentDeclinedTitle => 'A kártyáját elutasították';
+
+  @override
+  String paymentDeclinedMessage(Object plan) {
+    return 'Frissítse a kártyát a(z) $plan visszaállításához';
+  }
 }

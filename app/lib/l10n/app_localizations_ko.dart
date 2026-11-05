@@ -13203,6 +13203,17 @@ class AppLocalizationsKo extends AppLocalizations {
   String get paywallTrialCancelNote => '언제든지 취소 가능. 수수료나 위약금 없음.';
 
   @override
+  String get paywallMonthlyFallbackTitle => '1년은 아직 부담되시나요?';
+
+  @override
+  String paywallMonthlyFallbackTrialBody(int days, String price) {
+    return '대신 월간으로 시작하세요. 똑같이 $days일 무료, 이후 월 $price. 언제든 취소할 수 있어요.';
+  }
+
+  @override
+  String get paywallMonthlyFallbackTrialCta => '월간 무료로 체험하기';
+
+  @override
   String paywallTrialStarted(int days) {
     return 'Omi Pro의 $days일 무료 체험이 시작되었습니다.';
   }
@@ -15127,4 +15138,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get referralClaimShort => '받기';
+
+  @override
+  String get paymentDeclinedTitle => '카드가 거절되었습니다';
+
+  @override
+  String paymentDeclinedMessage(Object plan) {
+    return '$plan을 다시 이용하려면 카드를 업데이트하세요';
+  }
 }

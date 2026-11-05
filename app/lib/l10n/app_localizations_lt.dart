@@ -13410,6 +13410,17 @@ class AppLocalizationsLt extends AppLocalizations {
   String get paywallTrialCancelNote => 'Atšaukti bet kada. Jokių mokesčių, jokių baudų.';
 
   @override
+  String get paywallMonthlyFallbackTitle => 'Dar nesiryžtate visiems metams?';
+
+  @override
+  String paywallMonthlyFallbackTrialBody(int days, String price) {
+    return 'Pradėkite nuo mėnesio plano. Tos pačios $days dienos nemokamai, tada $price per mėnesį. Atšaukite bet kada.';
+  }
+
+  @override
+  String get paywallMonthlyFallbackTrialCta => 'Išbandyti mėnesio planą nemokamai';
+
+  @override
   String paywallTrialStarted(int days) {
     return 'Jūsų $days dienų nemokamas Omi Pro bandomasis laikotarpis prasidėjo.';
   }
@@ -15368,4 +15379,12 @@ class AppLocalizationsLt extends AppLocalizations {
 
   @override
   String get referralClaimShort => 'Atsiimti';
+
+  @override
+  String get paymentDeclinedTitle => 'Jūsų kortelė atmesta';
+
+  @override
+  String paymentDeclinedMessage(Object plan) {
+    return 'Atnaujinkite kortelę, kad vėl naudotumėte $plan';
+  }
 }

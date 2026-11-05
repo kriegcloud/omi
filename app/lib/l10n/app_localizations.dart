@@ -23829,6 +23829,24 @@ abstract class AppLocalizations {
   /// **'Cancel anytime. No fees, no penalties.'**
   String get paywallTrialCancelNote;
 
+  /// Title of the sheet shown on the trial paywall after the reader left the yearly checkout without buying.
+  ///
+  /// In en, this message translates to:
+  /// **'Not ready for a year?'**
+  String get paywallMonthlyFallbackTitle;
+
+  /// Body of that sheet when the reader can still get the free trial. days is the trial length, price is the monthly price with currency, e.g. US$29.99.
+  ///
+  /// In en, this message translates to:
+  /// **'Start monthly instead. Same {days} days free, then {price} a month. Cancel anytime.'**
+  String paywallMonthlyFallbackTrialBody(int days, String price);
+
+  /// Button on that sheet: opens the monthly checkout with the free trial.
+  ///
+  /// In en, this message translates to:
+  /// **'Try monthly free'**
+  String get paywallMonthlyFallbackTrialCta;
+
   /// Toast after a trial checkout completes; days is the trial length
   ///
   /// In en, this message translates to:
@@ -26966,6 +26984,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Claim'**
   String get referralClaimShort;
+
+  /// Home row title when the renewal charge for the user's plan failed
+  ///
+  /// In en, this message translates to:
+  /// **'Your card was declined'**
+  String get paymentDeclinedTitle;
+
+  /// Home row line under 'Your card was declined'. it = the card; plan = a product name such as Omi Pro
+  ///
+  /// In en, this message translates to:
+  /// **'Update it to get {plan} back'**
+  String paymentDeclinedMessage(Object plan);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

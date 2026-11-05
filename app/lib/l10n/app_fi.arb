@@ -4107,6 +4107,9 @@
     "paywallTrialSaveAmount": "Säästä {amount}",
     "paywallTrialCta": "Aloita hintaan {price}",
     "paywallTrialCancelNote": "Peruuta milloin tahansa. Ei maksuja, ei sakkoja.",
+    "paywallMonthlyFallbackTitle": "Etkö ole vielä valmis koko vuodeksi?",
+    "paywallMonthlyFallbackTrialBody": "Aloita kuukausitilauksella. Samat {days} päivää ilmaiseksi, sitten {price} kuukaudessa. Peru milloin vain.",
+    "paywallMonthlyFallbackTrialCta": "Kokeile kuukausitilausta ilmaiseksi",
     "paywallTrialStarted": "Omi Pro -palvelun {days} päivän ilmainen kokeilujaksosi on alkanut.",
     "paywallCancelAnytime": "Peruuta milloin tahansa.",
     "connectAnAgent": "Yhdistä agentti",
@@ -4629,5 +4632,7 @@
     "referralRewardFirstDetail": "Kun 2 ystävää ostaa Omin",
     "referralRewardSecondTitle": "3 kuukautta lisää",
     "referralRewardSecondDetail": "Kun 3 ystävää lisää ostaa",
-    "referralClaimShort": "Lunasta"
+    "referralClaimShort": "Lunasta",
+    "paymentDeclinedTitle": "Korttisi hylättiin",
+    "paymentDeclinedMessage": "Päivitä kortti saadaksesi {plan} takaisin"
 }

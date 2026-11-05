@@ -11527,6 +11527,9 @@
     "paywallTrialSaveAmount": "Makatipid ng {amount}",
     "paywallTrialCta": "Simulan sa {price}",
     "paywallTrialCancelNote": "Magkansela anumang oras. Walang bayad, walang multa.",
+    "paywallMonthlyFallbackTitle": "Hindi pa handa para sa isang buong taon?",
+    "paywallMonthlyFallbackTrialBody": "Magsimula muna sa buwanan. Parehong {days} araw na libre, pagkatapos ay {price} kada buwan. Magkansela anumang oras.",
+    "paywallMonthlyFallbackTrialCta": "Subukan ang buwanan nang libre",
     "paywallTrialStarted": "Ang iyong {days}-araw na libreng pagsubok ng Omi Pro ay nagsimula na.",
     "paywallCancelAnytime": "Kanselahin anumang oras.",
     "connectAnAgent": "Ikonekta ang isang Agent",
@@ -12186,5 +12189,7 @@
     "referralRewardFirstDetail": "Kapag bumili ng Omi ang 2 kaibigan",
     "referralRewardSecondTitle": "3 pang buwan",
     "referralRewardSecondDetail": "Kapag bumili ang 3 pang kaibigan",
-    "referralClaimShort": "Kunin"
+    "referralClaimShort": "Kunin",
+    "paymentDeclinedTitle": "Tinanggihan ang iyong card",
+    "paymentDeclinedMessage": "I-update ang card para maibalik ang {plan}"
 }

@@ -4142,6 +4142,9 @@
     "paywallTrialSaveAmount": "{amount} tasarruf edin",
     "paywallTrialCta": "{price} karşılığında başlayın",
     "paywallTrialCancelNote": "İstediğiniz zaman iptal edin. Ücret yok, ceza yok.",
+    "paywallMonthlyFallbackTitle": "Tam bir yıla henüz hazır değil misin?",
+    "paywallMonthlyFallbackTrialBody": "Bunun yerine aylıkla başla. Yine {days} gün ücretsiz, ardından ayda {price}. İstediğin zaman iptal et.",
+    "paywallMonthlyFallbackTrialCta": "Aylığı ücretsiz dene",
     "paywallTrialStarted": "Omi Pro'nun {days} günlük ücretsiz deneme süreniz başladı.",
     "paywallCancelAnytime": "İstediğin zaman iptal et.",
     "connectAnAgent": "Bir Ajan Bağla",
@@ -4664,5 +4667,7 @@
     "referralRewardFirstDetail": "2 arkadaşın Omi aldığında",
     "referralRewardSecondTitle": "3 ay daha",
     "referralRewardSecondDetail": "3 arkadaşın daha aldığında",
-    "referralClaimShort": "Al"
+    "referralClaimShort": "Al",
+    "paymentDeclinedTitle": "Kartınız reddedildi",
+    "paymentDeclinedMessage": "{plan} planınızı geri almak için kartınızı güncelleyin"
 }

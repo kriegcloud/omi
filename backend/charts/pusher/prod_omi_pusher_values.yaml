@@ -114,6 +114,18 @@ envFrom:
 runtimeConfigMapName: prod-omi-backend-config
 
 env:
+  - name: HOME_TRANSCRIPTION_PRESENTATION_GATE
+    value: "true"
+  - name: HOME_TRANSCRIPTION_DEADLINE_SECONDS
+    value: "7200"
+  # lead2 88ba4d: pusher train, canary one pod before fleet expansion.
+  - name: PUSHER_MAX_CLOSED_RECORD_DRAINS
+    value: "64"
+  - name: PUSHER_ABANDON_EVICTED_TOKENS
+    value: "on"
+  # Bound detached abandonment coordinators independently of closed workers.
+  - name: PUSHER_MAX_ABANDON_RECORD_DRAINS
+    value: "4"
   # Production retirement; false restores the old routes only after GPUs are ready.
   - name: STT_GPU_FLEET_OFF
     value: "true"
@@ -263,6 +275,11 @@ env:
         key: POSTHOG_PROJECT_API_KEY
   - name: ACTION_ITEM_REFRESH_PRESERVE_ENABLED
     value: "true"
+  - name: BATCH_FINAL_PASS_ENABLED
+    valueFrom:
+      configMapKeyRef:
+        name: prod-omi-backend-config
+        key: BATCH_FINAL_PASS_ENABLED
   - name: CONVERSATION_SMART_MERGE_FLATTEN_ENABLED
     value: "true"
   - name: CAPTURE_GROUP_CONTAINMENT_MODE
