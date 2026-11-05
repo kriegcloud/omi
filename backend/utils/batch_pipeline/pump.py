@@ -2,15 +2,22 @@
 
 import asyncio
 import contextlib
+import contextvars
 import logging
 import time
+import threading
 from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import replace
 from typing import Any
 from database.batch_privacy_attempt import with_batch_privacy_attempt
 
-from config.batch_pipeline import MAX_PUBLISH_CONCURRENCY, publish_concurrency as configured_publish_concurrency
+from config.batch_pipeline import (
+    MAX_PUBLISH_CONCURRENCY,
+    publish_concurrency as configured_publish_concurrency,
+    admission_parallel_calls_enabled,
+    idle_poll_max_seconds,
+)
 from config.stt_cap_dispatch import offline_admission_enabled as cap_dispatch_enabled
 from utils.batch_pipeline.contracts import (
     BatchWorker,
@@ -31,9 +38,14 @@ from utils.batch_pipeline.leader import LeaderLease
 from utils.batch_pipeline.metrics import QueueMetrics
 from utils.batch_pipeline.scheduler import Scheduler
 from utils.batch_pipeline.stage_timings import StageTimings
-from utils.executors import db_executor, run_blocking, sync_executor
+from utils.executors import admission_executor, db_executor, run_blocking, sync_executor
 
 logger = logging.getLogger(__name__)
+
+# Set per lane task: a cycle that claimed leases is not an empty queue, even
+# when every lease was deferred (allowance-exhausted owners), so it must not
+# grow the lane's idle backoff.
+_CYCLE_CLAIMED: contextvars.ContextVar[list | None] = contextvars.ContextVar('batch_cycle_claimed', default=None)
 
 # Maintenance re-reads every result_ready job each sweep to find its owner;
 # jobs blocked behind an ordered predecessor would otherwise cost one read
@@ -100,6 +112,10 @@ class Pump:
         self.capacity = capacity
         self.project_pending = project_pending
         self.authorize_compute = authorize_compute
+        # Shared across flights and the synchronous dispatch re-check. Locks
+        # live until the actual HTTP leaf returns, even if its async wait times out.
+        self._admission_locks: dict[str, list] = {}
+        self._admission_lock_guard = threading.Lock()
         # Optional single-owner lease for the recovery/drain tick. None keeps
         # every pump running it (single-replica and test behaviour).
         self.leader = leader
@@ -124,9 +140,6 @@ class Pump:
 
     async def run(self, stop_event: asyncio.Event) -> None:
         """SIGTERM sets stop_event; in-flight chains drain with heartbeats intact."""
-        if self.flights == 1:
-            await self._lane(stop_event)
-            return
         halt = asyncio.Event()
 
         async def relay():
@@ -137,7 +150,12 @@ class Pump:
         # Periodic recovery and queue sampling get their own cadence so no
         # lane spends a claim/publication window on them between flights.
         maintaining = asyncio.create_task(self._maintain_loop(halt))
-        lanes = [asyncio.create_task(self._lane(halt, maintain=False)) for _ in range(self.flights)]
+        # Lane 0 stays strictly fresh-first; later lanes may borrow backfill
+        # while every fresh shard is claimed (BATCH_PULL_BUSY_BORROW_ENABLED).
+        lanes = [
+            asyncio.create_task(self._lane(halt, maintain=False, borrow_when_fresh_busy=index > 0))
+            for index in range(self.flights)
+        ]
         try:
             await asyncio.wait(lanes, return_when=asyncio.FIRST_EXCEPTION)
         finally:
@@ -170,10 +188,17 @@ class Pump:
             except asyncio.TimeoutError:
                 pass
 
-    async def _lane(self, stop_event: asyncio.Event, *, maintain: bool = True) -> None:
+    async def _lane(
+        self, stop_event: asyncio.Event, *, maintain: bool = True, borrow_when_fresh_busy: bool = False
+    ) -> None:
+        idle_delay = self.poll_seconds
         while not stop_event.is_set():
+            claimed = [False]
+            marker = _CYCLE_CLAIMED.set(claimed)
             try:
-                count = await self.run_once(stop_event=stop_event, maintain=maintain)
+                count = await self.run_once(
+                    stop_event=stop_event, maintain=maintain, borrow_when_fresh_busy=borrow_when_fresh_busy
+                )
             except FatalGpuError:
                 raise  # Fatal CUDA requires process replacement, never another pull.
             except Exception as error:
@@ -183,11 +208,22 @@ class Pump:
                     error_site_field(error),
                 )
                 count = 0
-            if not count:
+                claimed[0] = False  # An error backs off like an empty queue.
+            finally:
+                _CYCLE_CLAIMED.reset(marker)
+            if not count and claimed[0]:
+                # Leased, then every lease deferred by admission (each carries
+                # its own retry delay): the queue is not empty, so pull again
+                # at once instead of backing off toward idlePollMaxSeconds.
+                idle_delay = self.poll_seconds
+            elif not count:
                 try:
-                    await asyncio.wait_for(stop_event.wait(), timeout=self.poll_seconds)
+                    await asyncio.wait_for(stop_event.wait(), timeout=idle_delay)
                 except asyncio.TimeoutError:
                     pass
+                idle_delay = min(max(self.poll_seconds, idle_poll_max_seconds()), idle_delay * 2)
+            else:
+                idle_delay = self.poll_seconds
 
     async def _renew(self, leases: list[LeasedWork], done: asyncio.Event, lost: set[str]) -> None:
         while not done.is_set():
@@ -225,14 +261,20 @@ class Pump:
         with self.timings.measure(stage):
             return await run_blocking(executor, function, *args, **kwargs)
 
-    async def run_once(self, *, stop_event: asyncio.Event | None = None, maintain: bool = True) -> int:
+    async def run_once(
+        self,
+        *,
+        stop_event: asyncio.Event | None = None,
+        maintain: bool = True,
+        borrow_when_fresh_busy: bool = False,
+    ) -> int:
         with self.timings.measure('pump_cycle'):
             if maintain and not self._maintenance.locked():
                 async with self._maintenance:
                     await self._maintain()
             if stop_event is not None and stop_event.is_set():
                 return 0
-            return await self._flight(stop_event)
+            return await self._flight(stop_event, borrow_when_fresh_busy=borrow_when_fresh_busy)
 
     async def _maintain(self) -> None:
         if self.shadow is not None:
@@ -282,30 +324,94 @@ class Pump:
             await self.sample_metrics()
             self._last_metrics = sampled_at
 
-    def _authorize_in_calls(self, leases: list[LeasedWork]) -> dict:
-        """One merged spend receipt from serial admission calls of at most ADMISSION_LEASES_PER_CALL leases.
+    def _authorize_call(self, leases: list[LeasedWork]) -> dict:
+        """One fail-closed HTTP leaf; serialize shared owners across all flights."""
+        owners = sorted({v.item.owner_id for v in leases})
+        with self._admission_lock_guard:
+            entries = []
+            for owner in owners:
+                entry = self._admission_locks.setdefault(owner, [threading.Lock(), 0])
+                entry[1] += 1
+                entries.append((owner, entry))
+        try:
+            with contextlib.ExitStack() as stack:
+                for _, entry in entries:
+                    stack.enter_context(entry[0])
+                try:
+                    authorize = self.authorize_compute
+                    part = (authorize(leases) or {}) if authorize else {}
+                    result = {
+                        'allowed': list(part.get('allowed') or []),
+                        'retry_after': dict(part.get('retry_after') or {}),
+                        'held_reason': dict(part.get('held_reason') or {}),
+                    }
+                except Exception as error:
+                    worker_metrics.admission(failure_outcome(error))
+                    return {}
+                worker_metrics.admission('received')
+                return result
+        finally:
+            with self._admission_lock_guard:
+                for owner, entry in entries:
+                    entry[1] -= 1
+                    if not entry[1]:
+                        del self._admission_locks[owner]
 
-        A failed or malformed call contributes nothing, so its leases stay
-        unevaluated (never allowed) while the other calls' decisions stand.
-        """
+    @staticmethod
+    def _merge_admission(parts: list[dict]) -> dict:
         allowed, retry_after, held_reason = [], {}, {}
-        authorize = self.authorize_compute
-        if authorize is None:
-            return {'allowed': allowed, 'retry_after': retry_after, 'held_reason': held_reason}
-        for start in range(0, len(leases), ADMISSION_LEASES_PER_CALL):
-            try:
-                part = authorize(leases[start : start + ADMISSION_LEASES_PER_CALL]) or {}
-                part_allowed = list(part.get('allowed') or [])
-                part_retry = dict(part.get('retry_after') or {})
-                part_held = dict(part.get('held_reason') or {})
-            except Exception as error:
-                worker_metrics.admission(failure_outcome(error))
-                continue
-            worker_metrics.admission('received')
-            allowed += part_allowed
-            retry_after.update(part_retry)
-            held_reason.update(part_held)
+        for part in parts:
+            allowed += part.get('allowed', [])
+            retry_after.update(part.get('retry_after', {}))
+            held_reason.update(part.get('held_reason', {}))
         return {'allowed': allowed, 'retry_after': retry_after, 'held_reason': held_reason}
+
+    def _authorize_in_calls(self, leases: list[LeasedWork]) -> dict:
+        """Serial capped calls for the synchronous provider dispatch re-check."""
+        return self._merge_admission(
+            [
+                self._authorize_call(leases[start : start + ADMISSION_LEASES_PER_CALL])
+                for start in range(0, len(leases), ADMISSION_LEASES_PER_CALL)
+            ]
+        )
+
+    async def _authorize_flight_timed(self, leases: list[LeasedWork]) -> dict:
+        with self.timings.measure('admission'):
+            return await self._authorize_flight(leases)
+
+    async def _authorize_flight(self, leases: list[LeasedWork]) -> dict:
+        """Pack first-seen owners; run only owner-disjoint calls together.
+
+        Orchestration stays on the event loop, with at most four HTTP leaves
+        in the dedicated pool. The number of calls and serial timeout bound
+        remain ceil(leases / cap), including a single owner's large flight.
+        """
+        parallel = admission_parallel_calls_enabled()
+        ordered = leases
+        if parallel:
+            groups: dict[str, list[LeasedWork]] = {}
+            for lease in leases:
+                groups.setdefault(lease.item.owner_id, []).append(lease)
+            ordered = [lease for group in groups.values() for lease in group]
+        pending = [
+            ordered[start : start + ADMISSION_LEASES_PER_CALL]
+            for start in range(0, len(ordered), ADMISSION_LEASES_PER_CALL)
+        ]
+        parts = []
+        while pending:
+            wave, remaining, owners = [], [], set()
+            for call in pending:
+                call_owners = {v.item.owner_id for v in call}
+                if len(wave) < (4 if parallel else 1) and owners.isdisjoint(call_owners):
+                    wave.append(call)
+                    owners.update(call_owners)
+                else:
+                    remaining.append(call)
+            parts.extend(
+                await asyncio.gather(*(run_blocking(admission_executor, self._authorize_call, call) for call in wave))
+            )
+            pending = remaining
+        return self._merge_admission(parts)
 
     @staticmethod
     def _log_held_retry(scope: str, error: Exception) -> None:
@@ -316,7 +422,7 @@ class Pump:
         )
 
     @with_batch_privacy_attempt
-    async def _flight(self, stop_event: asyncio.Event | None) -> int:
+    async def _flight(self, stop_event: asyncio.Event | None, *, borrow_when_fresh_busy: bool = False) -> int:
         now = time.time()
         snapshot = (
             self.capacity()
@@ -327,6 +433,8 @@ class Pump:
         def claim():
             if stop_event is not None and stop_event.is_set():
                 return []
+            if borrow_when_fresh_busy:
+                return self.scheduler.pull(time.time(), self.batch_size, capacity=snapshot, borrow_when_fresh_busy=True)
             return self.scheduler.pull(time.time(), self.batch_size, capacity=snapshot)
 
         leases = await self._run_blocking('pull', db_executor, claim)
@@ -340,6 +448,9 @@ class Pump:
                     logger.info('event=batch_shadow_worker outcome=error exception_type=%s', type(error).__name__)
             return 0
         self._normal_flights += 1
+        cycle = _CYCLE_CLAIMED.get()
+        if cycle is not None:
+            cycle[0] = True
         claimed = leases
         done = asyncio.Event()
         lost: set[str] = set()
@@ -366,7 +477,7 @@ class Pump:
                     calls = -(-len(required) // ADMISSION_LEASES_PER_CALL)
                     try:
                         receipt = await asyncio.wait_for(
-                            self._run_blocking('admission', db_executor, self._authorize_in_calls, required),
+                            self._authorize_flight_timed(required),
                             timeout=ADMISSION_CALL_TIMEOUT_SECONDS * calls,
                         )
                     except Exception as error:

@@ -17,7 +17,6 @@ import time
 import math
 import logging
 from typing import TYPE_CHECKING, Callable, NamedTuple, cast
-from uuid import NAMESPACE_URL, uuid5
 
 from config.batch_pipeline import (
     owner_drain_enabled,
@@ -49,8 +48,7 @@ from utils.batch_pipeline.projection_hold_policy import quarantines_assignment_c
 from database.batch_pipeline_projection_claim import projection_claim
 from utils.batch_pipeline.scheduler import owner_key
 from utils.batch_pipeline.voice_evidence import prepare as prepare_voice_evidence
-from utils.batch_pipeline.projection_parts import align_projection_words, bounded_projection_words
-from config.batch_conversation_speakers import vendor_speaker_authority
+from utils.batch_pipeline.projection_segments import projection_segments
 from utils.sync.assignment_errors import (
     SyncAssignmentConflict,
     SyncAssignmentSuperseded,
@@ -279,63 +277,9 @@ def build_incoming(
     from models.conversation import Conversation, CreateConversation
     from models.conversation_enums import ConversationSource
     from utils.conversations.deterministic_minimum import build_deterministic_minimum_structured
-    from utils.stt.pre_recorded import postprocess_words
     from utils.sync.capture import chunk_identity
 
-    duration = float(payload['audio_seconds'])
-    if not 0 < duration <= 7200 or abs(duration - item.duration_seconds) > 0.1:
-        raise ValueError('result audio duration differs from admitted capture')
-    # Model clocks may exceed EOF by the validator's 10 ms tolerance. Bound
-    # words to real PCM, and keep its precision through the legacy grouper:
-    # rounding to centiseconds can otherwise create a decoded coverage hole.
-    words = bounded_projection_words(payload['words'], duration)
-    # The existing final-pass aligner abstains in diarization gaps; the existing
-    # prerecorded grouper supplies the same sentence/segment shapes as sync.
-    aligned = align_projection_words(words, payload, item.segment_id)
-    # Vendor words already carry the vendor's labels; with its turns they join
-    # the same unit scope, centroids and conversation resolver as GPU units.
-    vendor_turns = vendor_speaker_authority(payload)
-    authoritative = (binding.record_origin or (policy or ProjectionPolicy()).authoritative_labels) and (
-        payload.get('recovery_version') != 1 or vendor_turns
-    )
-    if authoritative:
-        # The legacy grouper imputes None from adjacent voices. Keep each gap an
-        # explicit anonymous abstention instead of borrowing a speaker/owner.
-        gap = 0
-        in_gap = False
-        prepared = []
-        for word in aligned:
-            if word['speaker'] is None:
-                if not in_gap:
-                    gap += 1
-                in_gap = True
-                word = {**word, 'speaker': f'BATCH_UNASSIGNED_{item.segment_id}_{gap}'}
-            else:
-                in_gap = False
-            prepared.append(word)
-        aligned = prepared
-    segments = postprocess_words([{**word, 'text': word['word']} for word in aligned], 0, preserve_timestamps=True)
-    if not segments:
-        raise ValueError('successful batch result produced no transcript')
-    # Legacy sync transcribes a VAD-isolated file whose capture timestamp is
-    # already shifted. Batch words cover the full capture; undo the grouper's
-    # first-word normalization to keep absolute speech/playback clocks intact.
-    offset = float(words[0]['timestamp'][0])
-    for index, segment in enumerate(segments):
-        segment.start += offset
-        segment.end += offset
-        segment.id = str(uuid5(NAMESPACE_URL, f'batch:{item.segment_id}:{index}'))
-        segment.speaker_id_scope = (
-            f'final:batch:{batch_segment_id or item.segment_id}' if authoritative else f'sync:{item.segment_id}'
-        )
-        segment.stt_provider = payload.get('words_provider')
-        if authoritative:
-            abstained = (segment.speaker or '').startswith('BATCH_UNASSIGNED_')
-            segment.is_user, segment.person_id = False, None
-            segment.speaker_identity_status = 'ambiguous' if abstained else 'no_match'
-            segment.speaker_match_source = (
-                'batch_abstention' if abstained else 'batch_vendor' if vendor_turns else 'batch_pyannote'
-            )
+    segments = projection_segments(item, binding, payload, batch_segment_id=batch_segment_id, policy=policy)
     started = datetime.fromtimestamp(item.capture_at, timezone.utc)
     finished = datetime.fromtimestamp(item.capture_at + max(s.end for s in segments), timezone.utc)
     # Projected sync must use the same narrow admission rules as legacy sync.
@@ -461,13 +405,16 @@ class Projector:
         store: FirestoreStore,
         load_result: Callable[[WorkItem, str], dict],
         *,
+        projection_store=None,
+        assign_conversation: Callable | None = None,
         publish: Callable = publish_client_completion,
         playback: Callable | None = None,
         fetch_audio: Callable[[WorkItem], bytes] | None = None,
         clock: Callable[[], float] = time.time,
         require_lineage_fence: bool = False,
     ):
-        self.store = ProjectionStore(store)
+        self.store = projection_store if projection_store is not None else ProjectionStore(store)
+        self.assign_conversation = assign_conversation
         self.load_result, self.publish, self.playback, self.clock = load_result, publish, playback, clock
         self.fetch_audio = fetch_audio
         self.require_lineage_fence = require_lineage_fence
@@ -779,7 +726,8 @@ class Projector:
         A ``deadline`` (a ``time.monotonic`` instant) or ``max_pages`` chains
         full pages back to back — checked only between pages, so a pass
         overruns its deadline by at most one page — while neither bound keeps
-        the legacy single-page contract. ``units`` counts held documents
+        the legacy single-page contract. ``pages`` counts the pages fetched by
+        this call; ``units`` counts held documents
         examined; ``reads`` is what the caller should charge its read budget:
         one read per examined document plus, per attempted upload, 5 reads per
         sibling and 7 (the code-derived worst case of prepare_accounting plus
@@ -790,8 +738,7 @@ class Projector:
         interval. The upload dedupe spans the whole pass — across budget stops
         too — and resets only when a short page wraps the cursor.
         """
-        counts = {'partial': 0, 'waiting': 0, 'error': 0, 'units': 0, 'reads': 0, 'more': 0}
-        pages = 0
+        counts = {'partial': 0, 'waiting': 0, 'error': 0, 'units': 0, 'reads': 0, 'more': 0, 'pages': 0}
         while True:
             try:
                 page = held_candidates(self.store.client, self.store.store.namespace, limit, after_id=self.held_after)
@@ -808,7 +755,7 @@ class Projector:
             counts['units'] += len(page)
             counts['reads'] += len(page)
             counts['more'] = 1 if full else 0
-            pages += 1
+            counts['pages'] += 1
             for _, job in page:
                 try:
                     binding = normalized_binding(job['projection_binding'])
@@ -831,7 +778,7 @@ class Projector:
                 return counts
             if deadline is not None and time.monotonic() >= deadline:
                 return counts
-            if max_pages is not None and pages >= max_pages:
+            if max_pages is not None and counts['pages'] >= max_pages:
                 return counts
 
     def release_held_scan(self, limit: int | None = None) -> dict[str, int]:
@@ -1075,7 +1022,7 @@ class Projector:
                         receipt = session.persist_empty()
                     else:
                         try:
-                            assigned = conversations_db.assign_sync_conversation(
+                            assigned = (self.assign_conversation or conversations_db.assign_sync_conversation)(
                                 binding.owner_id,
                                 incoming,
                                 target_id=context.target_id,

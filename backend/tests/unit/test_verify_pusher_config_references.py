@@ -231,7 +231,7 @@ def test_rendered_dev_pusher_direct_bindings_match_source_contract(preflight: Si
         "OMI_SHAPED_AGENT_MODE": "on",
         "CAPTURE_GROUP_CONTAINMENT_MODE": "shadow",
         "CLIENT_SUMMARIES_AT_CAP_ENABLED": "true",
-        "FIRESTORE_READ_LEVERS": '{"action_items_page":100,"backfill_task_reads":100,"batch_privacy_memoize":0,"candidates_page":100,"canonical_statuses_dedupe":100,"conversation_list_cursor":100,"deletion_marker_cache":100,"finjob_candidate_queries":0,"historical_scan_memo":100,"ledger_purge_coalesce":100,"mcp_conversation_cards_cache":100,"memory_list_index_window":0,"people_scan_dedupe":0,"queue_age_sample_budget":100,"request_read_dedupe":100,"serving_config_cache":100,"singleton_loops":100,"subscription_cache":100,"sync_snapshot_resolve_cache":5,"usage_month_cache":0,"usage_month_total":0}',
+        "FIRESTORE_READ_LEVERS": '{"action_items_page":100,"action_items_ttl120":100,"backfill_task_reads":100,"batch_privacy_memoize":0,"bpp_decision_cache":0,"bpp_generation_memo":100,"candidates_page":100,"canonical_statuses_dedupe":100,"conversation_list_cursor":100,"deletion_marker_cache":100,"finjob_candidate_queries":100,"historical_scan_memo":100,"ledger_purge_coalesce":100,"lifecycle_record_pending_head":5,"mcp_conversation_cards_cache":100,"memory_list_index_window":100,"people_scan_dedupe":100,"privacy_checks_shadow":0,"privacy_ttl60":0,"queue_age_sample_budget":100,"request_read_dedupe":100,"serving_config_cache":100,"singleton_loops":100,"subscription_cache":100,"sync_snapshot_resolve_cache":100,"usage_month_cache":0,"usage_month_total":0}',
         "FSR_QUEUE_AGE_PUBLISHER": "0",
         "FSR_QUEUE_AGE_LEASE_SECONDS": "120",
         "FSR_LEADER_LEASE_TTL_SECONDS": "0",
@@ -239,13 +239,14 @@ def test_rendered_dev_pusher_direct_bindings_match_source_contract(preflight: Si
         "FSR_DELETION_NEGATIVE_TTL_SECONDS": "30",
         "FSR_USAGE_MONTH_TTL_SECONDS": "60",
         "FSR_USAGE_MONTH_TOTAL_EPOCH": "v1",
-        "FSR_SUBSCRIPTION_TTL_SECONDS": "60",
+        "FSR_SUBSCRIPTION_TTL_SECONDS": "55",
         "FSR_SERVING_CONFIG_TTL_SECONDS": "60",
         "ACTION_ITEMS_PAGE_CACHE_TTL_SECONDS": "30",
         "CANDIDATES_COMPATIBILITY_CACHE_TTL_SECONDS": "30",
         "GOOGLE_CLOUD_PROJECT": "based-hardware-dev",
+        "HOSTED_LID_API_URL": "",
         "HOSTED_PARAKEET_API_URL": "http://parakeet.omiapi.com",
-        "HOSTED_SPEAKER_EMBEDDING_API_URL": "http://172.16.48.49/diarizer",
+        "HOSTED_SPEAKER_EMBEDDING_API_URL": "http://diarizer.omiapi.com:80",
         "LLM_GATEWAY_ACCOUNTING_ENABLED": "true",
         "LIVE_CAPTURE_WINDOW_RETENTION": "false",
         "LIVE_CAPTURE_WINDOW_STRICT_PROJECTION": "false",
@@ -266,7 +267,7 @@ def test_rendered_dev_pusher_direct_bindings_match_source_contract(preflight: Si
         "PROACTIVITY_V2_POSTHOG_TOKEN": public_token,
         "PROACTIVITY_V2_POSTHOG_HOST": "https://us.posthog.com",
         "STT_PRERECORDED_MODEL": "parakeet,modulate-velma-2",
-        "STT_SERVICE_MODELS": "modulate-velma-2,soniox,parakeet",
+        "STT_SERVICE_MODELS": "modulate-velma-2,soniox",
         "TRANSCRIPTION_SHADOW_DAILY_AUDIO_HOURS": "1",
         "TRANSCRIPTION_SHADOW_ENABLED": "true",
         "TRANSCRIPTION_SHADOW_KILL_SWITCH": "false",
@@ -337,7 +338,7 @@ def test_prod_pusher_retires_self_hosted_deepgram_without_changing_cloud_policy(
         "DEEPGRAM_SELF_HOSTED_URL",
     ):
         assert retired not in literals
-    assert literals["STT_SERVICE_MODELS"] == "modulate-velma-2,soniox,parakeet"
+    assert literals["STT_SERVICE_MODELS"] == "modulate-velma-2,soniox"
 
 
 def test_dev_pusher_literal_policy_rejects_stale_deepgram_model(preflight: SimpleNamespace):
@@ -348,7 +349,7 @@ def test_dev_pusher_literal_policy_rejects_stale_deepgram_model(preflight: Simpl
 
     assert preflight.validate_dev_pusher_binding_contract(deployment) == [
         "dev pusher literal contract mismatch for STT_SERVICE_MODELS: "
-        "expected 'modulate-velma-2,soniox,parakeet', got 'modulate-velma-2'"
+        "expected 'modulate-velma-2,soniox', got 'modulate-velma-2'"
     ]
 
 
