@@ -44,7 +44,14 @@ class ServerBatchSuppressionReason(StrEnum):
     NOT_ENABLED = 'not_enabled'
 
 
+class MemoryL1Reason(StrEnum):
+    NOISE = 'noise'
+    SHORT_OWNER_SPEECH = 'short_owner_speech'
+    UNKNOWN = 'unknown'
+
+
 class ReasonFamily(StrEnum):
+    MEMORY_L1 = 'memory_l1'
     PUSHER_PCM = 'pusher_pcm'
     LIVE_STT = 'live_stt'
     WORKER_VALIDATION = 'worker_validation'
@@ -66,6 +73,7 @@ class ReasonFamily(StrEnum):
     NOTES_AGENT_TRANSPORT = 'notes_agent_transport'
     SYNC_DISPATCH = 'sync_dispatch'
     SYNC_CAPTURE_TIME = 'sync_capture_time'
+    SYNC_BRIDGE_CONTAINMENT = 'sync_bridge_containment'
     SYNC_PROCESSING_HOLD = 'sync_processing_hold'
     ADMISSION_HOLD = 'admission_hold'
     LISTEN_SESSION_TRANSCRIPT = 'listen_session_transcript'
@@ -76,6 +84,7 @@ class ReasonFamily(StrEnum):
     RECURRING_VOICE = 'recurring_voice'
     RECORD_GAP_FILL = 'record_gap_fill'
     RECORD_RETAINED_ACK = 'record_retained_ack'
+    PIPELINE_LEDGER = 'pipeline_ledger'
 
 
 class PusherPcmStage(StrEnum):
@@ -293,6 +302,25 @@ class SyncCaptureTimeReason(StrEnum):
     REJECTED_FUTURE = 'rejected_future'
     REJECTED_EARLY = 'rejected_early'
     REJECTED_MALFORMED = 'rejected_malformed'
+
+
+class ContainedDonorShadowOutcome(StrEnum):
+    """`omi_sync_bridge_contained_donor_shadow_total{outcome}` for a processed sync donor.
+
+    Owner: `utils/sync/bridge.py::_shadow_contained_donor`. The shadow count gates
+    the shadow-to-on ramp, so the label is a closed enum rather than free text.
+    `error` is a bounded read/compare failure: the shadow path still refuses.
+    """
+
+    UNKNOWN = 'unknown'
+    WOULD_ABSORB = 'would_absorb'
+    PARTIAL_OVERLAP = 'partial_overlap'
+    OPEN_TARGET = 'open_target'
+    NO_OVERLAP = 'no_overlap'
+    NO_SEGMENT_SPAN = 'no_segment_span'
+    UNPLACED_DONOR = 'unplaced_donor'
+    DONOR_INELIGIBLE = 'donor_ineligible'
+    ERROR = 'error'
 
 
 class BatchIntakeOutcome(StrEnum):
@@ -814,3 +842,23 @@ class IdentitySpeechOutcome(StrEnum):
     PERSON = 'person'
     RECURRING = 'recurring'
     UNNAMED = 'unnamed'
+
+
+class PipelineLedgerOutcome(StrEnum):
+    UNKNOWN = 'unknown'
+    OK = 'ok'
+    ERROR = 'error'
+    DISABLED = 'disabled'
+    DUPLICATE = 'duplicate'
+    STALE = 'stale'
+    ILLEGAL = 'illegal'
+    TERMINAL = 'terminal'
+
+
+class PipelineLedgerFailureReason(StrEnum):
+    UNKNOWN = 'unknown'
+    TIMEOUT = 'timeout'
+    UNAVAILABLE = 'unavailable'
+    PERMISSION = 'permission'
+    INVALID = 'invalid'
+    OTHER = 'other'

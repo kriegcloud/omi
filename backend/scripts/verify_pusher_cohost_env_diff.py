@@ -103,6 +103,7 @@ _BATCH_PIPELINE_LISTEN_ONLY = frozenset(
         # Held expiry/requeue is owned by main.py maintenance/RPC and GPU workers;
         # pusher does not run the held maintenance loop or worker failure writer.
         'BATCH_HELD_DEAD_LETTER_ENABLED',
+        'BATCH_INPUT_EXPIRING_ENABLED',
         'BATCH_CONTROL_CANDIDATE_FANOUT',
         'BATCH_ADMISSION_PARALLEL_CALLS',
         'BATCH_PIPELINE_IDLE_POLL_MAX_SECONDS',
@@ -167,6 +168,7 @@ LISTEN_ONLY_ALLOWED: dict[str, frozenset[str]] = {
             "STT_ROUTING_REDIS_TIMEOUT_SECONDS",
             # Sync HTTP intake is mounted by main.py; pusher mounts no sync router.
             "SYNC_FINALIZE_TARGET_RECOVERY_ENABLED",
+            "SYNC_BRIDGE_CONTAINED_DONOR_MERGE_ENABLED",
             "ACCOUNT_CUTOVER_ENFORCEMENT",
             "DESKTOP_UPDATE_POINTERS_MODE",
             "DESKTOP_UPDATE_RECONCILE_SAMPLE_RATE",
@@ -288,6 +290,7 @@ LISTEN_ONLY_ALLOWED: dict[str, frozenset[str]] = {
             "STT_ROUTING_REDIS_TIMEOUT_SECONDS",
             # Sync HTTP intake is mounted by main.py; pusher mounts no sync router.
             "SYNC_FINALIZE_TARGET_RECOVERY_ENABLED",
+            "SYNC_BRIDGE_CONTAINED_DONOR_MERGE_ENABLED",
             "ACCOUNT_CUTOVER_ENFORCEMENT",
             "ACCOUNT_DELETION_DISPATCH_MODE",
             "ACCOUNT_DELETION_TASKS_QUEUE",
@@ -656,7 +659,7 @@ def validate_preflight(root: Path = ROOT) -> list[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or '').partition('\n')[0])
     parser.add_argument(
         "--root",
         type=Path,
