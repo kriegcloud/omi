@@ -13,6 +13,7 @@ import { appendFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { supportsMica } from './windowsVersion'
 import { defaultOzonePlatform } from './linuxCompositor'
+import { LINUX_DISABLED_FEATURES, mergeFeatureList } from './linuxChromiumFeatures'
 import { APP_BG_HEX, HOME_BG_HEX, WCO_SYMBOL_HEX } from '../shared/chrome'
 import iconPath from '../../resources/icon.png?asset'
 import { listCaptureSources } from './ipc/capture'
@@ -433,6 +434,11 @@ if (process.platform === 'linux') {
   app.commandLine.appendSwitch(
     'enable-features',
     'WebRTCPipeWireCapturer,PulseaudioLoopbackForScreenShare'
+  )
+  // Capture must never rewrite device volumes (see linuxChromiumFeatures.ts).
+  app.commandLine.appendSwitch(
+    'disable-features',
+    mergeFeatureList(app.commandLine.getSwitchValue('disable-features'), LINUX_DISABLED_FEATURES)
   )
 }
 
