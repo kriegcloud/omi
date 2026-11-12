@@ -1,9 +1,15 @@
 import { it, expect, beforeEach, describe } from 'vitest'
-import { liveConversation, isConversationBoundary } from './liveConversation'
+import {
+  callAudioWarning,
+  liveConversation,
+  liveStatusLabel,
+  isConversationBoundary
+} from './liveConversation'
 import type { TranscriptLine } from '../../../shared/types'
 
 beforeEach(() => {
   liveConversation.reset()
+  liveConversation.clearCallAudio()
 })
 
 it('starts idle and empty', () => {
@@ -74,5 +80,72 @@ describe('applyRemoteOp', () => {
     liveConversation.applyRemoteOp({ op: 'reset' })
     expect(liveConversation.getSegments()).toEqual([])
     expect(liveConversation.getStatus()).toBe('idle')
+  })
+})
+
+// A 'call' session's system lane (the other side of a call), mirrored from the
+// capture window's call-audio-status events.
+describe('call audio', () => {
+  it('holds the latest lane state and notifies subscribers', () => {
+    let calls = 0
+    const unsub = liveConversation.subscribe(() => {
+      calls++
+    })
+    liveConversation.applyCallAudio({ sessionId: 's1', system: 'opening' })
+    liveConversation.applyCallAudio({ sessionId: 's1', system: 'silent', detail: 'monitor at 8%' })
+    expect(liveConversation.getCallAudio()).toEqual({
+      sessionId: 's1',
+      system: 'silent',
+      detail: 'monitor at 8%'
+    })
+    expect(calls).toBe(2)
+    unsub()
+  })
+
+  it("ends on the session's own 'off', not on its predecessor's", () => {
+    liveConversation.applyCallAudio({ sessionId: 's2', system: 'live' })
+    liveConversation.applyCallAudio({ sessionId: 's1', system: 'off' }) // a late stop
+    expect(liveConversation.getCallAudio()?.sessionId).toBe('s2')
+    liveConversation.applyCallAudio({ sessionId: 's2', system: 'off' })
+    expect(liveConversation.getCallAudio()).toBeNull()
+  })
+
+  it('survives a transcript reset and is dropped when the capture window restarts', () => {
+    liveConversation.applyCallAudio({ sessionId: 's1', system: 'unavailable' })
+    liveConversation.reset()
+    expect(liveConversation.getCallAudio()?.system).toBe('unavailable')
+    liveConversation.clearCallAudio()
+    expect(liveConversation.getCallAudio()).toBeNull()
+  })
+
+  it('counts delayed, silent and unavailable as warnings', () => {
+    const state = (system: 'opening' | 'delayed' | 'live' | 'silent' | 'unavailable') => ({
+      sessionId: 's1',
+      system,
+      detail: null
+    })
+    expect(callAudioWarning(null)).toBeNull()
+    expect(callAudioWarning(state('opening'))).toBeNull()
+    expect(callAudioWarning(state('live'))).toBeNull()
+    for (const system of ['delayed', 'silent', 'unavailable'] as const) {
+      expect(callAudioWarning(state(system))?.system).toBe(system)
+    }
+  })
+
+  it('does not label a session missing its call audio as plain Listening', () => {
+    const state = (system: 'live' | 'delayed' | 'silent' | 'unavailable') => ({
+      sessionId: 's1',
+      system,
+      detail: null
+    })
+    expect(liveStatusLabel('live')).toBe('Listening')
+    expect(liveStatusLabel('live', state('live'))).toBe('Listening')
+    expect(liveStatusLabel('live', state('silent'))).toBe('Listening (no call audio)')
+    expect(liveStatusLabel('live', state('delayed'))).toBe('Listening (mic only)')
+    expect(liveStatusLabel('live', state('unavailable'))).toBe('Listening (mic only)')
+    // Other statuses keep their own word whatever the lane says.
+    expect(liveStatusLabel('connecting', state('silent'))).toBe('Connecting…')
+    expect(liveStatusLabel('error', state('silent'))).toBe('Microphone unavailable')
+    expect(liveStatusLabel('idle')).toBe('Idle')
   })
 })

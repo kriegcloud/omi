@@ -28,6 +28,7 @@ import {
   stopTestListenSession
 } from './ipc/omiListen'
 import { registerCaptureBridge } from './ipc/captureBridge'
+import { registerSystemPlaybackHandlers } from './audio/systemPlayback'
 import { registerSoak } from './soak'
 import { createCaptureWindow, getCaptureWindow, getCaptureWc } from './captureWindow'
 import { registerFileIndexHandlers } from './ipc/fileIndex'
@@ -873,6 +874,9 @@ app.whenReady().then(async () => {
       return bar && !bar.isDestroyed() ? bar.webContents : null
     }
   )
+  // Call capture: answers "is anything playing?" for a silent system lane, and
+  // writes the lane's state changes to main.log.
+  registerSystemPlaybackHandlers()
   // Soak telemetry (inert unless OMI_SOAK=1): samples process metrics + listen
   // byte counters to userData/soak.jsonl for the 8h idle-soak verification.
   registerSoak()

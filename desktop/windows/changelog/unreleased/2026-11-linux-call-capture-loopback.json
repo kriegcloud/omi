@@ -1,0 +1,7 @@
+{
+  "changes": [
+    "Call capture on Linux records the other side of the call again. Opening the system-audio loopback turned the output's monitor volume down to 8%, so call audio came through as silence.",
+    "A call session now starts on the microphone and adds call audio as soon as it opens, instead of restarting every 10 seconds on a busy machine.",
+    "The live view now says when call audio is missing (mic only, or no call audio) instead of showing plain Listening."
+  ]
+}

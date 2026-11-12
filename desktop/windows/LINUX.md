@@ -35,7 +35,32 @@ sudo apt-get install -y x11-utils tesseract-ocr tesseract-ocr-eng
 - System-audio loopback (meeting capture) needs PulseAudio or `pipewire-pulse`.
   Chromium flag `PulseaudioLoopbackForScreenShare` is enabled on Linux; without
   a Pulse layer the flag is inert and capture falls back to mic-only.
+- `pactl` and `parec` (package `libpulse` / `pulseaudio-utils`, version 16 or
+  newer for pactl's JSON output) let call capture tell a quiet call from a broken
+  loopback. Without them capture works the same, minus that warning.
 - Headless/CI: run under `xvfb-run` and pass `--no-sandbox`.
+
+## Call capture and the loopback
+
+"Capture call audio" (Settings → Transcription) records the mic plus the default
+sink's monitor source. Three things about it are Linux-specific:
+
+- **The loopback is requested unprocessed, and WebRTC may not adjust input
+  volumes** (`lib/capture/systemAudio.ts`, `src/main/linuxChromiumFeatures.ts`).
+  With gain control on, Chromium wrote the monitor source's volume down to 8%
+  (-66 dB) each time the loopback opened, so the other side of a call was recorded
+  as silence. That volume is a device setting: it stays after the app exits and
+  affects every other recorder. If a monitor is still low from an older build,
+  restore it once: `pactl set-source-volume "$(pactl get-default-sink).monitor" 100%`.
+- **The session starts on the mic and the loopback joins when it opens**
+  (`AudioSessionHost.startCallAudio`). On a busy machine the display-media
+  request can take from seconds to over a minute.
+- **The live view says when the call side is missing.** `Listening (mic only)`
+  means the loopback is not attached (yet); `Listening (no call audio)` means it
+  is attached but has delivered only silence for 20 s or more while an
+  application was audibly playing to the default sink (the level is measured on
+  the playback streams themselves, so idle streams do not count). Each change is
+  also written to `main.log` as `[call-capture] system lane <state>`.
 
 ## Wayland
 

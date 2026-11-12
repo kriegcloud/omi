@@ -14,9 +14,10 @@ export type TranscriptionMode = Extract<ListenMode, 'conversation' | 'transcribe
 // quickly. (Push-to-talk does NOT ride this client — see lib/ptt/, whose stream
 // lane is opportunistic and needs no connect timeout at all.)
 const CONNECT_TIMEOUT_MS = 3000
-// A 'call' session also opens the system loopback (a display-media request plus a
-// second capture pipeline) before its audio source reports ready; on Linux that
-// took longer than 3 s and every attempt timed out (2026-11-03).
+// A 'call' session is ready once its mic lane is; the system loopback attaches
+// when it opens and no longer holds readiness back (AudioSessionHost.startCallAudio).
+// The longer window stays because call capture runs beside a live call, when the
+// machine is at its busiest and even the mic lane can take more than 3 s.
 const CALL_CONNECT_TIMEOUT_MS = 10000
 
 export type TranscriptionCallbacks = {

@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { AudioWaveform, Gift, MessageCircle, Mic, Scan, Settings } from 'lucide-react'
+import {
+  AudioWaveform,
+  Gift,
+  MessageCircle,
+  Mic,
+  Scan,
+  Settings,
+  TriangleAlert
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { getPreferences, onPreferencesChange, setPreferences } from '../../../lib/preferences'
+import { callAudioWarning, liveConversation } from '../../../lib/liveConversation'
 import { cn } from '../../../lib/utils'
 import type { RewindSettings } from '../../../../../shared/types'
 
@@ -23,13 +32,27 @@ const DISCORD_URL = 'https://discord.com/invite/8MP3b9ymvx'
 // Shared pill states. Mac also has a `blocked` (red) state for a denied capture
 // permission; Windows screen capture has no permission gate (RewindSettings
 // carries no such field), so that state is unreachable here and is not modeled.
-type PillState = 'active' | 'inactive'
+//
+// `warn` (amber) is the listening pill while a call session is recording the mic
+// only: on and working, but not hearing the other side of the call.
+type PillState = 'active' | 'inactive' | 'warn'
 
 const PILL_CLASS: Record<PillState, string> = {
   // The active stroke is CONSTANT — only the fill lifts on hover.
   active: 'bg-home-green/[0.12] hover:bg-home-green/20 border-home-green/[0.38] text-home-ink',
+  warn: 'bg-warning/[0.12] hover:bg-warning/20 border-warning/[0.38] text-home-ink',
   inactive:
     'bg-home-panel hover:bg-home-tileHover border-home-hairline/[0.58] hover:border-home-hairline/80 text-home-muted'
+}
+
+const CALL_AUDIO_FALLBACK_WARNING = 'Call audio is not being recorded; only your microphone is.'
+
+/** Why the live call session is not hearing the other side of the call (mic only,
+ *  or the loopback is silent while something plays), if that is the case. */
+function readCallWarning(): string | undefined {
+  if (liveConversation.getStatus() !== 'live') return undefined
+  const warning = callAudioWarning(liveConversation.getCallAudio())
+  return warning ? (warning.detail ?? CALL_AUDIO_FALLBACK_WARNING) : undefined
 }
 
 function Pill(props: {
@@ -38,14 +61,18 @@ function Pill(props: {
   on: boolean
   label: string
   onClick: () => void
+  /** What is wrong while the control is on; shown as the tooltip. */
+  warning?: string
 }): React.JSX.Element {
-  const { Icon, text, on, label, onClick } = props
+  const { Icon, text, on, label, onClick, warning } = props
+  const state: PillState = !on ? 'inactive' : warning ? 'warn' : 'active'
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      aria-label={label}
+      aria-label={warning ? `${label}. ${warning}` : label}
+      title={warning}
       className={cn(
         'focus-ring flex h-[34px] items-center gap-1.5 rounded-full border',
         // Leading 12 / icon↔label gap 6 / trailing 10 — a deliberate Windows-specific
@@ -53,7 +80,7 @@ function Pill(props: {
         // the icon↔label gap is tightened and the trailing pad widened to rebalance
         // (the leading edge is held at 12 so only the internal balance shifts).
         'pl-3 pr-2.5 text-[12px] font-medium transition-colors duration-150',
-        PILL_CLASS[on ? 'active' : 'inactive']
+        PILL_CLASS[state]
       )}
     >
       <Icon className="h-[13px] w-[13px] shrink-0" strokeWidth={2} />
@@ -137,6 +164,10 @@ export function HubHeader(): React.JSX.Element {
   const toggleMic = (): void => {
     setPreferences({ continuousRecording: !getPreferences().continuousRecording })
   }
+  // A call session that is missing its call audio must not look like healthy
+  // listening (readCallWarning above).
+  const [callWarning, setCallWarning] = useState(readCallWarning)
+  useEffect(() => liveConversation.subscribe(() => setCallWarning(readCallWarning())), [])
 
   return (
     <div className="flex h-9 items-center gap-2.5">
@@ -154,11 +185,12 @@ export function HubHeader(): React.JSX.Element {
         onClick={toggleCapture}
       />
       <Pill
-        Icon={micOn ? AudioWaveform : Mic}
+        Icon={!micOn ? Mic : callWarning ? TriangleAlert : AudioWaveform}
         text="Listening"
         on={micOn}
         label={micOn ? 'Stop listening' : 'Start listening'}
         onClick={toggleMic}
+        warning={micOn ? callWarning : undefined}
       />
       <GearMenu />
     </div>

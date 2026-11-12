@@ -22,6 +22,7 @@ import type {
   ListenMessage,
   CaptureCommand,
   CaptureEvent,
+  SystemPlaybackProbe,
   ExportMemory,
   KnowledgeGraph,
   OnboardingGraphNode,
@@ -151,6 +152,8 @@ const omi: OmiBridgeApi = {
     ipcRenderer.on('omi-capture:event', listener)
     return () => ipcRenderer.removeListener('omi-capture:event', listener)
   },
+  systemPlaybackProbe: (): Promise<SystemPlaybackProbe> =>
+    ipcRenderer.invoke('omi-capture:systemPlaybackProbe'),
   allowVirtualMic: process.env.OMI_ALLOW_VIRTUAL_MIC === '1',
   e2e: process.env.OMI_E2E === '1',
   // Offline fake-auth for the shell E2E (survives production builds). Gated on a

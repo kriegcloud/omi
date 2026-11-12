@@ -37,6 +37,16 @@ function pollForNewConversation(): void {
 export function LiveMirrorHost(): null {
   useEffect(() => {
     return window.omi?.onCaptureEvent?.((ev) => {
+      // A call session's system lane (the other side of the call) changed state;
+      // the live view shows it so "Listening" never hides a mic-only recording.
+      if (ev.type === 'call-audio-status') {
+        liveConversation.applyCallAudio(ev)
+        return
+      }
+      if (ev.type === 'capture-window-restarted') {
+        liveConversation.clearCallAudio()
+        return
+      }
       if (ev.type !== 'live') return
       liveConversation.applyRemoteOp(ev.op)
       // A quota-exhausted terminal error from the capture window can't raise the

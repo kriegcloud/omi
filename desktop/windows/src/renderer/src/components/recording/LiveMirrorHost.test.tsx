@@ -7,7 +7,9 @@ import type { CaptureEvent } from '../../../../shared/types'
 // the on-save UI side effects. Mock the store + side-effect modules and assert it
 // wires them correctly.
 
-vi.mock('../../lib/liveConversation', () => ({ liveConversation: { applyRemoteOp: vi.fn() } }))
+vi.mock('../../lib/liveConversation', () => ({
+  liveConversation: { applyRemoteOp: vi.fn(), applyCallAudio: vi.fn(), clearCallAudio: vi.fn() }
+}))
 vi.mock('../../lib/pendingConversations', () => ({ createPendingConversation: vi.fn() }))
 vi.mock('../../lib/pageCache', () => ({ refreshCloudConversations: vi.fn() }))
 vi.mock('../../lib/kgSynthesis', () => ({ buildLocalGraph: vi.fn() }))
@@ -54,5 +56,24 @@ describe('LiveMirrorHost', () => {
     render(<LiveMirrorHost />)
     emit({ type: 'capture-window-restarted' })
     expect(liveConversation.applyRemoteOp).not.toHaveBeenCalled()
+  })
+
+  it("mirrors a call session's system-lane state", () => {
+    render(<LiveMirrorHost />)
+    const event: CaptureEvent = {
+      type: 'call-audio-status',
+      sessionId: 's1',
+      system: 'silent',
+      detail: 'monitor at 8%'
+    }
+    emit(event)
+    expect(liveConversation.applyCallAudio).toHaveBeenCalledWith(event)
+    expect(liveConversation.applyRemoteOp).not.toHaveBeenCalled()
+  })
+
+  it('drops the call-audio state when the capture window restarts', () => {
+    render(<LiveMirrorHost />)
+    emit({ type: 'capture-window-restarted' })
+    expect(liveConversation.clearCallAudio).toHaveBeenCalledOnce()
   })
 })

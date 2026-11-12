@@ -37,4 +37,27 @@ describe('CallLaneMixer', () => {
     expect(out.map((b) => b.startSample)).toEqual([0, 3])
     expect([...out[1].mix]).toEqual([2, 2, 2])
   })
+
+  it('mixes the system lane in from the moment it is attached', () => {
+    const m = new CallLaneMixer({ blockSamples: 4, maxLagSamples: 100, hasSystem: false })
+    expect(m.push('mic', fill(6, 10)).map((b) => [...b.mix])).toEqual([[10, 10, 10, 10]])
+    m.attachSystem()
+    // Two mic samples were left over; the next block needs the system lane too.
+    expect(m.push('mic', fill(2, 10))).toEqual([])
+    const out = m.push('system', fill(4, 5))
+    expect(out).toHaveLength(1)
+    expect([...out[0].mix]).toEqual([15, 15, 15, 15])
+    expect([...out[0].mic]).toEqual([10, 10, 10, 10])
+    expect(out[0].startSample).toBe(4) // positions continue across the switch
+  })
+
+  it('drops system audio that arrives before the lane is attached', () => {
+    const m = new CallLaneMixer({ blockSamples: 4, maxLagSamples: 8, hasSystem: false })
+    // Far more than maxLagSamples: queued, it would read as a stalled mic lane
+    // and be emitted over silence.
+    expect(m.push('system', fill(64, 5))).toEqual([])
+    m.attachSystem()
+    expect(m.push('mic', fill(4, 10))).toEqual([])
+    expect([...m.push('system', fill(4, 7))[0].mix]).toEqual([17, 17, 17, 17])
+  })
 })

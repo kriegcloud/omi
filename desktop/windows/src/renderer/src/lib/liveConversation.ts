@@ -1,6 +1,42 @@
-import type { ListenEvent, LiveStoreOp, TranscriptLine } from '../../../shared/types'
+import {
+  isCallSystemLaneWarning,
+  type CallSystemLaneState,
+  type ListenEvent,
+  type LiveStoreOp,
+  type TranscriptLine
+} from '../../../shared/types'
 
 export type LiveStatus = 'idle' | 'connecting' | 'live' | 'error'
+
+/** The system lane of the running 'call' session (the other side of a call), as
+ *  last reported by the capture window. Null when no call session is running. */
+export type CallAudioState = {
+  sessionId: string
+  system: Exclude<CallSystemLaneState, 'off'>
+  detail: string | null
+}
+
+/** The call session's system lane when it is in a state that means the other
+ *  side of a call is not being recorded, else null. */
+export function callAudioWarning(callAudio: CallAudioState | null): CallAudioState | null {
+  return callAudio && isCallSystemLaneWarning(callAudio.system) ? callAudio : null
+}
+
+/** The live view's status word. A live session whose call audio is missing must
+ *  not read as plain "Listening": that is how a mic-only recording went unnoticed. */
+export function liveStatusLabel(
+  status: LiveStatus,
+  callAudio: CallAudioState | null = null
+): string {
+  if (status === 'connecting') return 'Connecting…'
+  if (status === 'live') {
+    const warning = callAudioWarning(callAudio)
+    if (!warning) return 'Listening'
+    return warning.system === 'silent' ? 'Listening (no call audio)' : 'Listening (mic only)'
+  }
+  if (status === 'error') return 'Microphone unavailable'
+  return 'Idle'
+}
 
 // Singleton store for the CURRENT in-progress conversation's live transcript. The
 // capture window's mic session writes it (via captureLiveStore, which mirrors each
@@ -18,6 +54,10 @@ let saved = false
 // (empty title => "loading…") and filled in by the client-side titler.
 let savedTitle = ''
 let savedEmoji = ''
+// Kept apart from the transcript state above: a call session's lane state follows
+// the audio session (call-audio-status events), not the conversation, so neither
+// reset() nor a saved conversation clears it.
+let callAudio: CallAudioState | null = null
 const subscribers = new Set<() => void>()
 
 function notify(): void {
@@ -53,6 +93,26 @@ export const liveConversation = {
   setSavedTopic(title: string, emoji: string): void {
     savedTitle = title
     savedEmoji = emoji
+    notify()
+  },
+  getCallAudio(): CallAudioState | null {
+    return callAudio
+  },
+  // Apply a call-audio-status event. 'off' ends only the session it names, so a
+  // late 'off' from the previous session cannot clear its successor's state.
+  applyCallAudio(ev: { sessionId: string; system: CallSystemLaneState; detail?: string }): void {
+    if (ev.system === 'off') {
+      if (callAudio?.sessionId !== ev.sessionId) return
+      callAudio = null
+    } else {
+      callAudio = { sessionId: ev.sessionId, system: ev.system, detail: ev.detail ?? null }
+    }
+    notify()
+  },
+  // The capture window restarted: whatever it last reported is gone with it.
+  clearCallAudio(): void {
+    if (!callAudio) return
+    callAudio = null
     notify()
   },
   appendLine(line: TranscriptLine): void {
