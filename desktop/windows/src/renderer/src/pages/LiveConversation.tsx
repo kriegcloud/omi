@@ -108,7 +108,7 @@ export function LiveConversation(): React.JSX.Element {
             </div>
             {warning && (
               <p
-                role="alert"
+                role="status"
                 className="mb-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-sm leading-relaxed text-white/85"
               >
                 <TriangleAlert

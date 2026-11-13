@@ -69,6 +69,7 @@ import {
   CALL_SYSTEM_LANE_DELAYED_MS,
   CALL_SYSTEM_LANE_RETRY_MS
 } from './AudioSessionHost'
+import { _resetCallAudioForTest } from './callAudioStatus'
 
 const OWNER = 42
 
@@ -117,6 +118,7 @@ beforeEach(() => {
   h.watchOptions = null
   h.watchPush.mockReset()
   h.watchStop.mockReset()
+  _resetCallAudioForTest()
   Object.defineProperty(window, 'omi', {
     configurable: true,
     value: {
@@ -293,5 +295,44 @@ describe('call session system-lane watch', () => {
     expect(h.watchStop).toHaveBeenCalledOnce()
     h.watchOptions?.onState('silent', detail) // a verdict that lands after the stop
     expect(lane('watch').at(-1)).toBe('off')
+  })
+})
+
+describe('call-audio-sync', () => {
+  const sync = (): void => h.commandHandler?.({ type: 'call-audio-sync' }, OWNER)
+
+  it("sends a UI window that just loaded the lane's current state again", async () => {
+    pendingSystem()
+    start('reloaded')
+    await vi.advanceTimersByTimeAsync(CALL_SYSTEM_LANE_DELAYED_MS)
+    const delayed = laneEvents('reloaded').at(-1)
+    expect(delayed?.system).toBe('delayed')
+
+    h.captureEmit.mockClear() // the window reloads and has heard none of the above
+    sync()
+    expect(laneEvents('reloaded')).toEqual([delayed])
+    stop('reloaded')
+  })
+
+  it('replays a warning the watch raised long ago', async () => {
+    start('silent-then-reload')
+    await settle()
+    const detail = 'The monitor of sink is at 8%, so call audio is recorded as silence.'
+    h.watchOptions?.onState('silent', detail)
+    h.captureEmit.mockClear()
+    sync()
+    expect(laneEvents('silent-then-reload')).toEqual([
+      { type: 'call-audio-status', sessionId: 'silent-then-reload', system: 'silent', detail }
+    ])
+    stop('silent-then-reload')
+  })
+
+  it('has nothing to replay once the session stopped', async () => {
+    start('ended')
+    await settle()
+    stop('ended')
+    h.captureEmit.mockClear()
+    sync()
+    expect(events()).toEqual([])
   })
 })

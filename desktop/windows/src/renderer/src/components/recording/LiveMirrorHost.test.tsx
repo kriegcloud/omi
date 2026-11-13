@@ -20,6 +20,7 @@ import { createPendingConversation } from '../../lib/pendingConversations'
 import { refreshCloudConversations } from '../../lib/pageCache'
 
 let evHandlers: Array<(e: CaptureEvent) => void>
+const captureCommand = vi.fn()
 function emit(e: CaptureEvent): void {
   for (const fn of [...evHandlers]) fn(e)
 }
@@ -28,6 +29,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   evHandlers = []
   ;(window as unknown as { omi: unknown }).omi = {
+    captureCommand,
     onCaptureEvent: (fn: (e: CaptureEvent) => void) => {
       evHandlers.push(fn)
       return () => (evHandlers = evHandlers.filter((x) => x !== fn))
@@ -69,6 +71,14 @@ describe('LiveMirrorHost', () => {
     emit(event)
     expect(liveConversation.applyCallAudio).toHaveBeenCalledWith(event)
     expect(liveConversation.applyRemoteOp).not.toHaveBeenCalled()
+  })
+
+  it('asks for the current call-audio state when it mounts', () => {
+    // Status events report changes only; a window that reloads mid-call would
+    // otherwise never learn of a lane that is already silent or unavailable.
+    render(<LiveMirrorHost />)
+    expect(captureCommand).toHaveBeenCalledWith({ type: 'call-audio-sync' })
+    expect(evHandlers).toHaveLength(1) // asked only after the listener is up
   })
 
   it('drops the call-audio state when the capture window restarts', () => {

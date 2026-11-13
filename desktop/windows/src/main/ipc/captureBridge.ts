@@ -114,6 +114,7 @@ export function canForwardRendererCaptureCommand(
     case 'assistant-speaking':
     case 'assistant-utterance':
     case 'auth-changed':
+    case 'call-audio-sync':
       return senderId === mainWindowId
     default:
       return false

@@ -1,4 +1,18 @@
-import { describe, expect, it, vi } from 'vitest'
+import { EventEmitter } from 'node:events'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// The default tap spawns `parec`. Mocked so its arguments are pinned without a
+// sound server (CI has none).
+const spawnMock = vi.fn()
+vi.mock('child_process', () => ({
+  spawn: (...args: unknown[]) => spawnMock(...args),
+  execFile: vi.fn()
+}))
+vi.mock('node:child_process', () => ({
+  spawn: (...args: unknown[]) => spawnMock(...args),
+  execFile: vi.fn()
+}))
+
 import {
   AUDIBLE_PEAK,
   callAudioLogLine,
@@ -229,6 +243,99 @@ describe('probeSystemPlayback', () => {
     expect(await probeSystemPlayback('win32', run, tap)).toEqual({ supported: false })
     expect(run).not.toHaveBeenCalled()
     expect(tap).not.toHaveBeenCalled()
+  })
+})
+
+describe('the default parec tap', () => {
+  type FakeChild = EventEmitter & { stdout: EventEmitter; kill: ReturnType<typeof vi.fn> }
+  const pactl = (s: PactlSnapshot) => async (args: string[]) => {
+    const key = args.join(' ')
+    if (key === 'info') return s.info
+    if (key === 'list sinks') return s.sinks
+    if (key === 'list sink-inputs') return s.sinkInputs
+    return s.sources
+  }
+  /** A parec that prints `pcm` and exits, as it does when the tap window ends. */
+  function fakeParec(pcm: Buffer | null): FakeChild {
+    const child = Object.assign(new EventEmitter(), {
+      stdout: new EventEmitter(),
+      kill: vi.fn()
+    }) as FakeChild
+    queueMicrotask(() => {
+      if (pcm) child.stdout.emit('data', pcm)
+      child.emit('close', 0)
+    })
+    return child
+  }
+  const loud = (): Buffer => {
+    const pcm = Buffer.alloc(4)
+    pcm.writeInt16LE(6613, 0)
+    pcm.writeInt16LE(-20, 2)
+    return pcm
+  }
+
+  beforeEach(() => {
+    spawnMock.mockReset()
+  })
+
+  it('records the reported sink input as 16 kHz mono s16le', async () => {
+    spawnMock.mockImplementation(() => fakeParec(loud()))
+    const probe = await probeSystemPlayback('linux', pactl(snapshot()))
+    expect(probe).toMatchObject({ supported: true, playing: true })
+    expect(spawnMock).toHaveBeenCalledOnce()
+    const [command, args] = spawnMock.mock.calls[0] as [string, string[]]
+    expect(command).toBe('parec')
+    expect(args).toEqual(
+      expect.arrayContaining([
+        '--monitor-stream=2309', // the sink input pactl listed
+        '--raw',
+        '--format=s16le',
+        '--rate=16000',
+        '--channels=1'
+      ])
+    )
+  })
+
+  it('taps every candidate stream by its own index', async () => {
+    spawnMock.mockImplementation(() => fakeParec(Buffer.alloc(4)))
+    const probe = await probeSystemPlayback(
+      'linux',
+      pactl(
+        snapshot({
+          sinkInputs: [
+            { index: 11, sink: 814, corked: false, mute: false },
+            { index: 12, sink: 814, corked: false, mute: false }
+          ]
+        })
+      )
+    )
+    expect(probe).toMatchObject({ supported: true, playing: false })
+    const streams = spawnMock.mock.calls.map(([, args]) => (args as string[])[0])
+    expect(streams).toEqual(['--monitor-stream=11', '--monitor-stream=12'])
+  })
+
+  it('is unsupported when parec cannot be started', async () => {
+    spawnMock.mockImplementation(() => {
+      const child = Object.assign(new EventEmitter(), {
+        stdout: new EventEmitter(),
+        kill: vi.fn()
+      }) as FakeChild
+      queueMicrotask(() => child.emit('error', new Error('spawn parec ENOENT')))
+      return child
+    })
+    expect(await probeSystemPlayback('linux', pactl(snapshot()))).toEqual({ supported: false })
+  })
+
+  it('is unsupported when parec prints nothing', async () => {
+    spawnMock.mockImplementation(() => fakeParec(null))
+    expect(await probeSystemPlayback('linux', pactl(snapshot()))).toEqual({ supported: false })
+  })
+
+  it('is unsupported when spawn itself throws', async () => {
+    spawnMock.mockImplementation(() => {
+      throw new Error('spawn ENOTDIR')
+    })
+    expect(await probeSystemPlayback('linux', pactl(snapshot()))).toEqual({ supported: false })
   })
 })
 

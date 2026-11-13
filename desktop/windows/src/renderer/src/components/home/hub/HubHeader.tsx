@@ -61,7 +61,8 @@ function Pill(props: {
   on: boolean
   label: string
   onClick: () => void
-  /** What is wrong while the control is on; shown as the tooltip. */
+  /** What is wrong while the control is on; shown as the tooltip. The label
+   *  stays the control's action: the caller announces the warning itself. */
   warning?: string
 }): React.JSX.Element {
   const { Icon, text, on, label, onClick, warning } = props
@@ -71,7 +72,7 @@ function Pill(props: {
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      aria-label={warning ? `${label}. ${warning}` : label}
+      aria-label={label}
       title={warning}
       className={cn(
         'focus-ring flex h-[34px] items-center gap-1.5 rounded-full border',
@@ -192,6 +193,14 @@ export function HubHeader(): React.JSX.Element {
         onClick={toggleMic}
         warning={micOn ? callWarning : undefined}
       />
+      {/* The pill only changes colour, icon and tooltip. Announce the warning as
+          it appears, politely, so a screen-reader user also learns that the call
+          side is not being recorded. Always mounted: a live region must exist
+          before its text changes to be read out. A bare live region rather than
+          role="status": that role on this screen is the ask bar's busy indicator. */}
+      <span aria-live="polite" aria-atomic="true" className="sr-only">
+        {micOn && callWarning ? callWarning : ''}
+      </span>
       <GearMenu />
     </div>
   )

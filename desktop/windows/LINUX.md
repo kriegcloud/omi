@@ -56,7 +56,8 @@ sink's monitor source. Three things about it are Linux-specific:
   (`AudioSessionHost.startCallAudio`). On a busy machine the display-media
   request can take from seconds to over a minute.
 - **The live view says when the call side is missing.** `Listening (mic only)`
-  means the loopback is not attached (yet); `Listening (no call audio)` means it
+  means the loopback is not attached (yet), or the transcription service refused
+  call capture and the session carried on with the mic; `Listening (no call audio)` means it
   is attached but has delivered only silence for 20 s or more while an
   application was audibly playing to the default sink (the level is measured on
   the playback streams themselves, so idle streams do not count). Each change is

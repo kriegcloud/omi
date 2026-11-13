@@ -24,6 +24,7 @@ import {
 import { CallLaneMixer, type MixedBlock } from '../lib/capture/callMixer'
 import { createSelfSpeechTracker, type SelfSpeechTracker } from './selfSpeech'
 import { createSystemLaneWatch, type SystemLaneWatch } from './systemLaneWatch'
+import { replayCallAudio, reportCallAudio } from './callAudioStatus'
 
 // The capture window's continuous-audio engine. Serves audio-start / audio-stop
 // commands (from the capture window's own continuous-mic lane and from UI screen
@@ -171,14 +172,6 @@ export const CALL_SYSTEM_LANE_DELAYED_MS = 5_000
 // Waits before the second and third attempt at a loopback that failed to open.
 export const CALL_SYSTEM_LANE_RETRY_MS: readonly number[] = [5_000, 15_000]
 
-function emitCallAudio(sessionId: string, system: CallSystemLaneState, detail?: string): void {
-  window.omi?.captureEmit(
-    detail
-      ? { type: 'call-audio-status', sessionId, system, detail }
-      : { type: 'call-audio-status', sessionId, system }
-  )
-}
-
 /** Stop everything a session holds and forget it. `stopped` also releases a
  *  source that is still being acquired once it resolves. */
 function teardownSession(sessionId: string, s: AudioSession): void {
@@ -190,7 +183,7 @@ function teardownSession(sessionId: string, s: AudioSession): void {
   s.gate?.stop()
   s.musicFilter?.stop()
   sessions.delete(sessionId)
-  if (s.isCall) emitCallAudio(sessionId, 'off')
+  if (s.isCall) reportCallAudio(sessionId, 'off')
 }
 
 /**
@@ -357,7 +350,7 @@ async function openSystemLane(
   attachSystem: () => void
 ): Promise<void> {
   const report = (state: CallSystemLaneState, detail?: string): void => {
-    if (!session.stopped) emitCallAudio(sessionId, state, detail)
+    if (!session.stopped) reportCallAudio(sessionId, state, detail)
   }
   report('opening')
   for (let attempt = 0; ; attempt++) {
@@ -413,6 +406,9 @@ export function AudioSessionHost(): null {
         // hangover); this window just enforces the final boolean on all
         // continuous feeds via wrapFeed above.
         assistantGate.setSpeaking(cmd.active)
+      } else if (cmd.type === 'call-audio-sync') {
+        // A UI window (re)loaded and has no call-audio state yet.
+        replayCallAudio()
       }
     })
   }, [])

@@ -373,6 +373,11 @@ export type CaptureCommand =
   // release after the playback buffer drains); the capture window just obeys
   // the final boolean. PTT and the realtime session's own mic are NEVER gated.
   | { type: 'assistant-speaking'; active: boolean }
+  // A UI window (re)loaded: send the current call-audio-status of every call
+  // session again. Those events report changes only, so without this a window
+  // that loads mid-call shows plain "Listening" over a lane that already went
+  // silent or unavailable.
+  | { type: 'call-audio-sync' }
   // Omi's spoken words, injected into the live record from SOURCE text (the
   // provider's output transcript / the TTS input) instead of re-transcription.
   // `utteranceId` is stable per utterance so re-delivery upserts, not duplicates.

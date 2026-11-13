@@ -36,7 +36,7 @@ function pollForNewConversation(): void {
 
 export function LiveMirrorHost(): null {
   useEffect(() => {
-    return window.omi?.onCaptureEvent?.((ev) => {
+    const unsubscribe = window.omi?.onCaptureEvent?.((ev) => {
       // A call session's system lane (the other side of the call) changed state;
       // the live view shows it so "Listening" never hides a mic-only recording.
       if (ev.type === 'call-audio-status') {
@@ -60,6 +60,11 @@ export function LiveMirrorHost(): null {
         requestKgRebuild()
       }
     })
+    // call-audio-status reports changes only. Ask for the current state once the
+    // listener is up, so a window that loads or reloads during a call does not
+    // show plain "Listening" over a lane that is already silent or unavailable.
+    window.omi?.captureCommand?.({ type: 'call-audio-sync' })
+    return unsubscribe
   }, [])
   return null
 }
