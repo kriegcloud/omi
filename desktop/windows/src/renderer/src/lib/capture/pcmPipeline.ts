@@ -55,6 +55,12 @@ export async function createPcmPipeline(
     const worklet = new AudioWorkletNode(ctx, 'omi-pcm', {
       numberOfInputs: 1,
       numberOfOutputs: 0, // a pure sink — a 0-output worklet stays active off its input, no destination connect needed
+      // The processor reads one channel. Have the graph mix a stereo source down
+      // to it (the unprocessed system loopback is stereo) instead of handing over
+      // the left channel alone; the ScriptProcessor fallback below already does.
+      channelCount: 1,
+      channelCountMode: 'explicit',
+      channelInterpretation: 'speakers',
       processorOptions: {
         inputRate: ctx.sampleRate,
         targetRate: TARGET_RATE,

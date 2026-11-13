@@ -248,6 +248,45 @@ export function listenChannelCount(source: ListenSource): 1 | 2 {
 }
 
 /**
+ * Where a 'call' session's system lane (the loopback: the other side of the call)
+ * stands. The session itself runs on the mic from the start, so every state but
+ * 'live' means the transcript may be missing the other side while the session
+ * still reads as listening.
+ *  - 'opening':     the loopback was just requested.
+ *  - 'delayed':     still not open after a few seconds (slow machine).
+ *  - 'live':        attached, and either audible or nothing is playing.
+ *  - 'silent':      attached, but only silence for a sustained period while
+ *                   something is playing to the default output.
+ *  - 'unavailable': the loopback could not be opened; mic only.
+ *  - 'off':         the session ended.
+ */
+export type CallSystemLaneState = 'opening' | 'delayed' | 'live' | 'silent' | 'unavailable' | 'off'
+
+/** The system-lane states the UI reports as a warning. */
+export function isCallSystemLaneWarning(state: CallSystemLaneState): boolean {
+  return state === 'delayed' || state === 'silent' || state === 'unavailable'
+}
+
+/** What is playing to the default output, as far as the platform can tell. Asked
+ *  only while the system lane is silent, to tell "nothing is playing" from "audio
+ *  is playing and we are not hearing it". */
+export type SystemPlaybackProbe =
+  /** No way to tell on this platform (or the probe failed): never warn from it. */
+  | { supported: false }
+  | {
+      supported: true
+      /** Some playback stream on the default sink is audibly playing right now
+       *  (measured on the stream itself, not on the sink's monitor). */
+      playing: boolean
+      /** Default sink name. */
+      sink: string
+      /** Volume of that sink's monitor source in percent, when it could be read.
+       *  The loopback records the monitor, so a low value here is the silence. */
+      monitorVolumePercent: number | null
+      monitorMuted: boolean
+    }
+
+/**
  * Which backend transcription pipeline a session uses:
  *  - 'conversation' → `/v4/listen`: the full pipeline (speech profiles, speaker
  *    assignment, memory events) that keeps a per-uid server-side conversation.
@@ -334,6 +373,11 @@ export type CaptureCommand =
   // release after the playback buffer drains); the capture window just obeys
   // the final boolean. PTT and the realtime session's own mic are NEVER gated.
   | { type: 'assistant-speaking'; active: boolean }
+  // A UI window (re)loaded: send the current call-audio-status of every call
+  // session again. Those events report changes only, so without this a window
+  // that loads mid-call shows plain "Listening" over a lane that already went
+  // silent or unavailable.
+  | { type: 'call-audio-sync' }
   // Omi's spoken words, injected into the live record from SOURCE text (the
   // provider's output transcript / the TTS input) instead of re-transcription.
   // `utteranceId` is stable per utterance so re-delivery upserts, not duplicates.
@@ -369,6 +413,9 @@ export type CaptureEvent =
   | { type: 'audio-source-ready'; sessionId: string }
   // An audio lane's source (mic/system stream) failed (routed to the owner).
   | { type: 'audio-source-error'; sessionId: string; name: string; message: string }
+  // A 'call' session's system lane changed state (main window + main's log tap).
+  // `detail` is a short human-readable cause for the warning states.
+  | { type: 'call-audio-status'; sessionId: string; system: CallSystemLaneState; detail?: string }
   // Push-to-talk streamed data / lifecycle (routed to the owner).
   | { type: 'ptt-chunk'; captureId: string; pcm: ArrayBuffer }
   | { type: 'ptt-drained'; captureId: string; pcm: ArrayBuffer }
@@ -817,6 +864,9 @@ export type OmiBridgeApi = {
   /** Subscribe to events from the capture window (audio errors, live-store ops,
    *  PTT chunks/levels). Returns an unsubscribe fn. */
   onCaptureEvent: (cb: (e: CaptureEvent) => void) => () => void
+  /** Ask main what is playing to the default output (Linux: pactl). Used by a
+   *  'call' session to tell a quiet system lane from a broken one. */
+  systemPlaybackProbe: () => Promise<SystemPlaybackProbe>
   /** True when OMI_ALLOW_VIRTUAL_MIC=1 — lets test harnesses feed a VB-Cable as
    *  the mic. When false, capture steers away from virtual/loopback default
    *  inputs (see lib/audio acquireMicStream). */

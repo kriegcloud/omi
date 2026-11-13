@@ -1,17 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, Check } from 'lucide-react'
+import { Loader2, Check, TriangleAlert } from 'lucide-react'
 import { PageHeader } from '../components/layout/PageHeader'
-import { liveConversation, requestFinalize, type LiveStatus } from '../lib/liveConversation'
+import {
+  callAudioWarning,
+  liveConversation,
+  liveStatusLabel,
+  requestFinalize,
+  type LiveStatus
+} from '../lib/liveConversation'
 import { LiveNotesPanel } from '../components/recording/LiveNotesPanel'
 import type { TranscriptLine } from '../../../shared/types'
 
-function statusLabel(status: LiveStatus): string {
-  if (status === 'connecting') return 'Connecting…'
-  if (status === 'live') return 'Listening'
-  if (status === 'error') return 'Microphone unavailable'
-  return 'Idle'
-}
+const CALL_AUDIO_FALLBACK_DETAIL = 'Call audio is not being recorded; only your microphone is.'
 
 // Live in-progress transcript of the mic capture (the "New" view). It does not
 // control segmentation — the backend decides when the conversation ends, at which
@@ -29,6 +30,8 @@ export function LiveConversation(): React.JSX.Element {
   const [errorMsg, setErrorMsg] = useState<string | null>(liveConversation.getError())
   const [saved, setSaved] = useState<boolean>(liveConversation.isSaved())
   const [topic, setTopic] = useState(liveConversation.getSavedTopic())
+  const [callAudio, setCallAudio] = useState(liveConversation.getCallAudio())
+  const warning = status === 'live' ? callAudioWarning(callAudio) : null
 
   useEffect(() => {
     return liveConversation.subscribe(() => {
@@ -37,6 +40,7 @@ export function LiveConversation(): React.JSX.Element {
       setErrorMsg(liveConversation.getError())
       setSaved(liveConversation.isSaved())
       setTopic(liveConversation.getSavedTopic())
+      setCallAudio(liveConversation.getCallAudio())
     })
   }, [])
 
@@ -68,7 +72,7 @@ export function LiveConversation(): React.JSX.Element {
             </h1>
           ) : undefined
         }
-        subtitle={statusLabel(status)}
+        subtitle={liveStatusLabel(status, callAudio)}
         onBack={() => navigate('/conversations')}
         actions={
           <div className="flex items-center gap-2">
@@ -81,9 +85,15 @@ export function LiveConversation(): React.JSX.Element {
               <Check className="h-4 w-4" />
               Save now
             </button>
-            <span className="badge flex items-center gap-1.5">
-              <Loader2 className={`h-3 w-3 ${status === 'live' ? 'animate-spin' : ''}`} />
-              {statusLabel(status)}
+            <span
+              className={`badge flex items-center gap-1.5 ${warning ? 'border-warning/40 text-white/85' : ''}`}
+            >
+              {warning ? (
+                <TriangleAlert className="h-3 w-3 text-amber-400" strokeWidth={1.9} />
+              ) : (
+                <Loader2 className={`h-3 w-3 ${status === 'live' ? 'animate-spin' : ''}`} />
+              )}
+              {liveStatusLabel(status, callAudio)}
             </span>
           </div>
         }
@@ -96,6 +106,18 @@ export function LiveConversation(): React.JSX.Element {
             <div className="mb-4 flex items-center justify-between">
               <h2 className="section-label">Transcript</h2>
             </div>
+            {warning && (
+              <p
+                role="status"
+                className="mb-4 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-sm leading-relaxed text-white/85"
+              >
+                <TriangleAlert
+                  className="mt-0.5 h-4 w-4 shrink-0 text-amber-400"
+                  strokeWidth={1.9}
+                />
+                <span>{warning.detail ?? CALL_AUDIO_FALLBACK_DETAIL}</span>
+              </p>
+            )}
             <div className="min-h-0 flex-1 overflow-y-auto">
               {segments.length > 0 ? (
                 <ul className="space-y-4">

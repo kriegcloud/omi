@@ -17,6 +17,7 @@ import type { ListenSource, LocalConversation } from '../../../shared/types'
 import { getPreferences, onPreferencesChange, type Preferences } from '../lib/preferences'
 import { omiApi } from '../lib/apiClient'
 import { createSelfAssignmentTracker, type SelfAssignmentBatch } from './selfAssignment'
+import { reportCallAudio } from './callAudioStatus'
 
 // After this much silence (no new finalized speech) the current conversation is
 // finalized: the session ends so the backend stores it, then a fresh one starts.
@@ -30,6 +31,11 @@ const MIN_WORDS = 5
 export function liveSourceFor(prefs: Pick<Preferences, 'callCaptureEnabled'>): ListenSource {
   return prefs.callCaptureEnabled === true ? 'call' : 'mic'
 }
+
+/** Shown while the session stays on the mic because the backend refused call
+ *  capture. */
+export const CALL_REFUSED_DETAIL =
+  'The transcription service refused call capture; recording your microphone only.'
 
 /** The backend's refusal to start STT for a two-channel socket (seen 2026-11-02:
  *  every channels=2 /v4/listen closed 1011 transcription_service_unavailable). */
@@ -184,6 +190,16 @@ export function startLiveMicSession(): LiveMicController {
   // transcription_service_unavailable at STT init). The session then stays on the
   // mic so transcription continues; flipping the toggle again retries the pair.
   let callRejected = false
+  // While the session is on that fallback no call session exists, so nothing
+  // else would tell the UI that the call side is not being recorded. Reported
+  // under an id of its own until call capture is retried or switched off.
+  const callRefusedId = `live-mic-${controllerId}-call-refused`
+  let callRefusedReported = false
+  const clearCallRefused = (): void => {
+    if (!callRefusedReported) return
+    callRefusedReported = false
+    reportCallAudio(callRefusedId, 'off')
+  }
   // Call sessions: the user's segments per server conversation, saved when it ends.
   const selfAssignments = createSelfAssignmentTracker()
   let retainer = createSegmentRetainer()
@@ -337,6 +353,8 @@ export function startLiveMicSession(): LiveMicController {
             console.warn(
               '[live-mic] two-channel call capture refused by the backend; staying on mic'
             )
+            callRefusedReported = true
+            reportCallAudio(callRefusedId, 'unavailable', CALL_REFUSED_DETAIL)
           }
           if (!isRetryableDropError((e as Error).message, (e as Error).name)) {
             // Quota/entitlement/sign-in error — reconnecting can't help. Surface it
@@ -416,6 +434,9 @@ export function startLiveMicSession(): LiveMicController {
     if (cancelled) return
     const wanted = liveSourceFor(p)
     if (wanted === 'call') callRejected = false // an explicit re-enable retries the pair
+    // Either call capture is being retried (its session reports for itself) or
+    // it was switched off: the fallback warning has nothing left to say.
+    clearCallRefused()
     if (wanted === currentSource) return
     clearSilence()
     try {
@@ -438,6 +459,7 @@ export function startLiveMicSession(): LiveMicController {
       timers.forEach(clearTimeout)
       unsubFinalize()
       unsubPrefs()
+      clearCallRefused()
       saveSelfAssignment(selfAssignments.drain())
       try {
         handle?.stop()

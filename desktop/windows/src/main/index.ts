@@ -13,6 +13,7 @@ import { appendFileSync } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { supportsMica } from './windowsVersion'
 import { defaultOzonePlatform } from './linuxCompositor'
+import { LINUX_DISABLED_FEATURES, mergeFeatureList } from './linuxChromiumFeatures'
 import { APP_BG_HEX, HOME_BG_HEX, WCO_SYMBOL_HEX } from '../shared/chrome'
 import iconPath from '../../resources/icon.png?asset'
 import { listCaptureSources } from './ipc/capture'
@@ -27,6 +28,7 @@ import {
   stopTestListenSession
 } from './ipc/omiListen'
 import { registerCaptureBridge } from './ipc/captureBridge'
+import { registerSystemPlaybackHandlers } from './audio/systemPlayback'
 import { registerSoak } from './soak'
 import { createCaptureWindow, getCaptureWindow, getCaptureWc } from './captureWindow'
 import { registerFileIndexHandlers } from './ipc/fileIndex'
@@ -433,6 +435,11 @@ if (process.platform === 'linux') {
   app.commandLine.appendSwitch(
     'enable-features',
     'WebRTCPipeWireCapturer,PulseaudioLoopbackForScreenShare'
+  )
+  // Capture must never rewrite device volumes (see linuxChromiumFeatures.ts).
+  app.commandLine.appendSwitch(
+    'disable-features',
+    mergeFeatureList(app.commandLine.getSwitchValue('disable-features'), LINUX_DISABLED_FEATURES)
   )
 }
 
@@ -867,6 +874,9 @@ app.whenReady().then(async () => {
       return bar && !bar.isDestroyed() ? bar.webContents : null
     }
   )
+  // Call capture: answers "is anything playing?" for a silent system lane, and
+  // writes the lane's state changes to main.log.
+  registerSystemPlaybackHandlers()
   // Soak telemetry (inert unless OMI_SOAK=1): samples process metrics + listen
   // byte counters to userData/soak.jsonl for the 8h idle-soak verification.
   registerSoak()

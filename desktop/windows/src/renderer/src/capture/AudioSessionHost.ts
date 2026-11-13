@@ -17,11 +17,14 @@ import { assistantGate, wrapFeed } from './assistantGate'
 import {
   CALL_UPSTREAM_CHANNELS,
   LISTEN_CALL_CHANNEL,
+  type CallSystemLaneState,
   type ListenCallChannel,
   type ListenSource
 } from '../../../shared/types'
 import { CallLaneMixer, type MixedBlock } from '../lib/capture/callMixer'
 import { createSelfSpeechTracker, type SelfSpeechTracker } from './selfSpeech'
+import { createSystemLaneWatch, type SystemLaneWatch } from './systemLaneWatch'
+import { replayCallAudio, reportCallAudio } from './callAudioStatus'
 
 // The capture window's continuous-audio engine. Serves audio-start / audio-stop
 // commands (from the capture window's own continuous-mic lane and from UI screen
@@ -47,6 +50,10 @@ type AudioSession = {
   systemPipeline: PcmPipeline | null
   // 'call' sessions on a mono upstream: reports the mic lane's own speech.
   selfSpeech: SelfSpeechTracker | null
+  // 'call' sessions only: watches the attached system lane for sustained silence.
+  systemWatch: SystemLaneWatch | null
+  // A 'call' session reports its system lane's state (call-audio-status).
+  isCall: boolean
   // Set if audio-stop lands while the source stream is still being acquired, so
   // the resolved stream is torn down instead of leaking.
   stopped: boolean
@@ -67,6 +74,8 @@ async function startAudioSession(
     musicFilter: null,
     systemPipeline: null,
     selfSpeech: null,
+    systemWatch: null,
+    isCall: source === 'call',
     stopped: false
   }
   sessions.set(sessionId, session)
@@ -158,6 +167,25 @@ async function startAudioSession(
   window.omi?.captureEmit({ type: 'audio-source-ready', sessionId }, ownerId)
 }
 
+// A loopback that is still not open after this long is reported as 'delayed'.
+export const CALL_SYSTEM_LANE_DELAYED_MS = 5_000
+// Waits before the second and third attempt at a loopback that failed to open.
+export const CALL_SYSTEM_LANE_RETRY_MS: readonly number[] = [5_000, 15_000]
+
+/** Stop everything a session holds and forget it. `stopped` also releases a
+ *  source that is still being acquired once it resolves. */
+function teardownSession(sessionId: string, s: AudioSession): void {
+  s.stopped = true
+  s.pipeline?.stop() // tears down the graph and stops the stream tracks
+  s.systemPipeline?.stop()
+  s.systemWatch?.stop()
+  s.selfSpeech?.stop()
+  s.gate?.stop()
+  s.musicFilter?.stop()
+  sessions.delete(sessionId)
+  if (s.isCall) reportCallAudio(sessionId, 'off')
+}
+
 /**
  * 'call': the mic and the system loopback (the other side of a call) feed ONE
  * listen socket, ungated so the backend's offsets track wall time.
@@ -166,8 +194,13 @@ async function startAudioSession(
  *    that reports the user's own speech as fed-stream sample positions
  *    (listenActivity), so main can mark the user's segments.
  *  - Two-channel upstream: each lane feeds its own channel id instead.
- * If system audio can't be opened the session still runs on the mic. While Omi's
- * own voice plays (echo gate) the mono feed carries silence rather than dropping
+ * The session is ready as soon as the mic lane is: the loopback is opened beside
+ * it and joins the stream when it resolves (openSystemLane). Waiting for it used
+ * to hold `audio-source-ready` back, and on a loaded machine the display-media
+ * request took longer than the connect timeout, so the session was torn down and
+ * restarted every 10 s without ever recording (2026-11-12). Until the loopback is
+ * up, and if it never comes up, the session runs on the mic. While Omi's own
+ * voice plays (echo gate) the mono feed carries silence rather than dropping
  * frames, so sample positions stay aligned with what the backend receives.
  */
 async function startCallAudio(
@@ -176,10 +209,7 @@ async function startCallAudio(
   ownerId: number
 ): Promise<void> {
   const fail = (e: unknown): void => {
-    session.pipeline?.stop()
-    session.systemPipeline?.stop()
-    session.selfSpeech?.stop()
-    sessions.delete(sessionId)
+    teardownSession(sessionId, session)
     const err = e instanceof Error ? e : new Error(String(e))
     window.omi?.captureEmit(
       { type: 'audio-source-error', sessionId, name: err.name, message: err.message },
@@ -194,21 +224,15 @@ async function startCallAudio(
     fail(e)
     return
   }
-  let system: MediaStream | null = null
-  try {
-    system = await getSystemAudioStream()
-  } catch (e) {
-    console.warn('[call-capture] system audio unavailable; mic only:', (e as Error).message)
-  }
   if (session.stopped) {
     mic.getTracks().forEach((t) => t.stop())
-    system?.getTracks().forEach((t) => t.stop())
     sessions.delete(sessionId)
     return
   }
 
   let micInput: (pcm: Int16Array) => void
   let systemInput: (pcm: Int16Array) => void
+  let attachSystem: () => void
   if (CALL_UPSTREAM_CHANNELS === 1) {
     const selfSpeech = createSelfSpeechTracker((speaking, atSample) =>
       window.omi?.listenActivity?.(sessionId, { lane: 'mic', speaking, atSample })
@@ -217,7 +241,7 @@ async function startCallAudio(
     const mixer = new CallLaneMixer({
       blockSamples: 1600, // 100 ms
       maxLagSamples: 8000, // 0.5 s before a stalled lane is filled with silence
-      hasSystem: system !== null
+      hasSystem: false // mic only until the loopback is up
     })
     const emit = (blocks: MixedBlock[]): void => {
       for (const b of blocks) {
@@ -228,6 +252,7 @@ async function startCallAudio(
     }
     micInput = (pcm) => emit(mixer.push('mic', pcm))
     systemInput = (pcm) => emit(mixer.push('system', pcm))
+    attachSystem = () => mixer.attachSystem()
   } else {
     const feedOn =
       (channel: ListenCallChannel) =>
@@ -235,35 +260,121 @@ async function startCallAudio(
         window.omi?.listenFeed(sessionId, pcm.buffer as ArrayBuffer, channel)
     const micFeed = wrapFeed(feedOn(LISTEN_CALL_CHANNEL.mic))
     const systemFeed = wrapFeed(feedOn(LISTEN_CALL_CHANNEL.system))
-    micInput = system
-      ? micFeed
-      : (pcm) => {
-          micFeed(pcm)
-          systemFeed(new Int16Array(pcm.length))
-        }
-    systemInput = systemFeed
+    let attached = false
+    // The system channel carries silence until its lane is up.
+    micInput = (pcm) => {
+      micFeed(pcm)
+      if (!attached) systemFeed(new Int16Array(pcm.length))
+    }
+    systemInput = (pcm) => {
+      if (attached) systemFeed(pcm)
+    }
+    attachSystem = () => {
+      attached = true
+    }
   }
   try {
     session.pipeline = createPcmPipeline(mic, micInput)
-    if (system) session.systemPipeline = createPcmPipeline(system, systemInput)
   } catch (e) {
-    if (!session.pipeline) mic.getTracks().forEach((t) => t.stop())
-    if (!session.systemPipeline) system?.getTracks().forEach((t) => t.stop())
+    mic.getTracks().forEach((t) => t.stop())
     fail(e)
     return
   }
 
-  const setups = await Promise.all([
-    session.pipeline.ready,
-    session.systemPipeline?.ready ?? Promise.resolve({ ok: true as const })
-  ])
+  void openSystemLane(sessionId, session, systemInput, attachSystem)
+
+  const setup = await session.pipeline.ready
   if (session.stopped) return
-  const failed = setups.find((r) => !r.ok)
-  if (failed && !failed.ok) {
-    fail(failed.error)
+  if (!setup.ok) {
+    fail(setup.error)
     return
   }
   window.omi?.captureEmit({ type: 'audio-source-ready', sessionId }, ownerId)
+}
+
+/** One attempt at the loopback. Resolves null once the lane is mixed in (or the
+ *  session ended meanwhile), else the reason it could not be opened. */
+async function tryOpenSystemLane(
+  session: AudioSession,
+  systemInput: (pcm: Int16Array) => void,
+  attachSystem: () => void,
+  onWatchState: (state: 'silent' | 'live', detail?: string) => void
+): Promise<Error | null> {
+  let system: MediaStream
+  try {
+    system = await getSystemAudioStream()
+  } catch (e) {
+    return e instanceof Error ? e : new Error(String(e))
+  }
+  // audio-stop arrived while the request was pending: drop the stream.
+  if (session.stopped) {
+    system.getTracks().forEach((t) => t.stop())
+    return null
+  }
+  let pipeline: PcmPipeline
+  try {
+    pipeline = createPcmPipeline(system, (pcm) => {
+      session.systemWatch?.push(pcm)
+      systemInput(pcm)
+    })
+  } catch (e) {
+    system.getTracks().forEach((t) => t.stop())
+    return e instanceof Error ? e : new Error(String(e))
+  }
+  session.systemPipeline = pipeline
+  const setup = await pipeline.ready
+  if (session.stopped) return null // teardownSession stopped the pipeline
+  if (!setup.ok) {
+    pipeline.stop()
+    session.systemPipeline = null
+    return setup.error
+  }
+  session.systemWatch = createSystemLaneWatch({
+    probe: () => window.omi?.systemPlaybackProbe?.() ?? Promise.resolve({ supported: false }),
+    onState: onWatchState
+  })
+  attachSystem()
+  return null
+}
+
+/**
+ * Open a 'call' session's system lane beside the running mic lane and report
+ * where it stands (call-audio-status), so a session that is recording the mic
+ * only never looks the same as one that hears the call. A request that is merely
+ * slow is waited for, however long it takes; one that fails is retried twice.
+ */
+async function openSystemLane(
+  sessionId: string,
+  session: AudioSession,
+  systemInput: (pcm: Int16Array) => void,
+  attachSystem: () => void
+): Promise<void> {
+  const report = (state: CallSystemLaneState, detail?: string): void => {
+    if (!session.stopped) reportCallAudio(sessionId, state, detail)
+  }
+  report('opening')
+  for (let attempt = 0; ; attempt++) {
+    const slow = setTimeout(
+      () => report('delayed', 'Call audio is not attached yet; recording your microphone only.'),
+      CALL_SYSTEM_LANE_DELAYED_MS
+    )
+    const error = await tryOpenSystemLane(session, systemInput, attachSystem, report)
+    clearTimeout(slow)
+    if (session.stopped) return
+    if (!error) {
+      report('live')
+      return
+    }
+    console.warn('[call-capture] system audio unavailable; mic only:', error.message)
+    const retryIn = CALL_SYSTEM_LANE_RETRY_MS[attempt]
+    report(
+      'unavailable',
+      `Call audio could not be opened (${error.message}); recording your microphone only.`
+    )
+    if (retryIn === undefined) return
+    await new Promise((resolve) => setTimeout(resolve, retryIn))
+    if (session.stopped) return
+  }
 }
 
 /** Test-only (read via the OMI_E2E-gated capture hook): current music-gate
@@ -278,14 +389,7 @@ export function _loopbackVerdictsForTest(): Record<string, string> {
 
 function stopAudioSession(sessionId: string): void {
   const s = sessions.get(sessionId)
-  if (!s) return
-  s.stopped = true
-  s.pipeline?.stop() // tears down the graph and stops the stream tracks
-  s.systemPipeline?.stop()
-  s.selfSpeech?.stop()
-  s.gate?.stop()
-  s.musicFilter?.stop()
-  sessions.delete(sessionId)
+  if (s) teardownSession(sessionId, s)
 }
 
 /** Mounted once in CaptureApp. Only owns the command subscription; all session
@@ -302,6 +406,9 @@ export function AudioSessionHost(): null {
         // hangover); this window just enforces the final boolean on all
         // continuous feeds via wrapFeed above.
         assistantGate.setSpeaking(cmd.active)
+      } else if (cmd.type === 'call-audio-sync') {
+        // A UI window (re)loaded and has no call-audio state yet.
+        replayCallAudio()
       }
     })
   }, [])

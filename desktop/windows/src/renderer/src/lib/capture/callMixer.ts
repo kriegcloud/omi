@@ -19,7 +19,8 @@ export type MixedBlock = {
 export type CallLaneMixerOptions = {
   blockSamples: number
   maxLagSamples: number
-  /** false when system audio could not be opened: mic-only, mixed with silence. */
+  /** false while system audio is not open (yet): mic-only, mixed with silence.
+   *  attachSystem() switches to mixing once the lane is up. */
   hasSystem: boolean
 }
 
@@ -58,29 +59,42 @@ export class CallLaneMixer {
   private readonly mic = new LaneQueue()
   private readonly system = new LaneQueue()
   private cursor = 0
+  private hasSystem: boolean
 
-  constructor(private readonly opts: CallLaneMixerOptions) {}
+  constructor(private readonly opts: CallLaneMixerOptions) {
+    this.hasSystem = opts.hasSystem
+  }
+
+  /** The system lane opened after the session started on the mic alone. Blocks
+   *  already emitted stay as they are; from here on the lanes are mixed. */
+  attachSystem(): void {
+    this.hasSystem = true
+  }
 
   push(lane: 'mic' | 'system', pcm: Int16Array): MixedBlock[] {
+    // System audio that arrives before the lane is attached has no place in the
+    // stream (those spans were already emitted mic-only), and queueing it would
+    // read as the mic lane having stalled.
+    if (lane === 'system' && !this.hasSystem) return []
     ;(lane === 'mic' ? this.mic : this.system).push(pcm)
     const out: MixedBlock[] = []
     const n = this.opts.blockSamples
     for (;;) {
       const micReady = this.mic.length >= n
-      const sysReady = !this.opts.hasSystem || this.system.length >= n
+      const sysReady = !this.hasSystem || this.system.length >= n
       const micStalled = this.system.length - this.mic.length > this.opts.maxLagSamples
       const sysStalled = this.mic.length - this.system.length > this.opts.maxLagSamples
       if (
         !(
           (micReady && sysReady) ||
           (micReady && sysStalled) ||
-          (sysReady && this.opts.hasSystem && micStalled)
+          (sysReady && this.hasSystem && micStalled)
         )
       )
         break
       const mic = this.mic.take(n)
       const mix = new Int16Array(n)
-      if (this.opts.hasSystem) {
+      if (this.hasSystem) {
         const sys = this.system.take(n)
         for (let i = 0; i < n; i++) {
           const v = mic[i] + sys[i]

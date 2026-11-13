@@ -23,6 +23,7 @@ labels every line `SPEAKER_0`. The user wants:
 | Segment `start`/`end` are conversation-offset seconds | `PATCH /v1/conversations/{id}/assign-speaker/{speaker_id}?start&end` documents that unit |
 | The backend learns voices from manual assignments | `segments/assign-bulk {segment_ids, assign_type: is_user\|person_id, value}`, plus `use_for_speech_training` and `utils/speaker_assignment_teaching.py` |
 | Electron loopback on Linux records the default sink's monitor | `getDisplayMedia` with `audio: 'loopback'` opened a PipeWire stream on the Bose sink's monitor |
+| That loopback must be requested unprocessed (found 2026-11-12) | With `audio: true` Chromium's gain control wrote the monitor's volume to 20/255 (8%, -66 dB) each time the stream opened, so the call side was recorded as silence. See "Call capture and the loopback" in `LINUX.md` |
 | Fluxer knows who speaks, per participant | LiveKit `IsSpeakingChanged` / `ActiveSpeakersChanged`, plus a 50 ms local audio-level detector (`VoiceSpeakingDetection.ts`) |
 | Fluxer's desktop app bundles its web client | `fluxer-app://app/` is served from `fluxer_desktop/dist/renderer`, with the hosted backend for the API |
 | Offline diarization runs in Node | `sherpa-onnx-node` 2.0.1 (pyannote segmentation plus speaker embeddings and clustering) |
