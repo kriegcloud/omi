@@ -1159,6 +1159,18 @@ an unready or fenced row is dropped from the set. Release commits carry
 source= head_state=` (closed labels only). `python -m
 testing.recovered_release_scenario` replays the run 18 shape.
 
+`BATCH_PIPELINE_PROVIDER_MERGE_MEMBERSHIP_ENABLED` defaults to `true` (kill
+switch: `false`). A provider-route unit settles in its own delivery, outside
+the pump, so the serving route wakes one coalesced owner drain after each
+delivery that settles a unit or ends it terminally
+(`Serving.drain_settled_async`: the owner-only merge drain and chain walk, with
+no release set, so no row skips the head wait or the depth hold). Provider
+settle stamps `ready_at` and provider admission stamps `fresh_capture`, as the
+GPU path does, and a provider row admitted before that stamp counts as
+catch-up. Without the switch a settled provider unit is found only by the
+100-row maintenance page and can use neither the head wait nor fresh-first.
+See `listen_pusher_pipeline/changes/2026-11-13-provider-merge-membership.md`.
+
 The walk is only a wakeup. Each row still passes the transactional predecessor,
 privacy, receipt-replay and owner-claim fences, so ordering is unchanged. For
 async projection, the persisted rows and their contents' persisted, not-ready
@@ -1423,3 +1435,21 @@ The [policy contract](../config/policy/README.md) owns the read map, unchanged
 legacy cohort assignments, nested live-STT retirement rule, explicit process/worker
 exceptions, replay commands and revert procedure. This change alters no environment
 values; deployment remains part of the two-lane train.
+
+The maintenance leader also samples the fresh-delivery guard at most once per
+minute using two Firestore count aggregations, never streamed documents: fresh
+results committed in the inclusive interval 10–20 minutes ago, and that cohort's
+`projection_state=pending` subset. The merge transaction alone stamps the stored
+class `results.fresh_capture` from the job's exact `True` value (missing means
+`False`); no existing routing reader changes. The gauges
+`omi_batch_pipeline_fresh_committed_window_total`,
+`omi_batch_pipeline_fresh_unprojected_window_total`,
+`omi_batch_pipeline_fresh_unprojected_ratio` and
+`omi_batch_pipeline_fresh_guard_sample_age_seconds` expose the pair and its age;
+the ratio is absent for empty/failed samples, both counts and ratio expire after
+120 s, and a failed query leaves age advancing from the last successful pair.
+`BATCH_PIPELINE_FRESH_GUARD_ENABLED=off` stops the queries and removes all guard
+gauges. Counts use declared prod/dev indexes, cost roughly one read per 1,000
+index entries per count (minimum two reads per sample), and do not alter merge,
+projection or enrichment order. See the 2026-11-13 fresh-delivery change note
+for the complete reader inventory and release-owner live acceptance procedure.

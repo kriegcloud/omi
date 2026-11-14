@@ -29,6 +29,20 @@ def _poll_skip_modes(client):
 def entries():
     namespaces = ['batch_pipeline_prod', 'batch_pipeline_dev']
     return (
+        DriverEntry(
+            'database.batch_pipeline_fresh_guard.fresh_committed_counts',
+            domains={'namespace': namespaces},
+            neutrals={'now': (2000000000.0, 'fixed cohort clock; no shape change')},
+        ),
+        DriverEntry(
+            'database.batch_pipeline_coalescing.due',
+            domains={
+                'namespace': namespaces,
+                'producer_enabled': [False, True],
+                'after': [None, {'scan_at': 1.0, 'id': 'synthetic-cursor'}],
+            },
+            neutrals={'now': (3000000.0, 'immutable release/lease deadline operand only')},
+        ),
         CoveredByEntry(
             'database.record_custody_receipts.prune',
             covered_by=('database.record_custody_receipts.expired_page',),
