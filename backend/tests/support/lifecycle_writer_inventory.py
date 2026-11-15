@@ -1,6 +1,25 @@
 """Reviewed payload sites, including values/keys and duplicate sites. Never refresh in a test."""
 
 FIELD_SITES = {
+    # Census response metadata only; no lifecycle document writes.
+    'utils/sync/batch_census.py': [
+        (
+            'snapshot',
+            'status',
+            "OUTCOME_DISABLED; literal aliases=[('OUTCOME_DISABLED', ('disabled',))]",
+            ('failed', 'status', 'stocks', 'units'),
+        ),
+        ('snapshot', 'status', 'outcome', ('failed', 'status', 'stocks', 'units')),
+    ],
+    'database/batch_pipeline_allowance_hold.py': [
+        (
+            'park',
+            'state',
+            "STATE; literal aliases=[('STATE', ('allowance_held',))]",
+            ('allowance_held_at', 'merge_pending', 'state'),
+        ),
+        ('restore_retry', 'state', "'retry'", ('available_at', 'lease_until', 'merge_pending', 'state', 'token')),
+    ],
     # Shadow allowance operation lifecycle, separate from audio custody.
     'database/free_allowance_leases.py': [
         ('reserve.commit.record', 'status', "'active'", ('had_refusal', 'has_hold', 'last_reason', 'months', 'status')),
@@ -2728,6 +2747,14 @@ FIELD_SITES = {
             ),
         ),
         ('OrderedMerge.commit_next.commit', 'state', "'committed'", ('merge_pending', 'state')),
+        # Transactional fresh gate: the skipped-row note copies the unready first row's state
+        # for the commit record; it is read, never written to a job.
+        (
+            'OrderedMerge.commit_next.commit',
+            'state',
+            "first.get('state') if first else None",
+            ('segment_ids', 'state', 'waited'),
+        ),
         ('_fresh_pick', 'state', "rows[0].get('state')", ('segment_ids', 'state', 'waited')),
     ],
     'utils/batch_pipeline/provider_stt.py': [
@@ -2848,6 +2875,7 @@ FIELD_SITES = {
             "'ready'",
             ('available_at', 'failure', 'lease_until', 'retry_started_at', 'state', 'token'),
         ),
+        ('Scheduler.release_allowance_in_transaction', 'state', "'ready'", ('compute_decision', 'state')),
         (
             'Scheduler.requeue_quarantined_in_transaction',
             'state',
