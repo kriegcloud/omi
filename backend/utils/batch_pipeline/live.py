@@ -23,6 +23,7 @@ from config.policy import resolve_batch_policy
 from config.audio_archive import derived_audio_bucket
 from config.record_audio import BARRIER_NOT_CLOSED, require_record_audio_barrier, record_identity
 from config.record_partial import UNIT_SECONDS, UNIT_REFERENCES, INVENTORY_POLL_SECONDS
+from config.record_latency import record_seal_wake_preserved_enabled
 from config.record_drain import (
     record_drain_batch,
     record_drain_concurrency,
@@ -128,9 +129,19 @@ def observe_admitted(uid: str, conversation: dict, *, now=None) -> bool:
         return False
     try:
         from database import pipeline_ledger
+        from database._client import get_firestore_client
 
+        client = get_firestore_client()
+        owner_ref = client.collection('users').document(uid)
+        source_ref = owner_ref.collection('conversations').document(capture_id)
         return pipeline_ledger.advance(
-            uid, capture_id, pipeline_ledger.CAPTURING, now=time.time() if now is None else now
+            uid,
+            capture_id,
+            pipeline_ledger.CAPTURING,
+            now=time.time() if now is None else now,
+            source_ref=source_ref,
+            owner_ref=owner_ref,
+            firestore_client=client,
         )
     except Exception as error:  # The real admission is already authoritative.
         logger.warning('event=batch_live_ledger outcome=error stage=capturing exception_type=%s', type(error).__name__)
@@ -599,6 +610,7 @@ async def drain_recordings(store, *, provider_outbox_factory=None, metrics=None)
             return None
         lease = now + lease_seconds
         latest['available_at'] = lease
+        latest['record_intake_claimed_at'] = now
         latest.pop('record_intake_retry_at', None)
         tx.put('jobs', segment, latest)
         return lease
@@ -677,6 +689,10 @@ async def drain_recordings(store, *, provider_outbox_factory=None, metrics=None)
             # Our own lease ends now; a later deferral written during
             # admission (or another replica's newer lease) is kept.
             current = latest.get('available_at', 0)
+            if record_seal_wake_preserved_enabled() and current != lease and current <= now:
+                # A seal committed a due-now wake after our barrier read.
+                # Its wake wins over this stale attempt's 60/900/3600s defer.
+                return False, expired
             latest['available_at'] = max(0 if current == lease else current, now + delay)
             if current == lease and fresh_seal_repair_enabled() and batch_held_dead_letter_enabled():
                 # Certify this exact value as a retry, not an active claim.
