@@ -10,6 +10,8 @@ from utils.conversations.v3 import Conflict, service
 from tests.unit.test_conversations_v3_review import AT, MemoryQuery, builder, source  # noqa: F401
 from tests.unit.test_conversations_v3_transactions import L, R, strict  # noqa: F401
 
+REAL_COMMIT = service._commit
+
 
 @pytest.mark.asyncio
 async def test_planned_id_outside_the_closure_is_adopted_as_prior(builder, monkeypatch):
@@ -84,16 +86,56 @@ async def test_deterministic_conflict_answers_the_task_and_backs_the_owner_off(b
 
 
 @pytest.mark.asyncio
-async def test_race_conflicts_still_raise_for_a_task_retry(builder, monkeypatch):
+@pytest.mark.parametrize('reason', ['source_changed', 'lease_lost'])
+async def test_live_capture_race_answers_the_task_and_wakes_the_owner_next_minute(builder, monkeypatch, reason):
+    monkeypatch.setattr(store, 'load', lambda *a, **kw: ({'r': source()}, {}, []))
+
+    def conflict(*a, **kw):
+        raise Conflict(reason)
+
+    monkeypatch.setattr(service, '_commit', conflict)
+    monkeypatch.setattr(store, 'record_blocked', lambda *a: pytest.fail('a race is not a blocked owner'))
+    wakes = []
+    monkeypatch.setattr(service, 'enqueue', lambda uid, at=None, **kw: wakes.append((uid, at, kw)))
+    raced = service.metrics.RACES.labels(reason)._value.get()
+    outcomes = service.metrics.RECONCILES.labels('raced')._value.get()
+    before = datetime.now(timezone.utc)
+    assert await service.reconcile('u') == 'raced'
+    # One coalesced named wake for a later minute than the executing task's, never a 500 retry.
+    assert len(wakes) == 1 and wakes[0][0] == 'u' and wakes[0][2] == {}
+    assert int(wakes[0][1].timestamp()) // 60 > int(before.timestamp()) // 60
+    assert wakes[0][1] - before <= service.RACE_RETRY + timedelta(seconds=5)
+    assert service.metrics.RACES.labels(reason)._value.get() == raced + 1
+    assert service.metrics.RECONCILES.labels('raced')._value.get() == outcomes + 1
+
+
+@pytest.mark.asyncio
+async def test_race_without_a_scheduled_wake_still_raises_for_a_task_retry(builder, monkeypatch):
     monkeypatch.setattr(store, 'load', lambda *a, **kw: ({'r': source()}, {}, []))
 
     def conflict(*a, **kw):
         raise Conflict('source_changed')
 
+    def unavailable(*a, **kw):
+        raise RuntimeError('conversations_v3_task_target_unconfigured')
+
     monkeypatch.setattr(service, '_commit', conflict)
-    monkeypatch.setattr(store, 'record_blocked', lambda *a: pytest.fail('a race is not a blocked owner'))
-    with pytest.raises(Conflict):
+    monkeypatch.setattr(service, 'enqueue', unavailable)
+    with pytest.raises(Conflict, match='source_changed'):
         await service.reconcile('u')
+
+
+@pytest.mark.asyncio
+async def test_backfill_race_still_raises_for_its_own_task_retry(builder, monkeypatch):
+    monkeypatch.setattr(store, 'load_derive', lambda *a, **kw: ({'r': source()}, {}, []))
+
+    def conflict(*a, **kw):
+        raise Conflict('source_changed')
+
+    monkeypatch.setattr(service, '_commit', conflict)
+    monkeypatch.setattr(service, 'enqueue', lambda *a, **kw: pytest.fail('backfill owns its own retry'))
+    with pytest.raises(Conflict):
+        await service.reconcile('u', derive=True)
 
 
 @pytest.mark.asyncio
@@ -230,3 +272,105 @@ def test_adoptable_skips_deleted_tombstoned_and_recording_rows(monkeypatch):
         'u', ['live', 'deleted', 'tomb', 'rec', 'legacy', 'missing'], firestore_client=MemoryQuery(rows)
     )
     assert list(found) == ['live']
+
+
+def _open_loop_row(level):
+    return {
+        'id': 'c',
+        'status': 'processing',
+        'started_at': AT,
+        'finished_at': AT,
+        'v3_recording_ids': ['r'],
+        'transcript_segments': [],
+        'structured': {},
+        'data_protection_level': level,
+        'open_loop_extractions': 'stored-protected-blob',
+        'open_loop_extractions_compressed': True,
+    }
+
+
+def test_prior_open_loop_blob_is_carried_verbatim(strict, monkeypatch):
+    seen = []
+    real = store.conversations._prepare_conversation_for_write
+
+    def prepare(row, *a, **kw):
+        seen.append(dict(row))
+        return real(row, *a, **kw)
+
+    monkeypatch.setattr(store.conversations, '_prepare_conversation_for_write', prepare)
+    strict.rows[R] = {'recording': True, 'v3_pending': True}
+    strict.rows[('users', 'synthetic', 'conversations', 'c')] = {'id': 'c'}
+    token = leases.acquire('synthetic', 'builder', firestore_client=strict)
+    prior = {**_open_loop_row('standard'), '_v3_revision': 1}
+    store.commit_projection(
+        'synthetic',
+        token,
+        {'r': {'id': 'r', 'recording': True, '_v3_revision': 1}},
+        {'c': prior},
+        [_open_loop_row('standard')],
+        [],
+        firestore_client=strict,
+    )
+    # The protected blob never reaches the codec, which accepts only the decoded object.
+    assert all('open_loop_extractions' not in row for row in seen)
+    stored = strict.rows[('users', 'synthetic', 'conversations', 'c')]
+    assert stored['open_loop_extractions'] == 'stored-protected-blob'
+    assert stored['open_loop_extractions_compressed'] is True
+
+
+def test_open_loop_blob_is_reprotected_on_a_level_change(strict, monkeypatch):
+    decoded = []
+    monkeypatch.setattr(
+        store.conversations,
+        'decode_open_loop_extractions',
+        lambda uid, raw, compressed: decoded.append((raw, compressed)) or {'loops': []},
+    )
+    strict.rows[R] = {'recording': True, 'v3_pending': True}
+    strict.rows[('users', 'synthetic', 'conversations', 'c')] = {'id': 'c'}
+    token = leases.acquire('synthetic', 'builder', firestore_client=strict)
+    prior = {**_open_loop_row('standard'), '_v3_revision': 1}
+    store.commit_projection(
+        'synthetic',
+        token,
+        {'r': {'id': 'r', 'recording': True, '_v3_revision': 1}},
+        {'c': prior},
+        [_open_loop_row('enhanced')],
+        [],
+        firestore_client=strict,
+    )
+    assert decoded == [('stored-protected-blob', True)]
+    assert strict.rows[('users', 'synthetic', 'conversations', 'c')]['open_loop_extractions'] == {'loops': []}
+
+
+@pytest.mark.asyncio
+async def test_oversized_document_parks_the_owner_instead_of_retrying(builder, monkeypatch):
+    from google.api_core.exceptions import InvalidArgument
+
+    from utils.conversations import lifecycle
+
+    monkeypatch.setattr(store, 'load', lambda *a, **kw: ({'r': source()}, {}, []))
+    monkeypatch.setattr(service, '_commit', REAL_COMMIT)
+
+    def too_large(*a, **kw):
+        raise InvalidArgument(
+            "Document 'x' cannot be written because its size (1,048,630 bytes) exceeds the maximum allowed size of 1,048,576 bytes."
+        )
+
+    monkeypatch.setattr(lifecycle, 'commit_v3_projection', too_large)
+    blocked = []
+    monkeypatch.setattr(store, 'record_blocked', lambda uid, token, why: blocked.append(why))
+    assert await service.reconcile('u') == 'blocked'
+    assert blocked == ['document_too_large']
+
+
+def test_other_invalid_arguments_still_raise(monkeypatch):
+    from google.api_core.exceptions import InvalidArgument
+
+    from utils.conversations import lifecycle
+
+    def bad(*a, **kw):
+        raise InvalidArgument('some other invalid write')
+
+    monkeypatch.setattr(lifecycle, 'commit_v3_projection', bad)
+    with pytest.raises(InvalidArgument):
+        REAL_COMMIT('u', 't', {}, {}, [], [])
