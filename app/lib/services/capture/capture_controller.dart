@@ -107,6 +107,7 @@ import 'package:omi/backend/schema/message_event.dart'
         MessageEvent,
         MessageServiceStatusEvent,
         ConversationProcessingStartedEvent,
+        ConversationSessionEvent,
         ConversationEvent,
         LastConversationEvent,
         SpeakerLabelSuggestionEvent,
@@ -818,6 +819,20 @@ class CaptureController extends ChangeNotifier
 
   ServerConversation? _conversation;
   DateTime? get liveTranscriptStartedAt => _conversation?.startedAt;
+
+  /// The conversation the server last closed on its own (quiet or boundary check), when, and the
+  /// preview's word count and session then. Finish right after it, with nothing heard since, opens
+  /// that conversation instead of finishing the new, empty one.
+  ({String id, DateTime at, int previewWords, int previewSession})? _lastServerClose;
+  ({String id, DateTime at, int previewWords, int previewSession})? get lastServerClose => _lastServerClose;
+
+  /// The preview's word count and session when the reader last tapped Finish: a repeat Finish with
+  /// no new words has nothing to process. Set by [noteClientFinish].
+  ({DateTime at, int previewWords, int previewSession})? lastClientFinish;
+  void noteClientFinish() =>
+      lastClientFinish = (at: DateTime.now(), previewWords: _previewWords, previewSession: _previewSession);
+  int get _previewWords => _localPreview.preview?.totalWordsSeen ?? 0;
+  int get _previewSession => _localPreview.preview?.sessionGeneration ?? 0;
   @override
   List<TranscriptSegment> segments = [];
   List<ConversationPhoto> photos = [];
@@ -847,6 +862,30 @@ class CaptureController extends ChangeNotifier
   /// Client-minted UUID shared by capture, `/v4/listen`, and the resulting
   /// conversation so the pipeline can be joined without timing heuristics.
   String? get activeRecordingId => _recordingTelemetry.recordingId;
+
+  ({String uid, String recordingId, CaptureSessionToken? token})? _liveSocketIdentity;
+
+  /// Recording provenance from this phone's active listen connection. A
+  /// per-user in-progress pointer or a nearby timestamp cannot prove it.
+  String? get verifiedLiveServerRecordingId {
+    final identity = _liveSocketIdentity;
+    final socket = _socket;
+    if (identity == null ||
+        socket == null ||
+        identity.uid.isEmpty ||
+        identity.uid != _preferences.uid ||
+        identity.recordingId != activeRecordingId ||
+        !_captureSessionIsCurrent(identity.token) ||
+        socket.state != SocketServiceState.connected ||
+        socket.stoppedIntentionally ||
+        !socket.hasCurrentListenOwner(identity.uid) ||
+        socket.clientConversationId != identity.recordingId) {
+      return null;
+    }
+    // Listen rotates its own recording-session identifier on silence, even
+    // when the direct connection and its client capture identifier stay valid.
+    return socket.liveRecording?.recordingId;
+  }
 
   // Identifies a conversation boundary within a continuous recording. This is
   // presentation/action identity, not another capture authorization generation.
@@ -1403,6 +1442,7 @@ class CaptureController extends ChangeNotifier
   bool _deviceIdentityStale(int? revision) => revision != null && _deviceIdentityRevision != revision;
 
   void _rollCaptureSession(String identity) {
+    _liveSocketIdentity = null;
     _mobileStandardBatchAllowed = false;
     _mobileStandardBatch?.authorize(false);
     _localPreview.end(send: _openSocketSender);
@@ -1966,7 +2006,11 @@ class CaptureController extends ChangeNotifier
       return;
     }
     if (!identical(_socket, socket)) {
+      _socket?.unsubscribe(this);
       _socket = socket;
+      final recordingId = activeRecordingId;
+      _liveSocketIdentity =
+          recordingId == null ? null : (uid: _preferences.uid, recordingId: recordingId, token: sessionToken);
       _lastPublishedSocketCustomStt = socket.customSttMode;
       _localPreview.socketPublished(declared: socket.localPreview, send: _sendPendantToSocket);
       _socket?.subscribe(this, this);
@@ -2924,6 +2968,7 @@ class CaptureController extends ChangeNotifier
   }
 
   void clearUserData() {
+    _liveSocketIdentity = null;
     if (_captureInstance != null) unawaited(_dispatchLogged(const CaptureIdentityChanged()));
     _mobileStandardBatchAllowed = false;
     _mobileStandardBatch?.authorize(false);
@@ -4086,7 +4131,14 @@ class CaptureController extends ChangeNotifier
 
   @override
   void onMessageEventReceived(MessageEvent event) {
+    if (event is ConversationSessionEvent) {
+      notifyListeners();
+      return;
+    }
+
     if (event is ConversationProcessingStartedEvent) {
+      _lastServerClose =
+          (id: event.memory.id, at: DateTime.now(), previewWords: _previewWords, previewSession: _previewSession);
       _closingSegmentArrivals[event.memory.id] = Map.of(_segmentArrivals);
       // An event that never arrives leaves its entry behind, and a few closes back are plenty.
       if (_closingSegmentArrivals.length > 8) _closingSegmentArrivals.remove(_closingSegmentArrivals.keys.first);

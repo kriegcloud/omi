@@ -21,6 +21,9 @@ environments:
           CONVERSATION_TERMINAL_FAMILY_MODE:
             value: 'on'
             category: ops_kill
+          BATCH_ACCOUNT_PRIVACY_WRITER_ENABLED:
+            value: 'true'
+            category: ops_kill
           CONVERSATIONS_V3_RECORDING_ROTATION: {value: 'off', category: rollout}
           CONVERSATIONS_V3_ROTATION_MIN_SECONDS: {value: '180', category: rollout}
           CONVERSATIONS_V3_ROTATION_MAX_SECONDS: {value: '300', category: rollout}
@@ -76,6 +79,9 @@ environments:
           BATCH_PIPELINE_PROJECTION_GHOST_SETTLE_COHORT:
             value: g1
             category: config
+          BATCH_PIPELINE_PACKING_SAMPLE_RATE:
+            value: '0.001'
+            category: ops_kill
           BATCH_PIPELINE_ENABLED: {value: 'false', category: rollout}
           FIRST_SUMMARY_PRESERVE_ADMITTED_ENABLED: {value: 'false', category: rollout}
           BATCH_LIVE_STT_RETIRE_PERCENT: {value: '0', category: rollout}
@@ -1033,6 +1039,9 @@ environments:
             CONVERSATION_TERMINAL_FAMILY_MODE:
               value: 'on'
               category: ops_kill
+            BATCH_ACCOUNT_PRIVACY_WRITER_ENABLED:
+              value: 'true'
+              category: ops_kill
             HOME_LIVE_MEMBER_NOTES_BOUNDED_ENABLED:
               value: 'true'
               category: ops_kill
@@ -1086,12 +1095,18 @@ environments:
             BATCH_HELD_DEAD_LETTER_ENABLED:
               value: 'true'
               category: ops_kill
+            BATCH_ALLOWANCE_INTAKE_PARK_ENABLED:
+              value: 'false'
+              category: ops_kill
             BATCH_INPUT_EXPIRING_ENABLED:
               value: 'true'
               category: ops_kill
             BATCH_PIPELINE_PROJECTION_GHOST_SETTLE_COHORT:
               value: g1
               category: config
+            BATCH_PIPELINE_PACKING_SAMPLE_RATE:
+              value: '0.001'
+              category: ops_kill
             BATCH_PIPELINE_ENABLED: {value: 'false', category: rollout}
             FIRST_SUMMARY_PRESERVE_ADMITTED_ENABLED: {value: 'false', category: rollout}
             BATCH_LIVE_STT_RETIRE_PERCENT: {value: '0', category: rollout}
@@ -1114,6 +1129,9 @@ environments:
               env_var: RECORD_TOKEN_LEASE_DEPLOYED_AT
               default: '0'
               category: rollout
+            BATCH_PROJECTION_OUTBOX:
+              value: 'true'
+              category: ops_kill
             BATCH_PIPELINE_SERVING_ENABLED: {value: 'false', category: rollout}
             BATCH_PIPELINE_WORKER_ENABLED:
               value: 'false'
@@ -1454,6 +1472,9 @@ environments:
             CONVERSATION_TERMINAL_FAMILY_MODE:
               value: 'on'
               category: ops_kill
+            BATCH_ACCOUNT_PRIVACY_WRITER_ENABLED:
+              value: 'true'
+              category: ops_kill
             HOME_LIVE_MEMBER_NOTES_BOUNDED_ENABLED:
               value: 'true'
               category: ops_kill
@@ -1487,12 +1508,18 @@ environments:
             BATCH_HELD_DEAD_LETTER_ENABLED:
               value: 'true'
               category: ops_kill
+            BATCH_ALLOWANCE_INTAKE_PARK_ENABLED:
+              value: 'true'
+              category: ops_kill
             BATCH_INPUT_EXPIRING_ENABLED:
               value: 'true'
               category: ops_kill
             BATCH_PIPELINE_PROJECTION_GHOST_SETTLE_COHORT:
               value: g1
               category: config
+            BATCH_PIPELINE_PACKING_SAMPLE_RATE:
+              value: '0.001'
+              category: ops_kill
             BATCH_PIPELINE_ENABLED: {value: 'false', category: rollout}
             FIRST_SUMMARY_PRESERVE_ADMITTED_ENABLED: {value: 'false', category: rollout}
             BATCH_LIVE_STT_RETIRE_PERCENT: {value: '0', category: rollout}
@@ -1515,6 +1542,9 @@ environments:
               env_var: RECORD_TOKEN_LEASE_DEPLOYED_AT
               default: '0'
               category: rollout
+            BATCH_PROJECTION_OUTBOX:
+              value: 'true'
+              category: ops_kill
             BATCH_PIPELINE_SERVING_ENABLED: {value: 'false', category: rollout}
             BATCH_PIPELINE_WORKER_ENABLED:
               value: 'false'
@@ -1865,6 +1895,9 @@ environments:
             CONVERSATION_TERMINAL_FAMILY_MODE:
               value: 'on'
               category: ops_kill
+            BATCH_ACCOUNT_PRIVACY_WRITER_ENABLED:
+              value: 'true'
+              category: ops_kill
             HOME_LIVE_MEMBER_NOTES_BOUNDED_ENABLED:
               value: 'true'
               category: ops_kill
@@ -1907,12 +1940,18 @@ environments:
             BATCH_HELD_DEAD_LETTER_ENABLED:
               value: 'true'
               category: ops_kill
+            BATCH_ALLOWANCE_INTAKE_PARK_ENABLED:
+              value: 'false'
+              category: ops_kill
             BATCH_INPUT_EXPIRING_ENABLED:
               value: 'true'
               category: ops_kill
             BATCH_PIPELINE_PROJECTION_GHOST_SETTLE_COHORT:
               value: g1
               category: config
+            BATCH_PIPELINE_PACKING_SAMPLE_RATE:
+              value: '0.001'
+              category: ops_kill
             BATCH_PIPELINE_ENABLED: {value: 'false', category: rollout}
             FIRST_SUMMARY_PRESERVE_ADMITTED_ENABLED: {value: 'false', category: rollout}
             BATCH_LIVE_STT_RETIRE_PERCENT: {value: '0', category: rollout}
@@ -1935,6 +1974,9 @@ environments:
               env_var: RECORD_TOKEN_LEASE_DEPLOYED_AT
               default: '0'
               category: rollout
+            BATCH_PROJECTION_OUTBOX:
+              value: 'true'
+              category: ops_kill
             BATCH_PIPELINE_SERVING_ENABLED: {value: 'false', category: rollout}
             BATCH_PIPELINE_WORKER_ENABLED:
               value: 'false'
@@ -2266,6 +2308,9 @@ environments:
             CONVERSATION_TERMINAL_FAMILY_MODE:
               value: 'on'
               category: ops_kill
+            BATCH_ACCOUNT_PRIVACY_WRITER_ENABLED:
+              value: 'true'
+              category: ops_kill
             HOME_LIVE_MEMBER_NOTES_BOUNDED_ENABLED:
               value: 'true'
               category: ops_kill
@@ -2298,12 +2343,18 @@ environments:
             BATCH_HELD_DEAD_LETTER_ENABLED:
               value: 'true'
               category: ops_kill
+            BATCH_ALLOWANCE_INTAKE_PARK_ENABLED:
+              value: 'true'
+              category: ops_kill
             BATCH_INPUT_EXPIRING_ENABLED:
               value: 'true'
               category: ops_kill
             BATCH_PIPELINE_PROJECTION_GHOST_SETTLE_COHORT:
               value: g1
               category: config
+            BATCH_PIPELINE_PACKING_SAMPLE_RATE:
+              value: '0.001'
+              category: ops_kill
             BATCH_PIPELINE_ENABLED: {value: 'false', category: rollout}
             FIRST_SUMMARY_PRESERVE_ADMITTED_ENABLED: {value: 'false', category: rollout}
             BATCH_LIVE_STT_RETIRE_PERCENT: {value: '0', category: rollout}
@@ -2326,6 +2377,9 @@ environments:
               env_var: RECORD_TOKEN_LEASE_DEPLOYED_AT
               default: '0'
               category: rollout
+            BATCH_PROJECTION_OUTBOX:
+              value: 'true'
+              category: ops_kill
             BATCH_PIPELINE_SERVING_ENABLED: {category: rollout, value: 'false'}
             BATCH_PIPELINE_WORKER_ENABLED:
               value: 'false'
@@ -2913,6 +2967,9 @@ environments:
           CONVERSATION_TERMINAL_FAMILY_MODE:
             value: 'on'
             category: ops_kill
+          BATCH_ACCOUNT_PRIVACY_WRITER_ENABLED:
+            value: 'true'
+            category: ops_kill
           CONVERSATIONS_V3_RECORDING_ROTATION: {value: 'off', category: rollout}
           CONVERSATIONS_V3_ROTATION_MIN_SECONDS: {value: '180', category: rollout}
           CONVERSATIONS_V3_ROTATION_MAX_SECONDS: {value: '300', category: rollout}
@@ -2968,6 +3025,9 @@ environments:
           BATCH_PIPELINE_PROJECTION_GHOST_SETTLE_COHORT:
             value: g1
             category: config
+          BATCH_PIPELINE_PACKING_SAMPLE_RATE:
+            value: '0.001'
+            category: ops_kill
           BATCH_PIPELINE_ENABLED: {value: 'true', category: rollout}
           FIRST_SUMMARY_PRESERVE_ADMITTED_ENABLED: {value: 'false', category: rollout}
           BATCH_LIVE_STT_RETIRE_PERCENT: {value: '0', category: rollout}
@@ -4077,6 +4137,9 @@ environments:
             CONVERSATION_TERMINAL_FAMILY_MODE:
               value: 'on'
               category: ops_kill
+            BATCH_ACCOUNT_PRIVACY_WRITER_ENABLED:
+              value: 'true'
+              category: ops_kill
             HOME_LIVE_MEMBER_NOTES_BOUNDED_ENABLED:
               value: 'true'
               category: ops_kill
@@ -4130,12 +4193,18 @@ environments:
             BATCH_HELD_DEAD_LETTER_ENABLED:
               value: 'true'
               category: ops_kill
+            BATCH_ALLOWANCE_INTAKE_PARK_ENABLED:
+              value: 'false'
+              category: ops_kill
             BATCH_INPUT_EXPIRING_ENABLED:
               value: 'true'
               category: ops_kill
             BATCH_PIPELINE_PROJECTION_GHOST_SETTLE_COHORT:
               value: g1
               category: config
+            BATCH_PIPELINE_PACKING_SAMPLE_RATE:
+              value: '0.001'
+              category: ops_kill
             BATCH_PIPELINE_ENABLED: {value: 'true', category: rollout}
             FIRST_SUMMARY_PRESERVE_ADMITTED_ENABLED: {value: 'false', category: rollout}
             BATCH_LIVE_STT_RETIRE_PERCENT: {value: '0', category: rollout}
@@ -4158,6 +4227,9 @@ environments:
               env_var: RECORD_TOKEN_LEASE_DEPLOYED_AT
               default: '0'
               category: rollout
+            BATCH_PROJECTION_OUTBOX:
+              value: 'true'
+              category: ops_kill
             BATCH_PIPELINE_SERVING_ENABLED: {value: 'false', category: rollout}
             BATCH_PIPELINE_WORKER_ENABLED:
               value: 'false'
@@ -4646,6 +4718,9 @@ environments:
             CONVERSATION_TERMINAL_FAMILY_MODE:
               value: 'on'
               category: ops_kill
+            BATCH_ACCOUNT_PRIVACY_WRITER_ENABLED:
+              value: 'true'
+              category: ops_kill
             HOME_LIVE_MEMBER_NOTES_BOUNDED_ENABLED:
               value: 'true'
               category: ops_kill
@@ -4679,12 +4754,18 @@ environments:
             BATCH_HELD_DEAD_LETTER_ENABLED:
               value: 'true'
               category: ops_kill
+            BATCH_ALLOWANCE_INTAKE_PARK_ENABLED:
+              value: 'true'
+              category: ops_kill
             BATCH_INPUT_EXPIRING_ENABLED:
               value: 'true'
               category: ops_kill
             BATCH_PIPELINE_PROJECTION_GHOST_SETTLE_COHORT:
               value: g1
               category: config
+            BATCH_PIPELINE_PACKING_SAMPLE_RATE:
+              value: '0.001'
+              category: ops_kill
             BATCH_PIPELINE_ENABLED: {value: 'true', category: rollout}
             FIRST_SUMMARY_PRESERVE_ADMITTED_ENABLED: {value: 'true', category: rollout}
             BATCH_LIVE_STT_RETIRE_PERCENT: {value: '0', category: rollout}
@@ -4707,6 +4788,9 @@ environments:
               env_var: RECORD_TOKEN_LEASE_DEPLOYED_AT
               default: '0'
               category: rollout
+            BATCH_PROJECTION_OUTBOX:
+              value: 'true'
+              category: ops_kill
             BATCH_PIPELINE_SERVING_ENABLED: {value: 'false', category: rollout}
             BATCH_PIPELINE_WORKER_ENABLED:
               value: 'false'
@@ -5212,6 +5296,9 @@ environments:
             CONVERSATION_TERMINAL_FAMILY_MODE:
               value: 'on'
               category: ops_kill
+            BATCH_ACCOUNT_PRIVACY_WRITER_ENABLED:
+              value: 'true'
+              category: ops_kill
             HOME_LIVE_MEMBER_NOTES_BOUNDED_ENABLED:
               value: 'true'
               category: ops_kill
@@ -5254,12 +5341,18 @@ environments:
             BATCH_HELD_DEAD_LETTER_ENABLED:
               value: 'true'
               category: ops_kill
+            BATCH_ALLOWANCE_INTAKE_PARK_ENABLED:
+              value: 'false'
+              category: ops_kill
             BATCH_INPUT_EXPIRING_ENABLED:
               value: 'true'
               category: ops_kill
             BATCH_PIPELINE_PROJECTION_GHOST_SETTLE_COHORT:
               value: g1
               category: config
+            BATCH_PIPELINE_PACKING_SAMPLE_RATE:
+              value: '0.001'
+              category: ops_kill
             BATCH_PIPELINE_ENABLED: {value: 'true', category: rollout}
             FIRST_SUMMARY_PRESERVE_ADMITTED_ENABLED: {value: 'true', category: rollout}
             BATCH_LIVE_STT_RETIRE_PERCENT: {value: '0', category: rollout}
@@ -5282,6 +5375,9 @@ environments:
               env_var: RECORD_TOKEN_LEASE_DEPLOYED_AT
               default: '0'
               category: rollout
+            BATCH_PROJECTION_OUTBOX:
+              value: 'true'
+              category: ops_kill
             BATCH_PIPELINE_SERVING_ENABLED: {value: 'false', category: rollout}
             BATCH_PIPELINE_WORKER_ENABLED:
               value: 'false'
@@ -5747,6 +5843,9 @@ environments:
             CONVERSATION_TERMINAL_FAMILY_MODE:
               value: 'on'
               category: ops_kill
+            BATCH_ACCOUNT_PRIVACY_WRITER_ENABLED:
+              value: 'true'
+              category: ops_kill
             HOME_LIVE_MEMBER_NOTES_BOUNDED_ENABLED:
               value: 'true'
               category: ops_kill
@@ -5779,12 +5878,18 @@ environments:
             BATCH_HELD_DEAD_LETTER_ENABLED:
               value: 'true'
               category: ops_kill
+            BATCH_ALLOWANCE_INTAKE_PARK_ENABLED:
+              value: 'true'
+              category: ops_kill
             BATCH_INPUT_EXPIRING_ENABLED:
               value: 'true'
               category: ops_kill
             BATCH_PIPELINE_PROJECTION_GHOST_SETTLE_COHORT:
               value: g1
               category: config
+            BATCH_PIPELINE_PACKING_SAMPLE_RATE:
+              value: '0.001'
+              category: ops_kill
             BATCH_PIPELINE_ENABLED: {value: 'true', category: rollout}
             FIRST_SUMMARY_PRESERVE_ADMITTED_ENABLED: {value: 'true', category: rollout}
             BATCH_LIVE_STT_RETIRE_PERCENT: {value: '0', category: rollout}
@@ -5807,6 +5912,9 @@ environments:
               env_var: RECORD_TOKEN_LEASE_DEPLOYED_AT
               default: '0'
               category: rollout
+            BATCH_PROJECTION_OUTBOX:
+              value: 'true'
+              category: ops_kill
             BATCH_PIPELINE_SERVING_ENABLED: {category: rollout, value: 'true'}
             BATCH_PIPELINE_WORKER_ENABLED:
               value: 'false'
