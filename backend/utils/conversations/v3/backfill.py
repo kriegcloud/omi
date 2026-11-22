@@ -15,17 +15,18 @@ import logging
 import os
 import time
 from contextlib import ExitStack
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
-from config.conversations_v3 import stretch_cohesion_enabled
+from config.conversations_v3 import HISTORICAL_SITDOWN_TIMING, stretch_cohesion_enabled
 from database import conversations as conversations_db
 from database import conversations_v3 as store
 from database import conversations_v3_backfill_runs as runs
 from database import conversations_v3_leases as leases
 from database import conversations_v3_rederive as rederive_store
 from utils.cloud_tasks import enqueue_named_task
-from utils.conversations.v3 import outline, planner, policy, service, visibility
+from utils.conversations.v3 import Conflict, outline, planner, policy, service, visibility
 from utils.conversations.v3.triggers import task_base
+from utils.conversations.v3.word_floor import MIN_TASK_WORDS
 from utils.executors import db_executor, run_blocking
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,7 @@ LIVE_PARTITION_ROWS = 192
 # A step (outline pass plus notes) stops taking new notes work this long after it started; the
 # route timeout and the Cloud Tasks dispatch deadline are both 25 minutes.
 STEP_SECONDS = 20 * 60
+OWNERSHIP_RECHECK_SECONDS = 60 * 60
 DEFAULT_QUEUE = 'conversations-v3-backfill'
 STARTS_PER_SWEEP = 20
 
@@ -64,23 +66,33 @@ def _utc(value):
     return outline.utc(value)
 
 
-def plan_partitions(meta, since, until, *, max_rows=PARTITION_ROWS):
+def plan_partitions(meta, since, until, *, max_rows=PARTITION_ROWS, historical_sitdown=False):
     """Cut [since, until) into partitions of at most max_rows documents, at recorded silence.
 
     A cut is placed at the last gap of at least five minutes (outline.SILENCE, the live hard window
     boundary), so no live stretch spans two partitions. Only a gap-free run longer than max_rows is
     cut at its largest gap; that partition is marked forced_cut and the run reports the count.
+    Historical sit-down plans require a 900-second boundary and refuse forced cuts.
     """
+    gap_seconds = HISTORICAL_SITDOWN_TIMING[0] if historical_sitdown else outline.SILENCE.total_seconds()
     rows = sorted((r for r in meta if r.get('started_at')), key=lambda r: _utc(r['started_at']))
+    if (
+        historical_sitdown
+        and len(rows) > max_rows
+        and any(not r.get('finished_at') or _utc(r['finished_at']) < _utc(r['started_at']) for r in rows)
+    ):
+        raise Conflict('rederive_live_boundary')
     partitions, current, gaps = [], [], []
     end = None
     for row in rows:
         start = _utc(row['started_at'])
         gap = (start - end).total_seconds() if end is not None else float('inf')
         if len(current) >= max_rows:
-            silent = [i for i in range(1, len(current)) if gaps[i] >= outline.SILENCE.total_seconds()]
-            forced = not silent and gap < outline.SILENCE.total_seconds()
-            if gap >= outline.SILENCE.total_seconds():
+            silent = [i for i in range(1, len(current)) if gaps[i] >= gap_seconds]
+            forced = not silent and gap < gap_seconds
+            if forced and historical_sitdown:
+                raise Conflict('rederive_live_boundary')
+            if gap >= gap_seconds:
                 cut = len(current)
             elif silent:
                 cut = silent[-1]
@@ -182,17 +194,17 @@ def estimate_partition(uid, partition, run_id, *, rederive=False, now=None):
         'usd': 0.0,
     }
     for group in groups:
-        words = sum(len(line['text'].split()) for line in group['lines'])
+        words = planner.word_count(group['lines'])
         est['words'] += words
         est['usd'] += _usd(OUTLINE_TOKENS['in'] + words * TOKENS_PER_WORD, OUTLINE_TOKENS['out'])
-        if words >= 300 or (group.get('manual_end') and words > 0):
+        if words >= visibility.MIN_HOME_WORDS or (group.get('manual_end') and words > 0):
             est['notes_calls'] += 1
-            if words >= AGENT_MIN_WORDS:
+            if sum(len(line['text'].split()) for line in group['lines']) >= AGENT_MIN_WORDS:
                 est['agent_notes'] += 1
                 est['usd'] += AGENT_MAX_USD
             else:
                 est['usd'] += _usd(NOTES_TOKENS['in'] + words * TOKENS_PER_WORD, NOTES_TOKENS['out'])
-        elif words >= 20:
+        elif words >= MIN_TASK_WORDS:
             est['short_task_calls'] += 1
             est['usd'] += _usd(SHORT_TASKS_TOKENS['in'] + words * TOKENS_PER_WORD, SHORT_TASKS_TOKENS['out'])
         else:
@@ -206,7 +218,19 @@ def new_run_id(now=None):
 
 
 def create_run(
-    uid, *, since, until, mode, operator, code_sha, partitions, estimate, counts, run_id=None, firestore_client=None
+    uid,
+    *,
+    since,
+    until,
+    mode,
+    operator,
+    code_sha,
+    partitions,
+    estimate,
+    counts,
+    historical_sitdown=False,
+    run_id=None,
+    firestore_client=None,
 ):
     """Write the planned run and its start marker; the sweep starts it when the switch is on."""
     run_id = run_id or new_run_id()
@@ -221,6 +245,10 @@ def create_run(
         'counts': counts,
         'forced_cuts': sum(1 for p in partitions if p.get('forced_cut')),
     }
+    if historical_sitdown:
+        if mode != LIVE_MODE or record['forced_cuts']:
+            raise Conflict('rederive_live_timing')
+        record['historical_timing'] = list(HISTORICAL_SITDOWN_TIMING)
     if not runs.create_run(uid, run_id, record, firestore_client=firestore_client):
         raise ValueError('backfill_run_exists')
     runs.mark_start(uid, run_id, firestore_client=firestore_client)
@@ -232,13 +260,14 @@ def _task_id(uid, run_id, index, phase, seq, gen):
     return f'conversations-v3-backfill-{owner}-{run_id}-g{gen}-{index}-{phase}-{seq}'
 
 
-def enqueue_step(uid, run_id, index, phase='derive', seq=0, gen=0):
+def enqueue_step(uid, run_id, index, phase='derive', seq=0, gen=0, *, schedule_at=None):
     """Named per run, resume generation, partition, phase and drain sequence: a redelivery dedupes."""
     enqueue_named_task(
         os.getenv('CONVERSATIONS_V3_BACKFILL_QUEUE', DEFAULT_QUEUE),
         task_base() + '/v1/conversations-v3/backfill',
         _task_id(uid, run_id, index, phase, seq, gen),
         {'uid': uid, 'run_id': run_id, 'partition': index, 'phase': phase},
+        schedule_at=schedule_at,
     )
 
 
@@ -321,6 +350,7 @@ async def run_step(uid, run_id, index, phase):
     active = {'planned', 'running'}
     sha = os.getenv('OMI_BACKEND_RELEASE_SHA', '')
     if phase == 'derive' and part.get('status') in {'pending', 'deriving'}:
+        historical_timing = run.get('historical_timing')
         if not await run_blocking(
             db_executor,
             runs.update_run,
@@ -340,6 +370,8 @@ async def run_step(uid, run_id, index, phase):
             run_id=run_id,
             rederive=run.get('mode') == 'rederive',
             live=run.get('mode') == LIVE_MODE,
+            historical_timing=historical_timing,
+            internal_end=index + 1 < len(partitions),
             report=report,
         )
         if outcome == 'busy':
@@ -379,14 +411,19 @@ async def run_step(uid, run_id, index, phase):
         current = await run_blocking(db_executor, runs.get_run, uid, run_id)
         return bool(current) and current.get('status') not in runs.STOPPED
 
-    drained = await service.drain_backfill(uid, deadline=deadline, keep_going=keep_going)
+    drained = await service.drain_backfill(
+        uid, deadline=deadline, after=part.get('notes_scan_after'), keep_going=keep_going
+    )
     fields = {
         'notes_processed': int(part.get('notes_processed') or 0) + drained['processed'],
         'notes_failed': int(part.get('notes_failed') or 0) + drained['failed'],
         'notes_remaining': drained['remaining'],
     }
+    previous_seq = int(part.get('drain_seq') or 0)
     if drained['remaining']:
-        seq = int(part.get('drain_seq') or 0) + 1
+        seq = previous_seq + 1
+        if 'scan_after' in drained:
+            fields['notes_scan_after'] = drained['scan_after']
         if not await run_blocking(
             db_executor,
             runs.update_run,
@@ -394,16 +431,21 @@ async def run_step(uid, run_id, index, phase):
             run_id,
             partition=(index, {**fields, 'drain_seq': seq}),
             expect=active,
+            expected_drain_seq=previous_seq,
         ):
             return {'outcome': 'stopped', 'remaining': drained['remaining']}
-        await run_blocking(db_executor, enqueue_step, uid, run_id, index, 'drain', seq, gen)
+        # Keep the partition open through handback without rapid task churn when all debt is foreign.
+        schedule = {}
+        if not drained.get('scan_pending') and drained.get('ownership_blocked') == drained['remaining']:
+            schedule['schedule_at'] = int(time.time()) + OWNERSHIP_RECHECK_SECONDS
+        await run_blocking(db_executor, enqueue_step, uid, run_id, index, 'drain', seq, gen, **schedule)
         return {'outcome': 'draining', 'remaining': drained['remaining']}
     last = index + 1 >= len(partitions)
     if run.get('mode') == LIVE_MODE:
         # The partition's notes are settled: anything that changes these rows from here on is not the
         # run's, and undo refuses to overwrite it.
         await run_blocking(db_executor, rederive_store.record_baselines, uid, run_id, prior_ids)
-    if await run_blocking(
+    if not await run_blocking(
         db_executor,
         runs.update_run,
         uid,
@@ -411,9 +453,11 @@ async def run_step(uid, run_id, index, phase):
         status='committed' if last else None,
         partition=(index, {**fields, 'status': 'committed'}),
         expect=active,
+        expected_drain_seq=previous_seq,
     ):
-        if not last:
-            await run_blocking(db_executor, enqueue_step, uid, run_id, index + 1, 'derive', 0, gen)
+        return {'outcome': 'stopped', 'remaining': 0}
+    if not last:
+        await run_blocking(db_executor, enqueue_step, uid, run_id, index + 1, 'derive', 0, gen)
     return {'outcome': 'committed', 'last': last}
 
 
@@ -556,7 +600,7 @@ def classify_live_window(meta):
     return counts
 
 
-def estimate_live_partition(uid, partition, run_id, *, now=None):
+def estimate_live_partition(uid, partition, run_id, *, now=None, historical_sitdown=False, internal_end=False):
     """Read-only preview of one live re-derive partition. Writes nothing and calls no model.
 
     Before counts are exact. After counts come from the real planner with one window per stretch
@@ -571,12 +615,31 @@ def estimate_live_partition(uid, partition, run_id, *, now=None):
         uid, since=partition['since'], until=partition['until'], run_id=run_id
     )
     eligible = [r for r in recordings.values() if policy.builder_eligible(r)]
-    groups = outline.stretches(eligible, now)
+    if historical_sitdown:
+        groups = service.historical_stretches(
+            eligible, now, since=partition['since'], until=partition['until'], internal_end=internal_end
+        )
+    else:
+        groups = outline.stretches(eligible, now)
     protected = {cid for cid, row in existing.items() if row.get('_v3_protected')}
     outlines = [outline.fallback(group) for group in groups]
-    windows = planner.preserve_finished_windows(
-        planner.windows(groups, outlines, cohesion=stretch_cohesion_enabled()), existing, recordings
-    )
+    if historical_sitdown:
+        ownership = planner.Ownership(existing, recordings)
+        planned = planner.windows(
+            groups,
+            outlines,
+            cohesion=True,
+            silence_gap=timedelta(seconds=HISTORICAL_SITDOWN_TIMING[0]),
+            defer_topic_lock=True,
+            ownership=ownership,
+        )
+        windows = planner.preserve_finished_windows(
+            planned, existing, recordings, protect_provisional=True, ownership=ownership
+        )
+    else:
+        windows = planner.preserve_finished_windows(
+            planner.windows(groups, outlines, cohesion=stretch_cohesion_enabled()), existing, recordings
+        )
     # Retained windows belong to protected rows, which the run never writes.
     fresh = [w for w in windows if w.get('existing_id') not in protected]
     est = {
@@ -607,23 +670,23 @@ def estimate_live_partition(uid, partition, run_id, *, now=None):
         if key.startswith(('protected_', 'sources_', 'skipped_')):
             est[key] = value
     for group in groups:
-        words = sum(len(line['text'].split()) for line in group['lines'])
+        words = planner.word_count(group['lines'])
         est['words'] += words
         est['usd'] += _usd(OUTLINE_TOKENS['in'] + words * TOKENS_PER_WORD, OUTLINE_TOKENS['out'])
     for window in fresh:
-        words = window.get('_stretch_words', planner.word_count(window['lines']))
+        own = planner.word_count(window['lines'])
+        words = window.get('_stretch_words', own)
         manual = bool(window.get('manual_end'))
         hidden = window['finished'] and not manual and words < visibility.MIN_HOME_WORDS
         est['visible_after'] += 0 if hidden else 1
-        own = planner.word_count(window['lines'])
         if own >= visibility.MIN_HOME_WORDS or (manual and own > 0):
             est['notes_calls'] += 1
-            if own >= AGENT_MIN_WORDS:
+            if sum(len(line['text'].split()) for line in window['lines']) >= AGENT_MIN_WORDS:
                 est['agent_notes'] += 1
                 est['usd'] += AGENT_MAX_USD
             else:
                 est['usd'] += _usd(NOTES_TOKENS['in'] + own * TOKENS_PER_WORD, NOTES_TOKENS['out'])
-        elif own >= 20:
+        elif own >= MIN_TASK_WORDS:
             est['short_task_calls'] += 1
             est['usd'] += _usd(SHORT_TASKS_TOKENS['in'] + own * TOKENS_PER_WORD, SHORT_TASKS_TOKENS['out'])
     return est
