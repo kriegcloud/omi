@@ -1,20 +1,26 @@
 """Conversation summary persistence and content-scoped retry fences."""
 
 from database import conversations_v3_leases as leases
+from utils.conversations.v3.live import FINISH_WINDOW_FIELD
 from utils.conversations.v3 import metrics
 
 import hashlib
 import json
 import math
+import time
 from datetime import datetime, timedelta, timezone
 from google.cloud import firestore
 from google.cloud.firestore_v1 import FieldFilter
 from database import conversations, conversations_v3 as store
+from database.conversations_v3_fence import PersistenceDecline
+from database.transcript_pointer import run_preloaded_transaction_with_contention_retry
 from database.account_deletion_marker import account_deletion_document
 from database.account_deletion_policy import account_deletion_marker_blocks_access
 from models.finalization_owner import python_owns_finalization
 from utils.conversations.v3 import Conflict, policy
+from utils.conversations import summary_delivery, terminal_settled
 from utils.conversations.summary_delivery import present
+from utils.conversations.fragment_visibility import is_relevance_discarded
 from utils.encryption import encrypt, decrypt
 
 _LIVE_INPUT_SCOPE = (
@@ -29,6 +35,17 @@ _LIVE_INPUT_SCOPE = (
     'data_protection_level',
     'private_cloud_sync_enabled',
 )
+
+
+def _lane(row):
+    return 'backfill' if row.get('backfilled') else summary_delivery.lane(row)
+
+
+def _observe_first_notes(row):
+    """After the commit that first set ``v3_notes_written``: the v3 lane's first usable summary."""
+    summary_delivery.observe_processed(
+        _lane(row), summary_delivery.processed_latencies(row.get('finished_at'), row.get('arrival_at'), time.time())
+    )
 
 
 def _live_scope(row):
@@ -134,9 +151,12 @@ def store_summary(uid, cid, token, revision, structured, covers, *, live_input=N
         patch = conversations._prepare_conversation_for_write(  # pyright: ignore[reportPrivateUsage] -- reuse the authoritative encryption codec
             {'structured': structured}, uid, 'enhanced', allow_offload=False
         )
+    settle_enabled = terminal_settled.serving(uid)
+    first_notes = {}
 
     @firestore.transactional
     def persist(tx):
+        first_notes.clear()
         snapshot = ref.get(transaction=tx)
         deletion = account_deletion_document(uid, firestore_client=client).get(transaction=tx)
         if account_deletion_marker_blocks_access(
@@ -183,7 +203,10 @@ def store_summary(uid, cid, token, revision, structured, covers, *, live_input=N
             and (was_unlocked or (current.get('v3_open_locked') and current.get('status') == 'processing'))
             else {}
         )
+        terminal_settled.stamp(current, open_lock, now=datetime.now(timezone.utc), enabled=settle_enabled)
         settled = current.get('v3_derived') and (bool(open_lock) or current.get('status') != 'in_progress')
+        if settled and not current.get('v3_notes_written'):
+            first_notes.update(current)
         # On-open notes are a notes write too: a row whose background notes failed and the user then
         # opened owes the same single created delivery once it is visible and completed.
         armed = bool(
@@ -210,7 +233,13 @@ def store_summary(uid, cid, token, revision, structured, covers, *, live_input=N
         )
         return armed
 
-    return persist(client.transaction())
+    armed = run_preloaded_transaction_with_contention_retry(client, persist)
+    if first_notes:
+        _observe_first_notes(first_notes)
+    return armed
+
+
+PROCESS_DECLINE_BACKOFF = timedelta(minutes=15)
 
 
 def settle_processing(
@@ -221,6 +250,7 @@ def settle_processing(
     covers,
     *,
     skipped=False,
+    decline: PersistenceDecline | None = None,
     notes=False,
     content_hash=None,
     word_floor_outcomes: tuple[bool, bool] | None = None,
@@ -245,7 +275,19 @@ def settle_processing(
         if lease.get('token') != token or not lease.get('until') or lease['until'] <= datetime.now(timezone.utc):
             raise Conflict('processing_source_changed')
         if not row or not python_owns_finalization(row):
-            return False, False
+            return False, False, None, False, None, None
+        if decline is not None:
+            # The terminal decision belongs to the exact declined row, not a
+            # replacement obligation written between persist and settlement.
+            if not row.get('v3_process_pending') or snapshot.update_time != decline.update_time:
+                return False, False, None, False, None, None
+            if not row.get('deleted') and row.get('sync_content_revision') != revision:
+                return False, False, None, False, None, None
+            if decline.transient:
+                # Planned backfill owns its own continuation and attempt budget.
+                if not row.get('v3_backfill_process_pending'):
+                    tx.update(ref, {'v3_process_retry_after': datetime.now(timezone.utc) + PROCESS_DECLINE_BACKOFF})
+                return False, False, None, False, None, None
         if not skipped and not row.get('deleted') and row.get('sync_content_revision') != revision:
             decoded = store.decode_row(uid, snapshot)
             if not content_hash or processing_hash(decoded) != content_hash:
@@ -254,11 +296,35 @@ def settle_processing(
         armed = written and policy.created_eligible(
             {**row, 'v3_notes_written': True, 'v3_process_failed': False, 'v3_process_pending': False}
         )
+        settled = (
+            not skipped
+            and not row.get('deleted')
+            and row.get('status') == 'completed'
+            and row.get('v3_process_pending') is True
+        )
+        manual_visibility = None
+        if (
+            settled
+            and row.get('v3_derived')
+            and row.get('manual_end')
+            and not row.get('backfilled')
+            and not row.get('discarded')
+            and not row.get('v3_manual_end_home_counted')
+        ):
+            # Same row filters as the Home feed (database/home_feed._visible) for a derived row.
+            visible = (
+                not row.get('sync_merged_into')
+                and not is_relevance_discarded(row)
+                and conversations.is_visible_conversation(row, hide_home=True, presentation=True)
+            )
+            kind = row.get('kind') if row.get('kind') in metrics.MANUAL_END_KINDS else 'other'
+            manual_visibility = ('visible' if visible else 'hidden', kind)
         tx.update(
             ref,
             {
                 'v3_process_pending': False,
                 'v3_process_attempts': 0,
+                **({'v3_process_retry_after': None} if row.get('v3_process_retry_after') else {}),
                 'tile_state': 'done',
                 'v3_process_failed': False,
                 'v3_process_failure_reason': None,
@@ -271,17 +337,35 @@ def settle_processing(
                 ),
                 **({'v3_notes_written': True} if written else {}),
                 **({'v3_created_pending': True} if armed else {}),
+                # First settlement only: a late rewrite re-settles the same row and must not count again.
+                **({'v3_manual_end_home_counted': True} if manual_visibility is not None else {}),
             },
         )
-        settled = (
-            not skipped
-            and not row.get('deleted')
-            and row.get('status') == 'completed'
-            and row.get('v3_process_pending') is True
+        first = None if row.get('v3_notes_written') else 'notes' if written else 'no_notes' if settled else None
+        return (
+            armed,
+            settled,
+            manual_visibility,
+            manual_visibility is not None and row.get(FINISH_WINDOW_FIELD) == cid,
+            (first, row) if first else None,
+            decline.reason if decline is not None else None,
         )
-        return armed, settled
 
-    armed, settled = settle(client.transaction())
+    armed, settled, manual_visibility, finish_settled, outcome, skipped_reason = (
+        run_preloaded_transaction_with_contention_retry(client, settle)
+    )
+    if skipped_reason is not None:
+        metrics.RECONCILES.labels('processing_skipped_' + skipped_reason).inc()
+    if outcome is not None:
+        first, row = outcome
+        if first == 'notes':
+            _observe_first_notes(row)
+        else:
+            summary_delivery.SETTLED_UNSUMMARIZED.labels(_lane(row), first).inc()
+    if manual_visibility is not None:
+        metrics.MANUAL_END_HOME.labels(*manual_visibility).inc()
+    if finish_settled:
+        metrics.FINISH_NO_POINTER.labels('settled').inc()
     if settled and word_floor_outcomes is not None:
         metrics.observe_word_floor(*word_floor_outcomes)
     return armed
@@ -338,7 +422,7 @@ def claim_created(uid, cid, *, firestore_client=None):
         tx.update(ref, {'v3_created_attempts': attempt, 'v3_created_claim_until': now + CREATED_CLAIM})
         return attempt
 
-    return claim(client.transaction())
+    return run_preloaded_transaction_with_contention_retry(client, claim)
 
 
 def finish_created(uid, cid, attempt, *, delivered, dropped=False, firestore_client=None):
@@ -374,7 +458,7 @@ def finish_created(uid, cid, attempt, *, delivered, dropped=False, firestore_cli
             tx.update(ref, {'v3_created_claim_until': None})
         return True
 
-    return finish(client.transaction())
+    return run_preloaded_transaction_with_contention_retry(client, finish)
 
 
 def processing_hash(row):
@@ -427,6 +511,12 @@ def begin_processing(uid, row, token, *, force=False, firestore_client=None):
             raise Conflict('lease_lost')
         if not current or not python_owns_finalization(current) or current.get('deleted') or current.get('is_locked'):
             return False
+        if (
+            not force
+            and not current.get('v3_backfill_process_pending')
+            and not policy.processing_due(current, datetime.now(timezone.utc))
+        ):
+            return False
         attempts = (
             current.get('v3_process_attempts', 0)
             if not force and current.get('v3_process_fingerprint') == fingerprint
@@ -440,6 +530,7 @@ def begin_processing(uid, row, token, *, force=False, firestore_client=None):
             {
                 'v3_process_fingerprint': fingerprint,
                 'v3_process_attempts': attempts + 1,
+                **({'v3_process_retry_after': None} if current.get('v3_process_retry_after') else {}),
                 'v3_process_failed': False,
                 'v3_process_failure_reason': None,
                 'summary_retryable': False,
@@ -450,7 +541,7 @@ def begin_processing(uid, row, token, *, force=False, firestore_client=None):
         )
         return True
 
-    result = begin(client.transaction())
+    result = run_preloaded_transaction_with_contention_retry(client, begin)
     if result == 'failed':
         metrics.terminal_failure('attempts_exhausted')
     if result in ('failed', 'terminal'):
@@ -474,8 +565,12 @@ def fail_processing(uid, cid, token, revision, *, content_hash=None, retryable=T
     ref = store.user_conversations(client, uid).document(cid)
     held = leases.lease_ref(client, uid, 'summary-' + cid)
 
+    settle_enabled = terminal_settled.serving(uid)
+    failed_row = {}
+
     @firestore.transactional
     def fail(tx):
+        failed_row.clear()
         snapshot = ref.get(transaction=tx)
         row = snapshot.to_dict() or {}
         lease = held.get(transaction=tx).to_dict() or {}
@@ -489,12 +584,21 @@ def fail_processing(uid, cid, token, revision, *, content_hash=None, retryable=T
         if row.get('sync_content_revision') != revision:
             if not content_hash or processing_hash(store.decode_row(uid, snapshot)) != content_hash:
                 raise Conflict('processing_source_changed')
-        tx.update(ref, failure_patch(retryable=retryable))
+        tx.update(
+            ref,
+            terminal_settled.stamp(
+                row, failure_patch(retryable=retryable), now=datetime.now(timezone.utc), enabled=settle_enabled
+            ),
+        )
+        if not row.get('v3_notes_written'):
+            failed_row.update(row)
         return not row.get('v3_process_failed')
 
-    changed = fail(client.transaction())
+    changed = run_preloaded_transaction_with_contention_retry(client, fail)
     if changed:
         metrics.terminal_failure('processing')
+        if failed_row:
+            summary_delivery.SETTLED_UNSUMMARIZED.labels(_lane(failed_row), 'failed').inc()
     return changed
 
 
@@ -531,4 +635,4 @@ def settle_backfill_processing(uid, cid, *, failed, max_attempts, firestore_clie
         tx.update(ref, {'v3_process_pending': False, 'v3_backfill_attempts': attempts})
         return 'retry'
 
-    return settle(client.transaction())
+    return run_preloaded_transaction_with_contention_retry(client, settle)
