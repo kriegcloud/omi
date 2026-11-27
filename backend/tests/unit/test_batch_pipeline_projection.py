@@ -187,7 +187,7 @@ def test_production_result_cannot_invent_vad_groups_from_transcript_gaps():
 
 def test_assignment_held_without_recovery_matrix():
     """Which quarantined-receipt rows the held-partial scan may treat as held."""
-    from database.batch_pipeline_projection import assignment_held_without_recovery
+    from utils.batch_pipeline.held_terminal import assignment_held_without_recovery
 
     quarantined = {'projection': {'state': 'quarantined'}}
     assert assignment_held_without_recovery({'recovery_state': 'held'}, quarantined)
@@ -626,6 +626,36 @@ def test_contention_control_retains_existing_expired_transaction_restart(monkeyp
     )
     assert operation.call_count == client.transaction.call_count == 2
     assert operation.call_args_list[0] != operation.call_args_list[1]
+
+
+def test_projection_bridge_superseded_keeps_the_receipt_canonical(binding, monkeypatch, caplog):
+    from utils.sync.assignment_errors import SyncAssignmentSuperseded
+
+    projector = projection.Projector(Mock(), Mock(), playback=Mock())
+    monkeypatch.setattr(projector.store, 'settle_deleted_output', Mock())
+    mark = Mock()
+    monkeypatch.setattr(projector.store, 'mark_enrichment', mark)
+    monkeypatch.setattr(
+        bridge,
+        'finish_sync_bridges',
+        Mock(side_effect=SyncAssignmentSuperseded('sync anchor is user managed')),
+    )
+    receipt = {
+        'state': 'persisted',
+        'conversation_id': 'managed',
+        'audio_required': False,
+        'enrichment_required': True,
+        'language': 'en',
+    }
+    policy = resolve_stage_policy(binding.owner_id, 'projection')
+
+    with caplog.at_level(logging.DEBUG, logger=projection.__name__):
+        projector.finish_part(Mock(), binding, receipt, None, policy=policy)
+
+    assert 'event=batch_projection action=bridge outcome=superseded' in caplog.text
+    # The assignment already committed: follow-up stays on its own canonical.
+    mark.assert_called_once()
+    assert mark.call_args.args[3] == 'managed'
 
 
 @pytest.mark.parametrize('engine', ['go', 'pending'])
