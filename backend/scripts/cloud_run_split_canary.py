@@ -189,7 +189,7 @@ def allocations(plan, candidate, donor_percent=0):
     return result
 
 
-def restore_completed(service, wire, transport, receipt):
+def restore_completed(service, wire, transport, receipt, floor=None):
     plan = decode_plan(service, wire)
     candidate = receipt['candidate']
     if (
@@ -202,6 +202,10 @@ def restore_completed(service, wire, transport, receipt):
     expected = allocations(plan, candidate)
     if receipt['final_map'] != expected:
         raise ValueError('rollback_receipt_map_mismatch')
+    if floor is not None:
+        # SCA-3804: the admitted inverse may only be restored when every
+        # revision it routes to still satisfies the published release floor.
+        floor(tuple(plan['inverse']))
     current = transport.read()
     if (
         not current.converged
@@ -213,6 +217,35 @@ def restore_completed(service, wire, transport, receipt):
     ):
         raise RuntimeError('rollback_traffic_ownership_lost')
     transport.replace(current, plan['inverse'])
+
+
+# The published floor lives on origin/main. A long guard window can outlive the
+# fetch that preceded promotion, so every check re-reads that ref first and
+# fails closed when the refresh cannot be proven.
+FLOOR_REFRESH = ('git', 'fetch', '--no-tags', 'origin', '+refs/heads/main:refs/remotes/origin/main')
+
+
+def release_floor(targets, *, script, project, region, refresh=None, run=subprocess.run):
+    """Refuse any rollback target the published backend release floor rejects.
+
+    When refresh is supplied its command must succeed before any target is
+    checked; a failed refresh refuses the check instead of trusting a cached
+    floor.
+    """
+    if refresh is not None:
+        fetched = run(list(refresh), capture_output=True, text=True)
+        if fetched.returncode:
+            reason = ' '.join((fetched.stderr or '').split())[:400]
+            raise ValueError(f'release_floor_refresh_failed:{reason}')
+    for revision in targets:
+        completed = run(
+            [sys.executable, str(script), '--revision', revision, '--project', project, '--region', region],
+            capture_output=True,
+            text=True,
+        )
+        if completed.returncode:
+            reason = ' '.join((completed.stderr or '').split())[:400]
+            raise ValueError(f'release_floor_refused:{revision}:{reason}')
 
 
 def recovery_plan(receipt, run, run_id):
@@ -247,18 +280,24 @@ def recovery_plan(receipt, run, run_id):
     return service, wire
 
 
-def promote(service, wire, candidate, transport, guard, *, sleep=time.sleep, now=None, on_promoted=None):
+def promote(service, wire, candidate, transport, guard, *, sleep=time.sleep, now=None, on_promoted=None, floor=None):
     """Guard a named candidate and return only after its final map is observed.
 
     For a split service a guarded canary first borrows up to 10 percentage
     points from the donor. At every step allocations of other revisions stay
     fixed. A failed guard or move restores the original map if this operation
     still owns the requested traffic.
+
+    Every revision in the admitted inverse is checked against the published
+    release floor before the first traffic move and again before that inverse
+    is restored, so a guard failure cannot re-serve an ineligible revision.
     """
     plan = decode_plan(service, wire)
     inverse, donor = plan['inverse'], plan['donor']
     if not valid_revision(service, candidate) or candidate in inverse:
         raise ValueError('invalid_candidate')
+    if floor is not None:
+        floor(tuple(inverse))
     initial = transport.read()
     if (
         not initial.uid
@@ -329,6 +368,10 @@ def promote(service, wire, candidate, transport, guard, *, sleep=time.sleep, now
             if current.requested != inverse:
                 if current.requested not in attempted or current.observed not in [inverse, *attempted]:
                     raise RuntimeError('rollback_traffic_ownership_lost')
+                if floor is not None:
+                    # Recheck at restore time: the published floor can move
+                    # while a multi-hour guard window is open.
+                    floor(tuple(inverse))
                 transport.replace(current, inverse)
             settled(inverse)
         raise
@@ -443,7 +486,10 @@ def main(argv=None):
             command.add_argument('--project', required=True)
             command.add_argument('--region', required=True)
             command.add_argument('--promotion-receipt', type=Path, required=True)
+        if mode in ('restore-completed', 'promote'):
+            command.add_argument('--release-floor-check', type=Path, required=True)
         if mode == 'promote':
+            command.add_argument('--refresh-floor', action='store_true', required=True)
             command.add_argument('--candidate', required=True)
             command.add_argument('--source', required=True)
             command.add_argument('--control', required=True)
@@ -456,14 +502,21 @@ def main(argv=None):
     recovery.add_argument('--run-id', type=int, required=True)
     recovery.add_argument('--run-metadata', type=Path, required=True)
     recovery.add_argument('--promotion-receipt', type=Path, required=True)
+    recovery.add_argument('--release-floor-check', type=Path, required=True)
     args = parser.parse_args(argv)
+    floor = None
+    if getattr(args, 'release_floor_check', None) is not None:
+        refresh = FLOOR_REFRESH if getattr(args, 'refresh_floor', False) else None
+        floor = lambda targets: release_floor(  # noqa: E731 - single-use CLI closure
+            targets, script=args.release_floor_check, project=args.project, region=args.region, refresh=refresh
+        )
     try:
         if args.mode == 'recover-run':
             receipt = json.loads(args.promotion_receipt.read_text())
             run = json.loads(args.run_metadata.read_text())
             service, wire = recovery_plan(receipt, run, args.run_id)
             transport = CloudRunTraffic(args.project, args.region, service, gcloud_json)
-            restore_completed(service, wire, transport, receipt)
+            restore_completed(service, wire, transport, receipt, floor)
             print('HOLDBACK_RESTORED exact admitted inverse')
             return 0
         if hashlib.sha256(args.plan.encode()).hexdigest() != args.binding:
@@ -473,7 +526,7 @@ def main(argv=None):
             return 0
         transport = CloudRunTraffic(args.project, args.region, args.service, gcloud_json)
         if args.mode == 'restore-completed':
-            restore_completed(args.service, args.plan, transport, json.loads(args.promotion_receipt.read_text()))
+            restore_completed(args.service, args.plan, transport, json.loads(args.promotion_receipt.read_text()), floor)
             print('HOLDBACK_RESTORED exact admitted inverse')
             return 0
 
@@ -507,7 +560,7 @@ def main(argv=None):
 
         default = [sys.executable, '-I', str(Path(__file__).with_name('guard_eval.py'))]
         guard = guard_command(args.guard_command or default, args.project, args.region)
-        result = promote(args.service, args.plan, args.candidate, transport, guard, on_promoted=record)
+        result = promote(args.service, args.plan, args.candidate, transport, guard, on_promoted=record, floor=floor)
         print(json.dumps(result, sort_keys=True))
         return 0
     except Hold as error:

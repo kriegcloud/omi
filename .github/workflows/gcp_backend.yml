@@ -17,11 +17,14 @@
 #   repair-traffic-only  Restore Cloud Run traffic to the serving revisions.
 #   recover-pump-cap    SCA-3318 one-time service-level cap correction on the dark pump.
 #   recover-split       Restore the admitted inverse from a failed bound promotion receipt.
+#   probe-app-icon      Check app-icon containment on the admitted Backend revision.
 
 name: Deploy Backend to Cloud RUN
 
 run-name: >-
   ${{ inputs.mode == 'recover-split' && format('Recover split from run {0}/1 by {1}', inputs.split_recovery_run_id, inputs.requested_by) ||
+    inputs.mode == 'probe-app-icon' && format('Probe Backend app icon revision={0} sha={1} by {2}',
+    inputs.app_icon_candidate_revision, inputs.release_sha, inputs.requested_by) ||
     inputs.selected_split_binding && format('Holdback {0}/{1} sha={2} by {3} plan={4}',
     inputs.environment, inputs.cloud_run_service, inputs.release_sha, inputs.requested_by, inputs.selected_split_binding) ||
     inputs.selected_rollback_revision && format('Select {0}/{1}/{2} sha={3} lock={4} img={5} elig={6} by {7} inverse={8}',
@@ -82,6 +85,7 @@ on:
           - operator-qualify-publish
           - recover-pump-cap
           - recover-split
+          - probe-app-icon
       deploy_targets:
         description: 'Deploy all backend surfaces or Cloud Run only'
         required: true
@@ -107,6 +111,11 @@ on:
         type: string
       selected_split_binding:
         description: 'SHA-256 of selected_split_plan.'
+        required: false
+        default: ''
+        type: string
+      app_icon_candidate_revision:
+        description: 'Probe-app-icon only. Exact admitted, tagged, zero-traffic Backend revision for release_sha.'
         required: false
         default: ''
         type: string
@@ -1393,6 +1402,13 @@ jobs:
           LADDER_V1_ARCHITECT_YEAR_PRICE_ID: ${{ vars.LADDER_V1_ARCHITECT_YEAR_PRICE_ID }}
         with:
           deploy_profile: manual
+          # SCA-3748: bind the shared record token lease vector exactly as
+          # Listen and Pusher do. Without these the composite defaults would
+          # reset Cloud Run and prod-omi-backend-config lease env on every deploy.
+          record_token_lease_mode: ${{ vars.RECORD_TOKEN_LEASE_MODE || 'off' }}
+          record_token_lease_mode_serve_percent: ${{ vars.RECORD_TOKEN_LEASE_MODE_SERVE_PERCENT || '0' }}
+          record_token_lease_seconds: ${{ vars.RECORD_TOKEN_LEASE_SECONDS || '3600' }}
+          record_token_lease_deployed_at: ${{ vars.RECORD_TOKEN_LEASE_DEPLOYED_AT || '0' }}
           # SCA-2283 captain ruling 01a1dca2: finite exact-source path only.
           integration_canary: ${{ github.event.inputs.environment == 'prod' && (needs.validate-production-boundary.outputs.integration_only == 'true' || needs.firestore_readiness.outputs.admitted_sha == '0714c5198be8f0183c8fd7dd3810d53c91af17a4') && 'true' || 'false' }}
           integration_only: ${{ needs.validate-production-boundary.outputs.integration_only || 'false' }}
@@ -1590,6 +1606,22 @@ jobs:
           service_account: omi-ci-deployer-prod@based-hardware.iam.gserviceaccount.com
       - name: Set up existing gcloud client
         uses: google-github-actions/setup-gcloud@v3
+      - name: Fetch the release-floor history from current main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +x
+          set -euo pipefail
+          # The floor verifier needs the restored revision's commit object and
+          # its ancestry back to the published floor, so the immutable checkout's
+          # depth-1 history is not enough (SCA-3804 recovery repair).
+          history_args=()
+          if [[ "$(git rev-parse --is-shallow-repository)" == true ]]; then
+            history_args=(--unshallow)
+          fi
+          git fetch --no-tags "${history_args[@]}" \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            +refs/heads/main:refs/remotes/origin/main
       - name: Restore only the admitted inverse while ownership still matches
         env:
           ORIGINAL_RUN: ${{ inputs.split_recovery_run_id }}
@@ -1598,7 +1630,8 @@ jobs:
           python3 backend/scripts/cloud_run_split_canary.py recover-run \
             --project "$PROJECT" --region "$REGION" --run-id "$ORIGINAL_RUN" \
             --run-metadata "$SPLIT_RECOVERY_EVIDENCE/run.json" \
-            --promotion-receipt "$SPLIT_RECOVERY_EVIDENCE/artifact/backend-holdback-promotion.json"
+            --promotion-receipt "$SPLIT_RECOVERY_EVIDENCE/artifact/backend-holdback-promotion.json" \
+            --release-floor-check .github/scripts/verify_backend_release_floor.py
 
   recover-projection-pump-cap:
     needs: validate-production-boundary
@@ -1638,6 +1671,52 @@ jobs:
         env:
           APPROVED_ETAG: ${{ inputs.pump_recovery_etag }}
         run: python3 backend/scripts/recover_projection_pump_cap.py --etag="$APPROVED_ETAG"
+
+  probe-app-icon:
+    name: Probe candidate app-icon containment before promotion
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.mode == 'probe-app-icon' &&
+      inputs.environment == 'prod' &&
+      !inputs.break_glass_lock &&
+      !inputs.skip_eligibility_proof
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the original attempt
+        run: test "$GITHUB_RUN_ATTEMPT" = 1
+      - name: Checkout immutable workflow controls
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Authenticate existing production workflow identity
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/208440318997/locations/global/workloadIdentityPools/omi-gha-deploy-prod/providers/github
+          service_account: omi-ci-deployer-prod@based-hardware.iam.gserviceaccount.com
+      - name: Set up existing gcloud client
+        uses: google-github-actions/setup-gcloud@v3
+      - name: Verify candidate identity and require containment from one synthetic icon request
+        shell: bash
+        env:
+          CANDIDATE_REVISION: ${{ inputs.app_icon_candidate_revision }}
+          CANDIDATE_SOURCE: ${{ inputs.release_sha }}
+        run: |
+          set +x
+          set -euo pipefail
+          umask 077
+          probe_dir="$(mktemp -d "$RUNNER_TEMP/app-icon-probe.XXXXXXXX")"
+          trap 'rm -rf "$probe_dir"' EXIT
+          receipt="$(python3 -I .github/scripts/app_icon_containment_probe.py \
+            "$probe_dir/token" "$CANDIDATE_REVISION" "$CANDIDATE_SOURCE")"
+          printf '%s\n' "$receipt" | tee -a "$GITHUB_STEP_SUMMARY"
+          test "$receipt" = "http_status=424 outcome=icon_generation_disabled"
 
   # SOURCE-ONLY PROPOSAL: contract remains closed until approved ingress IDs
   # and existing repository authorization evidence are reviewed and committed.

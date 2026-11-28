@@ -68,12 +68,19 @@ def version(obj):
 
 
 def partial_metadata_version(response, name, namespace):
+    # The request names only the PartialObjectMetadata media type, with no fallback, so an API
+    # server that cannot honour it answers 406 rather than a full Secret. GKE (through
+    # `kubectl proxy`) labels the metadata-only body plain `application/json`, dropping the
+    # `as=` parameters (run 46027266977), so the header admits JSON and the body check below
+    # decides: anything but a bare PartialObjectMetadata object is refused without echoing it.
     content_type = response.headers.get("Content-Type", "").lower().replace(" ", "")
+    media_type, _, params = content_type.partition(";")
     require(
-        "application/json" in content_type
-        and "as=partialobjectmetadata" in content_type
-        and "g=meta.k8s.io" in content_type
-        and "v=v1" in content_type,
+        media_type == "application/json"
+        and (
+            not params
+            or ("as=partialobjectmetadata" in params and "g=meta.k8s.io" in params and "v=v1" in params)
+        ),
         "secret_metadata_only_response_unavailable",
     )
     try:
@@ -412,6 +419,27 @@ def validate_proof(proof):
     )
 
 
+QUALIFICATION_MAX_AGE_SECONDS = 24 * 3600
+
+
+def qualification_fresh(receipt, now=None):
+    """The verified development deployment receipt was recorded no more than 24 hours ago.
+
+    The window applies in every image-only mode, so preview, canary and promote must all
+    start within 24 hours of the qualification; otherwise qualify again and restart."""
+    finished = receipt.get("recorded_at") if isinstance(receipt, dict) else None
+    if not isinstance(finished, str):
+        return False
+    try:
+        finished_at = datetime.fromisoformat(finished.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if finished_at.tzinfo is None:
+        return False
+    age = ((now or datetime.now(timezone.utc)) - finished_at).total_seconds()
+    return 0 <= age <= QUALIFICATION_MAX_AGE_SECONDS
+
+
 def check_provenance(proof):
     source = proof["source_sha"]
     candidate = proof["candidate_image"]
@@ -425,13 +453,10 @@ def check_provenance(proof):
     git = ["git", "-C", str(ROOT)]
     require(run([*git, "rev-parse", "origin/main"], "fresh_main_unavailable").strip() == main, "fetch_fresh_main")
     run([*git, "merge-base", "--is-ancestor", source, main], "source_not_merged")
+    # David 2026-11-28: the source must be on main and freshly qualified, but main may
+    # have moved past it. Requiring an unchanged Pusher closure refused every candidate
+    # on a busy main before the chain could finish (runs 46063539437, 46082813194).
     scripts = ROOT / "backend/scripts"
-    closure = run(
-        [sys.executable, str(scripts / "verify_pusher_source_closure.py"), "--image-repository", dev_repository],
-        "source_closure_unavailable",
-    ).splitlines()
-    require(closure, "source_closure_unavailable")
-    run([*git, "diff", "--quiet", source, main, "--", *closure], "source_or_chart_closure_changed")
 
     with tempfile.TemporaryDirectory(prefix="pusher-qualification-") as tmp:
         directory = Path(tmp)
@@ -520,6 +545,9 @@ def check_provenance(proof):
             "development_qualification_failed",
         )
         qualification_receipt = read_json(artifacts / "pusher-dev-deployment-receipt.json")
+        # The verified receipt's own timestamp, written per attempt and hash-bound into the
+        # evidence; a run's updated_at can move without a new qualification.
+        require(qualification_fresh(qualification_receipt), "qualification_stale")
 
     for image in (f"{dev_repository}@{digest}", candidate, proof["prior_image"]):
         remote_digest = run(

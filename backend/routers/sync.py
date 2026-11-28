@@ -36,8 +36,8 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query, 
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
-from config.summary_guarantee import repair_enabled as summary_repair_enabled
-from services import summary_debt_repair
+from config.summary_guarantee import first_week_enabled, repair_enabled as summary_repair_enabled
+from services import first_week_summary_closeout, summary_debt_repair
 from config.policy import resolve_batch_policy
 from config.reliability_experiments import enabled as experiment, warm as warm_experiments
 from config.policy.ramp import audio_span
@@ -800,6 +800,7 @@ async def sync_local_files_v2(
         None, alias='X-Omi-Upload-Journal-Recovery', include_in_schema=False
     ),
     x_omi_upload_hold_age_ms: Optional[str] = Header(None, alias='X-Omi-Upload-Hold-Age-Ms', include_in_schema=False),
+    x_app_build: Optional[str] = Header(None, alias='X-App-Build', include_in_schema=False),
 ):
     """
     Async version of sync-local-files. Saves raw files and returns 202
@@ -817,7 +818,13 @@ async def sync_local_files_v2(
         upload_arrived_at = capture_received_at  # Direct/internal adapter without HTTP middleware.
     # Measurement only: how long the oldest file waited on the phone, and why.
     capture_end.observe_trace(
-        x_omi_upload_trace if isinstance(x_omi_upload_trace, str) else None, received_at=capture_received_at
+        x_omi_upload_trace if isinstance(x_omi_upload_trace, str) else None,
+        received_at=capture_received_at,
+        client_headers={
+            'x-app-platform': x_app_platform if isinstance(x_app_platform, str) else None,
+            'x-app-version': x_app_version if isinstance(x_app_version, str) else None,
+            'x-app-build': x_app_build if isinstance(x_app_build, str) else None,
+        },
     )
     try:
         files = await run_blocking(sync_executor, prepare_sync_uploads, files, uid)
@@ -1420,7 +1427,13 @@ async def sync_local_files_v2(
                 # owner is a follow-on, not a batch landing).
                 if intake_evidence.batch_accepted and not intake_evidence.final_pass_owner_followed:
                     record_upload_outcome('batch')
-                    observe_hold_age(x_omi_upload_hold_age_ms, x_omi_upload_hold, upload_recovered)
+                    observe_hold_age(
+                        x_omi_upload_hold_age_ms,
+                        x_omi_upload_hold,
+                        upload_recovered,
+                        upload_trace=x_omi_upload_trace,
+                        received_at=capture_received_at,
+                    )
                 return batch_response
             sequencer_registration_started = False
 
@@ -2417,6 +2430,19 @@ async def sweep_sync_backfill_sequencer(_retry_count: int = Depends(verify_cloud
             outcomes['summary_debt_near_expiry_admitted'] = summary.get('near_expiry_admitted', 0)
             outcomes['summary_debt_errors'] = summary['errors']
             outcomes['summary_debt_expired_seen'] = summary['expired_seen']
+        if first_week_enabled():
+            # SCA-4790: its own lease and scan budget, so a slow or unindexed
+            # first-week page never consumes the repair phases' budget. It is
+            # independent of the unrelated summary-repair rollout switch.
+            try:
+                first_week = await run_blocking(db_executor, first_week_summary_closeout.tick)
+            except Exception as error:
+                logger.error('event=first_week_closeout outcome=error exception_type=%s', type(error).__name__)
+                first_week = {'scanned': 0, 'closed': 0, 'errors': 1}
+            outcomes['first_week_scanned'] = first_week['scanned']
+            outcomes['first_week_closed'] = first_week['closed']
+            outcomes['first_week_errors'] = first_week['errors']
+            outcomes['first_week_lease_busy'] = first_week.get('lease_busy', 0)
     return JSONResponse(status_code=500 if outcomes.get('error') else 200, content={'outcomes': outcomes})
 
 

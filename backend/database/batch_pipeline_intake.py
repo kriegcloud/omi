@@ -16,7 +16,7 @@ from config.record_seal_rules import token_lease_mode
 from config.record_latency import recent_record_end, record_fresh_merge_enabled, record_notes_eager_enabled
 from database.batch_pipeline_store import Store
 from database import batch_pipeline_allowance_hold as allowance_hold
-from database.batch_pipeline_staging import artifact_id
+from database.batch_pipeline_staging import artifact_id, retire_upload_reservation
 from database import batch_pipeline_coalescing_completion as coalescing_completion
 from database.sync_ledger import LEDGER_RETENTION_DAYS, is_valid_completed_sync_content_result
 from utils.batch_pipeline.correctness_metrics import record as record_correctness
@@ -166,6 +166,7 @@ def admit(
             )
         if not admission.batch_enabled:
             raise AdmissionDisabled('recorded admission policy does not enable batch')
+        record_lane_owner = None
         if binding.record_origin:
             key = f'{binding.owner_id}/{binding.target_conversation_id}'
             if binding.native_record:
@@ -180,6 +181,7 @@ def admit(
                 raise ValueError('record owner is immutable')
             if row.get('record_lane_owner') != expected:
                 tx.patch('conversations', key, {'record_lane_owner': expected})
+            record_lane_owner = expected
         park_allowance = (
             intake_refusal is not None
             and enqueue is None
@@ -204,7 +206,7 @@ def admit(
                     or artifact.get('erasure_requested')
                 ):
                     raise ValueError('audio staging reservation missing or reclaimed')
-                artifact.pop('write_pending_until', None)
+                retire_upload_reservation(artifact)
                 tx.put('artifacts', key, artifact)
             proposal = (source_aliases or {}).get(item.segment_id)
             if proposal is not None:
@@ -232,6 +234,9 @@ def admit(
             if not created and previous_binding != serialized_binding:
                 raise ValueError('existing segment cannot change its immutable intake binding')
             job['projection_binding'] = serialized_binding
+            job['record_origin'] = binding.record_origin or binding.native_record
+            if record_lane_owner is not None:
+                job['record_lane_owner'] = record_lane_owner
             if created and packing_observations and item.segment_id in packing_observations:
                 job['packing_observation'] = packing_observations[item.segment_id]
             if created and binding.native_record:

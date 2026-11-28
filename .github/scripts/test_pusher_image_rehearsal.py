@@ -370,14 +370,44 @@ class RehearsalTest(unittest.TestCase):
         response = Response(json.dumps(payload).encode())
         self.assertEqual(helper.partial_metadata_version(response, "secret", helper.NAMESPACE), ["secret-uid", "9"])
 
-        class FullSecretResponse:
+        # GKE through `kubectl proxy` labels the metadata-only body plain application/json.
+        class PlainJsonResponse(io.BytesIO):
             headers = {"Content-Type": "application/json"}
 
+        plain = PlainJsonResponse(json.dumps(payload).encode())
+        self.assertEqual(helper.partial_metadata_version(plain, "secret", helper.NAMESPACE), ["secret-uid", "9"])
+
+        # A full Secret under plain JSON is refused, and the reason never carries its data.
+        full_secret = {
+            "apiVersion": "v1",
+            "kind": "Secret",
+            "metadata": payload["metadata"],
+            "data": {"token": "c2VjcmV0LXZhbHVl"},
+        }
+        with self.assertRaises(helper.Refused) as refused:
+            helper.partial_metadata_version(
+                PlainJsonResponse(json.dumps(full_secret).encode()), "secret", helper.NAMESPACE
+            )
+        self.assertEqual(str(refused.exception), "secret_metadata_only_response_invalid")
+        self.assertNotIn("c2VjcmV0", str(refused.exception))
+
+        class OtherMediaResponse:
+            headers = {"Content-Type": "application/vnd.kubernetes.protobuf"}
+
             def read(self, *_args):
-                raise AssertionError("a full Secret response must not be read")
+                raise AssertionError("a non-JSON response must not be read")
 
         with self.assertRaisesRegex(helper.Refused, "secret_metadata_only_response_unavailable"):
-            helper.partial_metadata_version(FullSecretResponse(), "secret", helper.NAMESPACE)
+            helper.partial_metadata_version(OtherMediaResponse(), "secret", helper.NAMESPACE)
+
+        class TableResponse:
+            headers = {"Content-Type": "application/json;as=Table;g=meta.k8s.io;v=v1"}
+
+            def read(self, *_args):
+                raise AssertionError("a Table response must not be read")
+
+        with self.assertRaisesRegex(helper.Refused, "secret_metadata_only_response_unavailable"):
+            helper.partial_metadata_version(TableResponse(), "secret", helper.NAMESPACE)
 
     def test_secret_version_uses_partial_metadata_request_and_closes_proxy(self):
         class Listener:
@@ -522,6 +552,38 @@ class RehearsalTest(unittest.TestCase):
         self.assertEqual(receipt["reason"], "registry_digest_mismatch")
         self.assertNotIn("effective_user", receipt)
 
+    def test_qualification_freshness_window(self):
+        now = datetime(2026, 11, 28, 2, 0, tzinfo=timezone.utc)
+        fresh = {"recorded_at": "2026-11-27T03:00:01Z"}
+        self.assertTrue(helper.qualification_fresh(fresh, now))
+        self.assertFalse(helper.qualification_fresh({"recorded_at": "2026-11-27T01:59:59Z"}, now))
+        self.assertFalse(helper.qualification_fresh({"recorded_at": "2026-11-28T02:00:01Z"}, now))
+        self.assertFalse(helper.qualification_fresh({"recorded_at": "2026-11-27T03:00:01"}, now))
+        self.assertFalse(helper.qualification_fresh({"recorded_at": "not a time"}, now))
+        self.assertFalse(helper.qualification_fresh({}, now))
+
+    def test_provenance_refuses_a_stale_qualification(self):
+        def command(args, reason):
+            if reason == "fresh_main_unavailable":
+                return "4" * 40
+            if reason == "qualification_run_unavailable":
+                return '{"head_repository":{"full_name":"BasedHardware/omi"}}'
+            if reason == "qualification_workflow_unavailable":
+                return "18"
+            if reason == "qualification_artifact_unavailable":
+                path = Path(args[args.index("--dir") + 1])
+                path.mkdir()
+                receipt = {"receipt": "qualified", "recorded_at": "2026-01-01T00:00:00Z"}
+                (path / "pusher-dev-deployment-receipt.json").write_text(json.dumps(receipt), encoding="utf-8")
+            if reason == "registry_digest_unavailable":
+                raise AssertionError("a stale qualification must refuse before registry reads")
+            return ""
+
+        with patch.object(helper, "run", side_effect=command):
+            with self.assertRaises(helper.Refused) as refused:
+                helper.check_provenance(self.proof)
+        self.assertEqual(str(refused.exception), "qualification_stale")
+
     def test_provenance_checks_qualified_repository_source_run_and_registry_parity(self):
         source = self.proof["source_sha"]
         main = "4" * 40
@@ -535,35 +597,28 @@ class RehearsalTest(unittest.TestCase):
                 return main
             if reason == "qualification_run_unavailable":
                 return '{"head_repository":{"full_name":"BasedHardware/omi"}}'
-            if reason == "source_closure_unavailable":
-                return "backend/pusher\nbackend/charts/pusher\n"
             if reason == "qualification_workflow_unavailable":
                 return "18"
             if reason == "qualification_artifact_unavailable":
                 path = Path(args[args.index("--dir") + 1])
                 path.mkdir()
-                (path / "pusher-dev-deployment-receipt.json").write_text('{"receipt": "qualified"}', encoding="utf-8")
+                recorded = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+                receipt = {"receipt": "qualified", "recorded_at": recorded}
+                (path / "pusher-dev-deployment-receipt.json").write_text(json.dumps(receipt), encoding="utf-8")
             if reason == "registry_digest_unavailable":
                 return args[4].split("@")[1]
             return ""
 
         with patch.object(helper, "run", side_effect=command):
-            self.assertEqual(helper.check_provenance(self.proof), {"receipt": "qualified"})
+            self.assertEqual(helper.check_provenance(self.proof)["receipt"], "qualified")
 
         commands = {reason: args for args, reason in seen}
         self.assertIn(f"head_sha={source}", commands["release_eligibility_unavailable"][2])
         self.assertIn("--require-first-attempt", commands["source_admission_failed"])
         self.assertEqual(commands["source_not_merged"][-2:], [source, main])
-        self.assertEqual(
-            commands["source_or_chart_closure_changed"][-5:],
-            [
-                source,
-                main,
-                "--",
-                "backend/pusher",
-                "backend/charts/pusher",
-            ],
-        )
+        # Main may move past the source (David 2026-11-28); no closure diff is taken.
+        self.assertNotIn("source_or_chart_closure_changed", commands)
+        self.assertNotIn("source_closure_unavailable", commands)
         verifier = commands["development_qualification_failed"]
         for flag, value in {
             "--expected-repository": dev_repo,
